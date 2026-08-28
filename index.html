@@ -1423,19 +1423,6 @@ function plateBreakdown(totalWeight){
   if(remaining >= 5) text += ` (closest with your plates; ${remaining.toFixed(0)} lb/side short of exact target)`;
   return text;
 }
-// A "ladder" format string starts with a descending rep sequence, e.g. "21-15-9" or "21-15-9 - cap 15'"
-function isLadderFormat(formatStr){
-  return /^\d+(-\d+)+/.test(formatStr);
-}
-function ladderRungsFor(formatStr){
-  const m = formatStr.match(/^(\d+(?:-\d+)+)/);
-  return m ? m[1].split('-').map(Number) : null;
-}
-function applyTimeCap(formatStr, minutes){
-  if(/^(AMRAP|EMOM)/.test(formatStr)) return formatStr.replace(/\d+/, minutes);
-  if(/cap \d+/.test(formatStr)) return formatStr.replace(/cap \d+/, 'cap '+minutes);
-  return formatStr + ` - cap ${minutes}'`;
-}
 // splits available minutes across warmup/skill/wod/core; trims skill/core first when time is tight
 function allocateTime(total){
   if(!total) return null;
