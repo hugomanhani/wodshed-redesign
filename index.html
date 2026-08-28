@@ -1,0 +1,3309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WODshed</title>
+<meta name="description" content="Garage gym workout generator with progressive overload tracking.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1b2a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WODshed">
+<style>html,body{margin:0; background:#0d1b2a;}</style>
+</head>
+<body>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap');
+
+  :root{
+    --bg:#0d1b2a;
+    --surface:#1b263b;
+    --surface-2:#0d1b2a;
+    --coral:#ff6b6b;
+    --coral-dark:#e5504f;
+    --muted:#778da9;
+    --text:#e0e1dd;
+    --line:rgba(255,255,255,0.2);
+    --line-strong:rgba(255,255,255,0.3);
+    --danger:#ff6b6b;
+    --font-display:'Big Shoulders Display', Impact, 'Arial Narrow', sans-serif;
+    --font-body:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html, body{
+    font-family:var(--font-body);
+    background:var(--bg);
+    color:var(--text);
+    margin:0;
+  }
+  #gw-root{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    padding:0 0 calc(108px + env(safe-area-inset-bottom, 0px));
+    min-height:100vh;
+    min-height:100dvh;
+    border-radius:14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .gw-display{
+    font-family:var(--font-display);
+    font-weight:900;
+    letter-spacing:-0.01em;
+    text-transform:uppercase;
+  }
+  #gw-header{
+    background:var(--surface);
+    padding:calc(20px + env(safe-area-inset-top, 0px)) 24px 24px;
+  }
+  #gw-header .gw-rule{display:none;}
+  #gw-header h1{ margin:0; font-size:44px; letter-spacing:-0.02em; line-height:0.85; color:#fff; }
+  #gw-header h1 span{color:var(--coral);}
+  #gw-header .gw-sub{color:var(--coral); opacity:0.8; font-size:11px; margin-top:8px; letter-spacing:0.1em; font-weight:700; font-family:var(--font-body); text-transform:uppercase;}
+
+  .gw-btn{
+    background:var(--surface); color:#fff; border:1px solid var(--line-strong);
+    padding:10px 16px; border-radius:8px; cursor:pointer; font-size:12px;
+    font-weight:800; letter-spacing:0.03em; text-transform:uppercase; font-family:var(--font-body);
+  }
+  .gw-btn:hover{background:#232f47;}
+  .gw-btn.gw-primary{background:var(--coral); color:var(--bg); border:none; font-family:var(--font-display); font-size:16px; letter-spacing:0;}
+  .gw-btn.gw-primary:hover{background:var(--coral-dark);}
+  .gw-btn.gw-teal{background:var(--coral); color:var(--bg); border:none; font-family:var(--font-display); font-size:16px; letter-spacing:0;}
+  .gw-btn.gw-teal:hover{background:var(--coral-dark);}
+  .gw-btn:disabled{opacity:0.35; cursor:not-allowed;}
+  .gw-btn-row{display:flex; gap:8px; flex-wrap:wrap;}
+
+  #gw-controls{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    background:var(--surface); border-radius:8px;
+    padding:16px; margin-bottom:20px; font-size:12px;
+  }
+  #gw-controls.gw-travel-on{background:var(--coral);}
+  #gw-controls.gw-travel-on span, #gw-controls.gw-travel-on label{color:var(--bg) !important;}
+  .gw-switch-row{display:flex; align-items:center; gap:8px;}
+  .gw-switch{position:relative; width:44px; height:24px; flex:none;}
+  .gw-switch input{opacity:0; width:0; height:0;}
+  .gw-slider{position:absolute; inset:0; background:var(--surface-2); border-radius:24px; cursor:pointer; transition:0.2s; border:1px solid var(--line);}
+  .gw-slider:before{content:""; position:absolute; width:18px; height:18px; left:2px; top:2px; background:var(--muted); border-radius:50%; transition:0.2s;}
+  .gw-switch input:checked + .gw-slider{background:var(--bg); border-color:var(--bg);}
+  .gw-switch input:checked + .gw-slider:before{transform:translateX(20px); background:var(--coral);}
+  #gw-controls label.gw-time{display:flex; align-items:center; gap:10px; font-weight:700; flex-wrap:wrap;}
+  .gw-time-stepper{
+    display:flex; align-items:stretch; border:1px solid var(--line-strong); border-radius:8px; overflow:hidden;
+    background:var(--surface-2);
+  }
+  .gw-time-step-btn{
+    width:38px; height:38px; flex:none; background:var(--surface-2); border:none; color:var(--coral);
+    font-size:20px; font-weight:900; font-family:var(--font-body); cursor:pointer; line-height:1;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .gw-time-step-btn:hover{background:var(--surface);}
+  .gw-time-step-btn:active{background:var(--coral); color:var(--bg);}
+  #gw-controls input[type=number]{
+    width:56px; height:38px; background:var(--surface-2); border:none; border-left:1px solid var(--line); border-right:1px solid var(--line);
+    color:#fff; padding:0 4px; font-size:16px; font-weight:800; font-family:var(--font-body); text-align:center;
+    -moz-appearance:textfield;
+  }
+  #gw-controls input[type=number]::-webkit-outer-spin-button,
+  #gw-controls input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance:none; margin:0;
+  }
+  .gw-time-clear-btn{
+    background:none; border:1px solid var(--line); color:var(--muted); border-radius:8px;
+    padding:8px 12px; font-size:12px; font-weight:800; font-family:var(--font-body); cursor:pointer;
+  }
+  .gw-time-clear-btn:hover{color:var(--coral); border-color:var(--coral);}
+
+  /* ---- bottom floating nav ---- */
+  #gw-pagetabs{
+    display:flex; gap:4px; justify-content:space-between;
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+    width:calc(100% - 40px); max-width:361px; z-index:100;
+    background:rgba(13,27,42,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:1px solid var(--line); border-radius:24px; padding:13px 20px;
+    box-shadow:0 12px 24px rgba(0,0,0,0.45);
+  }
+  .gw-pagetab{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+    cursor:pointer; color:var(--muted);
+  }
+  .gw-pagetab svg{width:22px; height:22px; stroke:var(--muted); fill:none; stroke-width:1.8;}
+  .gw-pagetab .gw-navlabel{
+    font-family:var(--font-body); font-weight:800; font-size:11px; letter-spacing:0.02em;
+  }
+  .gw-pagetab .gw-navdot{display:none;}
+  .gw-pagetab.active{color:var(--coral);}
+  .gw-pagetab.active svg{stroke:var(--coral);}
+  .gw-page{padding:20px; padding-top:20px; min-height:70vh; min-height:70dvh; box-sizing:border-box;}
+
+  /* ---- LOG day strip ---- */
+  #gw-daystrip{display:flex; gap:6px; margin-bottom:20px;}
+  .gw-daystrip-cell{
+    flex:1; text-align:center; padding:10px 2px; border-radius:12px;
+    background:var(--surface); cursor:pointer; position:relative;
+  }
+  .gw-daystrip-cell:hover{background:#232f47;}
+  .gw-daystrip-cell.today{box-shadow:inset 0 0 0 1px var(--coral);}
+  .gw-daystrip-cell.selected{background:var(--coral);}
+  .gw-daystrip-cell.selected .gw-daystrip-dow,
+  .gw-daystrip-cell.selected .gw-daystrip-num{color:var(--bg);}
+  .gw-daystrip-dow{font-size:10px; letter-spacing:0.04em; color:var(--muted); text-transform:uppercase; font-weight:800;}
+  .gw-daystrip-num{font-size:18px; font-weight:900; color:#fff; margin-top:4px; font-family:var(--font-body);}
+  .gw-daystrip-dot{width:4px; height:4px; border-radius:50%; background:var(--coral); margin:5px auto 0;}
+  .gw-daystrip-cell.selected .gw-daystrip-dot{background:var(--bg);}
+
+  #gw-focusline{font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.5; font-weight:700;}
+  #gw-focusline strong{color:var(--coral); font-weight:900;}
+
+  /* ---- focus filter tags ---- */
+  #gw-daytabs{display:flex; gap:4px; flex-wrap:wrap; margin-bottom:20px;}
+  .gw-tab{
+    padding:10px 12px; border-radius:8px; border:1px solid var(--line-strong);
+    background:var(--surface); color:#fff; cursor:pointer;
+    font-size:11px; font-weight:900; letter-spacing:0.02em; text-transform:uppercase;
+    font-family:var(--font-body); position:relative;
+  }
+  .gw-tab.active{background:var(--coral); border-color:var(--coral); color:var(--bg);}
+
+  #gw-timebanner{
+    font-size:12px; color:#fff; background:var(--surface); border:1px solid var(--line);
+    border-radius:8px; padding:12px 14px; margin-bottom:14px; display:none; font-weight:600;
+  }
+  #gw-coachnotes{
+    font-size:12.5px; color:#fff; background:var(--surface); border-left:3px solid var(--coral);
+    border-radius:8px; padding:12px 14px; margin-bottom:14px; display:none; line-height:1.55;
+  }
+  #gw-coachnotes strong{color:var(--coral);}
+
+  /* ---- workout board / cards ---- */
+  #gw-board{ display:flex; flex-direction:column; gap:20px; margin-bottom:20px; }
+  .gw-section{ border-radius:16px; overflow:hidden; }
+  .gw-section-head{
+    background:#fff; padding:8px 16px; height:56px; box-sizing:border-box;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .gw-section-head .gw-section-title{
+    font-family:var(--font-display); font-weight:900; font-size:20px; color:var(--bg); text-transform:none; letter-spacing:0;
+  }
+  .gw-section-head .gw-tag{
+    color:var(--bg); font-size:10px; font-weight:900; letter-spacing:0.04em;
+    background:var(--coral); padding:4px 10px; border-radius:999px; text-transform:uppercase;
+    border:1px solid rgba(255,255,255,0.3);
+  }
+  .gw-reroll-btn{
+    display:flex; align-items:center; gap:8px; border:1px solid var(--coral); background:none;
+    color:var(--bg); border-radius:999px; padding:8px 12px; cursor:pointer;
+    font-family:var(--font-body); font-weight:900; font-size:11px; letter-spacing:0.02em;
+  }
+  .gw-reroll-btn:hover{background:rgba(255,107,107,0.1);}
+  .gw-reroll-btn .gw-arrows{font-weight:700; font-size:12px;}
+  .gw-timer-inline-btn{
+    background:none; color:var(--bg); border:1px solid var(--coral); border-radius:999px;
+    font-size:11px; font-weight:900; letter-spacing:0.02em; padding:8px 14px; cursor:pointer;
+    text-transform:uppercase; font-family:var(--font-body);
+  }
+  .gw-timer-inline-btn:hover{background:rgba(255,107,107,0.1);}
+  .gw-timer-full{
+    display:block; width:100%; text-align:center; border-radius:8px; padding:20px; box-sizing:border-box;
+    font-family:var(--font-display); font-size:24px; font-weight:900; text-transform:none;
+    background:none; border:1px solid var(--coral); color:var(--coral); cursor:pointer;
+  }
+  .gw-timer-full:hover{background:rgba(255,107,107,0.08);}
+  .gw-section-start-btn{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    background:var(--coral); border:none; border-radius:10px; padding:16px; margin-top:16px;
+    color:var(--bg); font-family:var(--font-display); font-weight:900; font-size:16px;
+    text-transform:uppercase; letter-spacing:0.02em; cursor:pointer;
+  }
+  .gw-section-start-btn:hover{background:var(--coral-dark);}
+  .gw-section-start-btn svg{width:18px; height:18px;}
+  .gw-icon-btn{
+    background:none; color:var(--bg); border:1px solid rgba(13,27,42,0.3); border-radius:50%;
+    font-size:13px; width:36px; height:36px; line-height:1; cursor:pointer; padding:0;
+    display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .gw-icon-btn:hover{border-color:var(--coral); color:var(--coral);}
+
+  .gw-section-body{padding:20px; background:var(--surface); display:flex; flex-direction:column; gap:20px;}
+  .gw-section-headline{font-family:var(--font-display); font-weight:900; font-size:28px; color:var(--coral); line-height:1.05; text-transform:uppercase; word-break:break-word;}
+  .gw-headline-row{display:flex; flex-direction:column; align-items:flex-start; gap:6px;}
+  .gw-headline-row .gw-tag{flex-shrink:0;}
+  .gw-section-detail{font-family:var(--font-body); font-weight:500; font-size:14px; color:var(--text); line-height:1.7; white-space:pre-line;}
+  .gw-format-explainer{font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--muted); line-height:1.4;}
+  .gw-checklist{display:flex; flex-direction:column; gap:20px; width:100%;}
+  .gw-checklist-row{display:flex; gap:8px; align-items:flex-start;}
+  .gw-checklist-num{
+    flex:none; width:40px; font-family:var(--font-body); font-weight:900; font-size:12px; color:var(--coral);
+    letter-spacing:0.03em; text-transform:uppercase; padding-top:11px; background:none; border:none; text-align:left;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .gw-checklist-num svg{width:16px; height:16px; margin-top:2px;}
+  .gw-checklist-num-done{color:var(--coral);}
+  .gw-roundlog{display:flex; flex-direction:column; gap:2px; width:100%;}
+  .gw-roundlog:empty{display:none;}
+  .gw-roundlog-row{
+    display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line);
+    font-family:var(--font-body); font-weight:700; font-size:14px; color:#fff;
+  }
+  .gw-roundlog-row .gw-roundlog-time{color:var(--muted); font-family:var(--font-mono);}
+  .gw-roundlog-row .gw-roundlog-delta{font-size:12px; margin-left:8px;}
+  .gw-roundlog-delta.pos{color:var(--danger);}
+  .gw-roundlog-delta.neg{color:#fff;}
+  .gw-roundlog-done{font-family:var(--font-display); font-weight:900; font-size:12px; letter-spacing:0.04em; color:var(--coral); text-transform:uppercase; padding-top:8px;}
+  .gw-checklist-reps{
+    flex:none; width:70px; font-family:var(--font-body); font-weight:900; font-size:12px; color:#fff;
+    letter-spacing:0.03em; text-transform:uppercase; padding-top:11px;
+  }
+  .gw-checklist-inputwrap{flex:1; display:flex; flex-direction:column; gap:8px; min-width:0;}
+  .gw-checklist-inputbox{
+    position:relative; height:44px; background:var(--surface-2); border:1px solid var(--line-strong); border-radius:8px;
+    display:flex; align-items:center;
+  }
+  .gw-checklist-inputbox input{
+    flex:1; background:none; border:none; color:#fff; font-family:var(--font-body); font-weight:900; font-size:18px;
+    padding-left:15px; min-width:0; width:100%;
+  }
+  .gw-checklist-units{display:flex; gap:0; padding-right:6px; flex:none;}
+  .gw-unit{
+    background:none; border:none; color:#fff; font-family:var(--font-body); font-weight:900; font-size:14px;
+    padding:0 8px; cursor:pointer; opacity:0.3;
+  }
+  .gw-unit.active{opacity:1; text-decoration:underline;}
+  .gw-checklist-plates{font-family:var(--font-body); font-weight:700; font-size:12px; color:var(--muted);}
+  .gw-movement-list{display:flex; flex-direction:column; gap:8px;}
+  .gw-movement-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    font-family:var(--font-body); font-weight:500; font-size:14px; color:var(--text);
+  }
+  .gw-info-links{display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-family:var(--font-body); font-weight:700; font-size:11px; color:var(--muted);}
+  .gw-info-links .gw-info-label{font-weight:900;}
+  .gw-info-links a, .gw-info-links span.gw-info-link{color:var(--muted); text-decoration:underline; cursor:pointer;}
+  .gw-info-links span.gw-info-link:hover{color:#fff;}
+
+  #gw-empty{ text-align:center; padding:60px 20px; color:var(--muted); }
+  #gw-empty .gw-btn{margin-top:14px;}
+  .gw-load-row{ display:flex; flex-direction:column; gap:8px; }
+  .gw-load-row label{font-size:11px; color:var(--muted); letter-spacing:0.04em; font-weight:900; text-transform:uppercase; font-family:var(--font-body);}
+  .gw-load-row input{
+    width:100%; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff;
+    border-radius:8px; padding:10px 8px; font-size:18px; font-weight:900; text-align:center; font-family:var(--font-body);
+  }
+  .gw-plates{font-size:12px; color:#fff; font-weight:700;}
+  .gw-chips{display:none;} /* replaced by gw-info-links */
+
+  #gw-actions{display:flex; flex-direction:column; gap:12px; margin-bottom:20px;}
+  #gw-actions .gw-btn-row{width:100%;}
+  #gw-actions > .gw-btn-hero{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    background:var(--coral); color:var(--bg); border:none; border-radius:12px;
+    padding:22px; font-family:var(--font-display); font-size:22px; font-weight:900;
+    box-shadow:0 10px 28px rgba(255,107,107,0.32);
+    margin-bottom:10px;
+  }
+  #gw-actions > .gw-btn-hero:hover{background:var(--coral-dark); box-shadow:0 10px 32px rgba(255,107,107,0.42);}
+  #gw-actions > .gw-btn-hero svg{width:24px; height:24px;}
+  #gw-actions > .gw-btn-secondary{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+    background:none; color:var(--muted); border:1px solid var(--line-strong); border-radius:10px;
+    padding:14px; font-family:var(--font-body); font-size:13px; font-weight:800; letter-spacing:0.02em;
+  }
+  #gw-actions > .gw-btn-secondary:hover{color:#fff; border-color:var(--coral);}
+  #gw-actions > .gw-btn-secondary svg{width:15px; height:15px;}
+  .gw-btn-with-icon{display:inline-flex; align-items:center; gap:8px;}
+  .gw-btn-with-icon svg{flex-shrink:0;}
+  .gw-icon-btn svg{width:16px; height:16px; display:block;}
+  #gw-actions .gw-btn.gw-primary, #gw-actions .gw-btn.gw-teal{width:100%; padding:20px;}
+  .gw-rate-block{background:var(--surface); border:1px solid var(--line-strong); border-radius:8px; padding:16px; width:100%;}
+  .gw-rate-block .gw-rate-label{font-size:11px; font-weight:900; color:#fff; letter-spacing:0.02em; text-transform:uppercase; margin-bottom:12px; font-family:var(--font-body);}
+  .gw-rate-options{display:flex; gap:8px;}
+  .gw-rate-options .gw-btn{
+    flex:1; background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
+    border-radius:4px; text-align:center; padding:8px; font-size:12px;
+  }
+  .gw-rate-options .gw-btn.gw-primary{background:var(--surface-2); border-color:var(--coral); color:var(--coral);}
+
+  #gw-log-content, #gw-profile-content{
+    background:transparent; padding:0; margin-bottom:20px;
+  }
+  #gw-log-content h3, #gw-profile-content h3{margin:0 0 12px; font-size:13px; letter-spacing:0.08em; color:var(--muted); font-weight:900; text-transform:uppercase; font-family:var(--font-body);}
+  .gw-card{background:var(--surface); border-radius:16px; padding:20px; margin-bottom:20px;}
+  .gw-setting-row{display:flex; flex-direction:column; gap:8px; margin-bottom:16px;}
+  .gw-setting-row label, .gw-setting-row > span:first-child{font-size:11px; color:var(--muted); font-weight:900; letter-spacing:0.04em; text-transform:uppercase; font-family:var(--font-body);}
+  .gw-setting-row input, .gw-setting-row select, .gw-setting-row textarea{
+    width:100%; background:var(--surface-2); border:1px solid var(--line); color:#fff;
+    border-radius:8px; padding:12px 16px; font-size:16px; font-weight:500; font-family:var(--font-body);
+  }
+  .gw-weights-row{display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);}
+  .gw-weights-row:last-child{border-bottom:none;}
+  .gw-weights-row .gw-weights-label{font-size:13px; font-weight:600; color:#fff;}
+  .gw-weights-row input{
+    width:64px; height:36px; background:var(--surface-2); border:1px solid var(--line); color:var(--coral);
+    border-radius:6px; text-align:center; font-size:16px; font-weight:800; font-family:var(--font-body);
+  }
+  .gw-activity-select{
+    background:var(--surface-2); border:1px solid var(--line); color:#fff; border-radius:8px; padding:12px 16px; font-size:16px; width:100%; font-family:var(--font-body);
+  }
+  .gw-activity-notes{
+    width:100%; min-height:56px; background:var(--surface-2); border:1px solid var(--line); color:#fff;
+    border-radius:8px; padding:12px 16px; font-size:16px; font-family:var(--font-body); resize:vertical;
+  }
+  .gw-hist-item{background:var(--surface); border-radius:16px; padding:16px; margin-bottom:8px; font-size:13px;}
+  .gw-hist-item .gw-hist-date{color:var(--coral); font-weight:900; font-size:13px;}
+  .gw-hist-item .gw-hist-detail{color:var(--muted); margin-top:6px; font-weight:400;}
+  .gw-gloss-item{padding:10px 0; border-bottom:1px solid var(--line);}
+  .gw-gloss-item .gw-gloss-name{font-weight:900; font-size:13px; color:var(--coral);}
+  .gw-gloss-item .gw-gloss-desc{font-size:12.5px; color:var(--muted); margin-top:2px;}
+  .gw-gloss-item .gw-gloss-link{font-size:12px; color:#fff; font-weight:700; text-decoration:underline; display:inline-block; margin-top:4px;}
+  #gw-toast{
+    position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
+    background:#fff; color:var(--bg); padding:10px 20px; border-radius:24px;
+    font-size:13px; font-weight:800; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:150;
+    font-family:var(--font-body);
+  }
+  #gw-toast.show{opacity:1;}
+  #gw-modal-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(13,27,42,0.8); z-index:160;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  #gw-modal-backdrop.show{display:flex;}
+  #gw-modal{
+    background:var(--surface); border-radius:16px;
+    max-width:360px; width:100%; padding:24px;
+  }
+  #gw-modal h4{margin:0 0 10px; color:var(--coral); font-size:22px; font-family:var(--font-display); font-weight:900; text-transform:uppercase;}
+  #gw-modal p{margin:0; font-size:14px; line-height:1.6; color:var(--text); font-family:var(--font-body);}
+  #gw-modal-link{margin-top:12px; display:none; font-family:var(--font-body);}
+  #gw-modal-link a{color:#fff; font-size:13px; font-weight:700; text-decoration:underline; font-family:var(--font-body);}
+  #gw-modal-link .gw-modal-credit{display:block; font-size:11px; color:var(--muted); margin-top:2px; font-family:var(--font-body);}
+  #gw-modal button{margin-top:16px; width:100%;}
+
+  #gw-timer-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:170;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  #gw-timer-backdrop.show{display:flex;}
+  #gw-timer{
+    background:var(--surface); border-radius:16px;
+    max-width:345px; width:100%; padding:32px; text-align:left;
+  }
+  #gw-timer .gw-timer-label{font-size:11px; letter-spacing:0.04em; color:var(--muted); text-transform:uppercase; font-weight:900; font-family:var(--font-body);}
+  #gw-timer .gw-timer-sub{font-size:14px; color:var(--coral); margin-top:12px; min-height:17px; font-weight:600; font-family:var(--font-body);}
+  #gw-timer .gw-timer-phase{
+    display:none; font-size:48px; font-weight:900; font-family:var(--font-display); text-transform:uppercase;
+    margin-top:16px; line-height:1;
+  }
+  #gw-timer .gw-timer-phase.show{display:block;}
+  #gw-timer .gw-timer-phase.work{color:var(--coral);}
+  #gw-timer .gw-timer-phase.rest{color:#fff;}
+  #gw-timer .gw-timer-clock{
+    font-family:var(--font-mono); font-size:64px; font-weight:700;
+    color:#fff; margin:16px 0 0; letter-spacing:0; text-align:left;
+  }
+  #gw-timer .gw-timer-clock.gw-warn{color:var(--danger);}
+  #gw-timer .gw-timer-controls{display:flex; gap:12px; margin-top:24px;}
+  #gw-timer .gw-timer-controls .gw-btn{flex:1; border-radius:8px; padding:20px; font-family:var(--font-display); font-size:20px;}
+  #gw-timer .gw-timer-controls .gw-btn:not(.gw-primary){background:var(--surface-2); border:1px solid var(--line); color:#fff; flex:none; width:100px;}
+  #gw-timer .gw-timer-close{margin-top:20px; background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; text-decoration:underline; font-weight:700; font-family:var(--font-body);}
+  #gw-timer-context{
+    text-align:left; margin-top:20px; padding-top:20px; border-top:1px solid var(--line);
+    max-height:160px; overflow-y:auto; white-space:pre-line; font-size:16px; line-height:1.5; color:#fff; font-weight:600;
+    display:none; font-family:var(--font-body);
+  }
+  #gw-timer-context.show{display:block;}
+  #gw-timer-context .gw-timer-context-label{
+    font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--muted);
+    margin-bottom:12px; display:block; font-weight:900; font-family:var(--font-body);
+  }
+
+  /* ---- Focus Mode ---- */
+  #gw-focus{display:flex; flex-direction:column; gap:18px; margin-top:-20px; padding-bottom:340px;}
+  #gw-focus-header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:calc(16px + env(safe-area-inset-top, 0px)) 20px 12px; background:var(--surface);
+  }
+  #gw-focus-header-name{
+    font-family:var(--font-display); font-weight:900; font-size:18px; color:#fff; text-transform:uppercase; letter-spacing:0.01em;
+  }
+  #gw-focus-close{
+    width:40px; height:40px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line-strong);
+    color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
+  }
+  #gw-focus-close:hover{border-color:var(--coral); color:var(--coral);}
+  #gw-focus-close svg{width:18px; height:18px;}
+  .gw-focus-tapcounter{
+    background:var(--surface); border:1px solid var(--coral); border-radius:16px; padding:16px;
+    display:flex; align-items:center; justify-content:space-between; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; user-select:none;
+  }
+  .gw-focus-tapcounter-label{font-size:12px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:var(--coral); font-family:var(--font-body);}
+  .gw-focus-tapcounter-number{font-family:var(--font-mono); font-weight:700; font-size:32px; color:#fff;}
+  .gw-focus-tapcounter.gw-tap-flash{background:var(--coral-dark);}
+  .gw-focus-headrow{display:flex; align-items:center; justify-content:space-between;}
+  .gw-focus-section-name{font-family:var(--font-display); font-weight:900; font-size:26px; color:#fff; text-transform:uppercase;}
+  .gw-focus-section-name .gw-focus-num{color:var(--coral);}
+  .gw-focus-tag{font-size:10px; font-weight:900; letter-spacing:0.04em; color:var(--coral); text-transform:uppercase; background:var(--surface); border:1px solid var(--line-strong); padding:5px 10px; border-radius:999px;}
+
+  .gw-focus-detail{
+    background:var(--surface); border-radius:16px; padding:16px 18px; font-size:14px; color:var(--text);
+    line-height:1.6; white-space:pre-line; font-family:var(--font-body); font-weight:500;
+  }
+
+  .gw-starttimer-btn{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    background:var(--coral); border:none; border-radius:14px; padding:18px;
+    color:var(--bg); font-family:var(--font-display); font-weight:900; font-size:16px;
+    text-transform:uppercase; letter-spacing:0.02em; cursor:pointer;
+  }
+  .gw-starttimer-btn:hover{background:var(--coral-dark);}
+  .gw-starttimer-btn svg{width:20px; height:20px;}
+  .gw-section-round-btn{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    background:var(--coral); border:none; border-radius:14px; padding:18px;
+    color:var(--bg); font-family:var(--font-display); font-weight:900; font-size:16px;
+    text-transform:uppercase; letter-spacing:0.02em; cursor:pointer;
+  }
+  .gw-section-round-btn:hover{background:var(--coral-dark);}
+  .gw-round-target{opacity:0.7; font-size:13px;}
+  .gw-section-round-btn:disabled{background:var(--surface); color:var(--coral); cursor:default;}
+  .gw-section-round-btn:disabled svg{width:18px; height:18px;}
+  .gw-navmid-badge{
+    width:22px; height:22px; border-radius:50%; background:var(--bg); color:var(--coral);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; font-family:var(--font-mono);
+  }
+
+  .gw-floatcard{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+    width:calc(100% - 40px); max-width:354px; z-index:96;
+    background:rgba(27,38,59,0.82); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border-radius:20px; padding:24px 20px;
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.45);
+  }
+  .gw-floatcard-close{
+    position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%;
+    background:var(--surface-2); border:none; color:#fff; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; padding:0;
+  }
+  .gw-floatcard-close svg{width:14px; height:14px;}
+  .gw-floatcard-label{font-family:var(--font-body); font-weight:700; font-size:13px; color:var(--muted); text-align:center;}
+  .gw-floatcard-clock{font-family:var(--font-mono); font-weight:700; font-size:56px; color:#fff; letter-spacing:-0.02em;}
+  .gw-floatcard-clock.warn{color:var(--danger);}
+  .gw-floatcard-clock.rest{color:var(--muted);}
+  .gw-floatcard-secondary{font-size:12px; color:var(--muted); font-weight:700; text-align:center; min-height:14px;}
+  .gw-floatcard-ringwrap{display:grid; place-items:center; width:72px; height:72px;}
+  .gw-floatcard-ringwrap svg{grid-row:1; grid-column:1; width:72px; height:72px;}
+  .gw-focus-ring-track{fill:none; stroke:var(--surface-2); stroke-width:4;}
+  .gw-focus-ring-fill{fill:none; stroke:var(--coral); stroke-width:4; stroke-linecap:round; transition:stroke-dashoffset 0.2s linear, stroke 0.3s ease;}
+  .gw-focus-ring-fill.rest{stroke:var(--muted);}
+  .gw-floatcard-playpause{
+    grid-row:1; grid-column:1;
+    width:48px; height:48px; border-radius:50%; background:var(--surface-2); border:none; color:var(--coral); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .gw-floatcard-playpause svg{width:24px; height:24px;}
+  .gw-floatcard-round{position:absolute; bottom:20px; right:16px;}
+  .gw-floatcard-round button{
+    display:flex; align-items:center; gap:8px; background:none; border:none; color:#fff; cursor:pointer;
+    font-family:var(--font-body); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.03em; padding:0;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .gw-floatcard-round button:disabled{opacity:0.5; cursor:default;}
+  .gw-floatcard-round .gw-round-target{color:var(--muted); font-size:11px;}
+  .gw-floatcard-round-badge{
+    width:20px; height:20px; border-radius:50%; background:var(--coral); color:var(--bg);
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; font-family:var(--font-mono);
+  }
+  .gw-floatcard-round button.gw-tap-flash .gw-floatcard-round-badge{background:var(--coral-dark);}
+  .gw-floatcard-next{position:absolute; bottom:16px; right:16px; display:flex; flex-direction:column; align-items:flex-end; gap:4px;}
+  .gw-floatcard-next button{
+    display:flex; align-items:center; gap:4px; background:none; border:none; color:#fff; cursor:pointer;
+    font-family:var(--font-body); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.03em; padding:4px;
+  }
+  .gw-floatcard-next button svg{width:16px; height:16px;}
+  .gw-floatcard-nextpreview{font-size:12px; color:var(--muted); font-weight:700;}
+
+  .gw-focus-phaseword{font-family:var(--font-display); font-weight:900; font-size:22px; text-transform:uppercase; color:var(--coral); min-height:26px; letter-spacing:0.02em;}
+  .gw-focus-phaseword.rest{color:var(--muted);}
+
+  .gw-focus-swipezone{margin-top:4px;}
+  .gw-focus-swipe-track{
+    position:relative; height:56px; border-radius:28px; background:var(--surface-2); border:1px solid var(--line-strong);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; -webkit-tap-highlight-color:transparent;
+  }
+  .gw-focus-swipe-track span{position:relative; z-index:1; font-size:12px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:#fff; pointer-events:none;}
+  .gw-focus-swipe-fill{position:absolute; left:0; top:0; bottom:0; width:0; background:rgba(255,107,107,0.25); pointer-events:none;}
+  .gw-focus-swipe-thumb{
+    position:absolute; left:6px; top:6px; width:44px; height:44px; border-radius:50%;
+    background:var(--coral); display:flex; align-items:center; justify-content:center; color:var(--bg);
+    cursor:grab; z-index:2; touch-action:none; box-shadow:0 2px 10px rgba(0,0,0,0.35);
+  }
+  .gw-focus-swipe-thumb svg{width:16px; height:16px; margin-left:2px;}
+  .gw-focus-swipe-thumb:active{cursor:grabbing;}
+  .gw-focus-swipezone.gw-swipe-locked .gw-focus-swipe-track{opacity:0.45; pointer-events:none;}
+  .gw-focus-swipezone.gw-swipe-locked .gw-focus-swipe-track span::after{content:' — locked in';}
+
+
+
+  .gw-focus-nav{display:flex; gap:10px;}
+  .gw-focus-nav .gw-btn{flex:1; padding:18px;}
+  .gw-focus-exit{
+    text-align:center; font-size:12px; color:var(--muted); font-weight:700; text-decoration:underline;
+    cursor:pointer; padding:6px;
+  }
+  .gw-focus-exit:hover{color:var(--coral);}
+
+  #gw-stopconfirm-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:180;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  #gw-stopconfirm-backdrop.show{display:flex;}
+  #gw-timerstop-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:185;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  #gw-timerstop-backdrop.show{display:flex;}
+  #gw-stopconfirm, #gw-timerstop{background:var(--surface); border-radius:16px; max-width:340px; width:100%; padding:24px;}
+  #gw-stopconfirm h4, #gw-timerstop h4{margin:0 0 10px; color:#fff; font-size:20px; font-family:var(--font-display); font-weight:900; text-transform:uppercase;}
+  #gw-stopconfirm p, #gw-timerstop p{margin:0 0 18px; font-size:13.5px; line-height:1.55; color:var(--muted); font-family:var(--font-body);}
+  .gw-stopconfirm-row{display:flex; gap:10px;}
+  .gw-stopconfirm-row .gw-btn{flex:1; padding:14px; font-size:13px;}
+
+  #gw-focus-gradientbg{
+    position:fixed; left:0; right:0; bottom:0; height:100px;
+    background:linear-gradient(to bottom, rgba(13,27,42,0) 0%, rgba(13,27,42,0.75) 40px, rgba(13,27,42,0.75) 100%);
+    pointer-events:none; z-index:90;
+  }
+</style>
+
+<div id="gw-root">
+  <div id="gw-focus-header" style="display:none;">
+    <span id="gw-focus-header-name"></span>
+    <button id="gw-focus-close" aria-label="Close and stop workout"></button>
+  </div>
+  <div id="gw-header">
+    <h1 class="gw-display">GARAGE <span>WOD</span></h1>
+    <div class="gw-sub">RACK · RINGS · ONE BELL · ONE BAR · A ROPE</div>
+  </div>
+
+  <div id="gw-page-wod" class="gw-page" style="margin-top:0;">
+    <div id="gw-controls">
+      <div class="gw-switch-row">
+        <label class="gw-switch">
+          <input type="checkbox" id="gw-bw-toggle">
+          <span class="gw-slider"></span>
+        </label>
+        <span>Travel mode <span style="color:var(--muted); font-size:11.5px;">(zero equipment — no bar, rings, rope, KB or barbell)</span></span>
+      </div>
+      <label class="gw-time">
+        Time I have today:
+        <div class="gw-time-stepper">
+          <button type="button" id="gw-time-minus" class="gw-time-step-btn" aria-label="Decrease time by 5 minutes">−</button>
+          <input type="number" id="gw-time-input" min="10" step="5" placeholder="—">
+          <button type="button" id="gw-time-plus" class="gw-time-step-btn" aria-label="Increase time by 5 minutes">+</button>
+        </div>
+        <button type="button" id="gw-time-clear" class="gw-time-clear-btn" title="Clear time budget" style="display:none;">✕ Clear</button>
+        <span style="color:var(--muted); font-size:11.5px;">min (optional)</span>
+      </label>
+    </div>
+
+    <div id="gw-focusline"></div>
+    <div id="gw-daytabs"></div>
+    <div id="gw-timebanner"></div>
+    <div id="gw-coachnotes"></div>
+    <div id="gw-board"></div>
+    <div id="gw-actions"></div>
+    <div id="gw-focus" style="display:none;"></div>
+    <div id="gw-focus-gradientbg" style="display:none;"></div>
+  </div>
+
+  <div id="gw-page-log" class="gw-page" style="display:none;">
+    <div id="gw-log-content"></div>
+  </div>
+
+  <div id="gw-page-profile" class="gw-page" style="display:none;">
+    <div id="gw-profile-content"></div>
+  </div>
+
+  <div id="gw-pagetabs">
+    <div class="gw-pagetab active" data-page="wod">
+      <svg viewBox="0 0 24 24"><rect x="10" y="9" width="4" height="6" rx="1"/><rect x="2" y="10.5" width="3" height="3"/><rect x="19" y="10.5" width="3" height="3"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span class="gw-navlabel">WOD</span>
+      <span class="gw-navdot"></span>
+    </div>
+    <div class="gw-pagetab" data-page="log">
+      <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+      <span class="gw-navlabel">LOG</span>
+      <span class="gw-navdot"></span>
+    </div>
+    <div class="gw-pagetab" data-page="profile">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg>
+      <span class="gw-navlabel">PROFILE</span>
+      <span class="gw-navdot"></span>
+    </div>
+  </div>
+</div>
+<div id="gw-toast"></div>
+<div id="gw-stopconfirm-backdrop">
+  <div id="gw-stopconfirm">
+    <h4>Stop the workout?</h4>
+    <p>You'll leave Focus Mode. Nothing you've done so far is lost — you can pick up where you left off from the normal view.</p>
+    <div class="gw-stopconfirm-row">
+      <button class="gw-btn" id="gw-stopconfirm-cancel">Keep Going</button>
+      <button class="gw-btn gw-primary" id="gw-stopconfirm-ok">Stop</button>
+    </div>
+  </div>
+</div>
+<div id="gw-timerstop-backdrop">
+  <div id="gw-timerstop">
+    <h4>Cancel this timer?</h4>
+    <p>This will reset it back to the start. Any rounds you've logged for this section stay saved.</p>
+    <div class="gw-stopconfirm-row">
+      <button class="gw-btn" id="gw-timerstop-cancel">Continue</button>
+      <button class="gw-btn gw-primary" id="gw-timerstop-ok">Cancel Timer</button>
+    </div>
+  </div>
+</div>
+<div id="gw-modal-backdrop">
+  <div id="gw-modal">
+    <h4 id="gw-modal-title"></h4>
+    <p id="gw-modal-desc"></p>
+    <div id="gw-modal-link"></div>
+    <button class="gw-btn gw-primary" id="gw-modal-close">Got it</button>
+  </div>
+</div>
+<div id="gw-timer-backdrop">
+  <div id="gw-timer">
+    <div class="gw-timer-label" id="gw-timer-label">AMRAP</div>
+    <div class="gw-timer-phase" id="gw-timer-phase"></div>
+    <div class="gw-timer-clock" id="gw-timer-clock">00:00</div>
+    <div class="gw-timer-sub" id="gw-timer-sub"></div>
+    <div class="gw-timer-controls">
+      <button class="gw-btn gw-primary" id="gw-timer-start">Start</button>
+      <button class="gw-btn" id="gw-timer-pause">Pause</button>
+      <button class="gw-btn" id="gw-timer-reset">Reset</button>
+    </div>
+    <div id="gw-timer-context"><span class="gw-timer-context-label">What you're doing</span><div id="gw-timer-context-text"></div></div>
+    <button class="gw-timer-close" id="gw-timer-close">Close</button>
+  </div>
+</div>
+
+<script>
+(function(){
+
+// Falls back to localStorage when not running inside a Claude artifact (e.g. deployed standalone).
+if(!window.storage){
+  window.storage = {
+    async get(key){ const v = localStorage.getItem(key); return v!=null ? {key, value:v, shared:false} : null; },
+    async set(key, value){ localStorage.setItem(key, value); return {key, value, shared:false}; },
+    async delete(key){ const existed = localStorage.getItem(key)!=null; localStorage.removeItem(key); return {key, deleted:existed, shared:false}; },
+    async list(prefix){ const keys = Object.keys(localStorage).filter(k=>!prefix || k.startsWith(prefix)); return {keys, prefix, shared:false}; }
+  };
+}
+
+// Phosphor Icons "arrows-clockwise" (regular weight) — used for every reroll/refresh action
+const ICON_REFRESH = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27a96,96,0,0,1,135,.79L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 256 256" fill="currentColor" width="18" height="18"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 256 256" fill="currentColor" width="18" height="18"><path d="M110,40H50A14,14,0,0,0,36,54V202a14,14,0,0,0,14,14h60a14,14,0,0,0,14-14V54A14,14,0,0,0,110,40Zm-2,160H52V56h56ZM206,40H146a14,14,0,0,0-14,14V202a14,14,0,0,0,14,14h60a14,14,0,0,0,14-14V54A14,14,0,0,0,206,40Zm-2,160H148V56h56Z"/></svg>';
+const ICON_X = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>';
+const ICON_ARROW_LEFT = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"/></svg>';
+const ICON_ARROW_RIGHT = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"/></svg>';
+
+const DAY_TYPES = [
+  {key:'strength', label:'Strength'},
+  {key:'gymnastics', label:'Gymnastics'},
+  {key:'weightlifting', label:'Weightlifting'},
+  {key:'accessory', label:'Accessory'},
+  {key:'conditioning', label:'Conditioning'},
+];
+
+const DEFAULT_WEIGHTS = {
+  backSquat:95, frontSquat:75, deadlift:135, floorPress:65, powerClean:65, powerSnatch:45
+};
+const LIFT_LABELS = {
+  backSquat:'Back Squat', frontSquat:'Front Squat', deadlift:'Deadlift',
+  floorPress:'Barbell Floor Press', powerClean:'Power Clean', powerSnatch:'Power Snatch'
+};
+// available plates, one per side (35/25/15 oly + 25/10 iron)
+const SIDE_PLATES = [35,25,25,15,10];
+
+const ADJUST = {
+  backSquat:   {easy:10, right:5, hard:0},
+  frontSquat:  {easy:10, right:5, hard:0},
+  deadlift:    {easy:15, right:10, hard:0},
+  floorPress:  {easy:5,  right:5,  hard:0},
+  powerClean:  {easy:5,  right:5,  hard:-5},
+  powerSnatch: {easy:5,  right:5,  hard:-5}
+};
+const RPE_LABELS = {easy:'Easy', right:'Right', hard:'Hard'};
+
+// how much a type's WOD volume (rep ranges) grows/shrinks based on how the last one or two sessions felt
+const VOLUME_ADJUST = {easy:0.10, right:0, hard:-0.10};
+const DEFAULT_VOLUME = {strength:1.0, gymnastics:1.0, weightlifting:1.0, accessory:1.0, conditioning:1.0};
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+// ---------- WARM-UPS ----------
+const WARMUPS = {
+  strength: ["2X:\n30\" high knees\n10 PVC pass-throughs (2nd bar)\n10 air squats\n10 hollow rocks",
+             "2X:\n15 walking lunges\n10 good mornings (2nd bar)\n10 hollow rocks"],
+  gymnastics: ["2X:\n10 scap pull-ups\n10 hollow rocks\n10 superman\n30 single unders",
+               "2X:\n60 single unders\n10 scap pull-ups\n10 superman"],
+  weightlifting: ["2X (empty 2nd bar):\n10 OHS\n10 good mornings\n10 strict press",
+                  "2X (empty 2nd bar):\n10 muscle snatch\n10 OHS\n10 snatch grip good mornings"],
+  accessory: ["2X:\n10 KB deadlifts\n10 push-ups\n10 walking lunges",
+              "2X:\n10 push-ups\n10 walking lunges\n10 dislocates (W-bar)"],
+  conditioning: ["2X:\n30\" jump rope\n10 half burpees\n10 hollow rocks",
+                 "2X:\n40 single unders\n10 burpees\n10 air squats"]
+};
+// bodyweight-only alternates for the two day types whose default warm-ups touch the barbell
+const WARMUPS_BW = {
+  strength: ["2X:\n30\" high knees\n10 air squats\n10 walking lunges\n10 hollow rocks"],
+  gymnastics: ["2X:\n10 hollow rocks\n10 superman\n30\" high knees\n10 plank shoulder taps"],
+  weightlifting: ["2X:\n10 broad jumps\n10 jump squats\n10 hollow rocks"],
+  accessory: ["2X:\n10 good mornings (bodyweight)\n10 push-ups\n10 walking lunges"],
+  conditioning: ["2X:\n30\" high knees\n10 half burpees\n10 hollow rocks"]
+};
+
+// ---------- SKILLS ----------
+const SKILLS = {
+  strength: [
+    {text:"STRENGTH\nBACK SQUAT (rack)\n5 x 5\nEach 2 min", liftKey:'backSquat'},
+    {text:"STRENGTH\nFRONT SQUAT (rack)\n5-5-3-3-2-2\nEach 2 min", liftKey:'frontSquat'},
+    {text:"STRENGTH\nDEADLIFT\n4 x 6\nEach 2 min", liftKey:'deadlift'}
+  ],
+  gymnastics: [
+    {text:"GYMNASTIC\nEMOM 10'\nOdd: 8-10 Toes to Bar\nEven: 20\" L-sit (bar or rings)"},
+    {text:"GYMNASTIC - PULL-UPS\n5 sets x 8-10 (strict or banded)\nEach 1:30"},
+    {text:"GYMNASTIC\nEMOM 12'\n6-10 Toes to Bar"}
+  ],
+  weightlifting: [
+    {text:"OLYMPIC LIFTING - COMPLEX (main bar)\n5 sets, each 2 min:\n1 Power Clean + 1 Front Squat + 1 Push Jerk", liftKey:'powerClean'},
+    {text:"OLYMPIC LIFTING - SNATCH\n5 sets: 1 Snatch Deadlift + 1 Hang Power Snatch\nEach 2 min", liftKey:'powerSnatch'},
+    {text:"OLYMPIC LIFTING - SNATCH\n6 sets x 3\nEach 2 min, progressive load", liftKey:'powerSnatch'}
+  ],
+  accessory: [
+    {text:"ACCESSORY (W-bar + KB)\n4 sets:\n10 W-bar curls\n10 W-bar skull crushers\n10/10 single arm KB row\nRest 1'"},
+    {text:"ACCESSORY (KB)\n4 sets:\n10 single arm KB row each side\n10 KB Romanian deadlift\n20 bicycle crunches\nRest 1'"},
+    {text:"ACCESSORY\nBARBELL FLOOR PRESS\n4 x 8\nEach 2 min", liftKey:'floorPress'},
+    {text:"ACCESSORY SUPERSET x4:\n10 barbell floor press\n10 single arm KB row\nRest 1'", liftKey:'floorPress'}
+  ],
+  conditioning: [
+    {text:"ENDURANCE\nEMOM 8'\nOdd: 10 KB swings\nEven: 8 burpees"},
+    {text:"ENDURANCE\n4 sets: 100 single unders + max effort burpees\nRest 1' between sets"},
+    {text:"ENDURANCE\nEMOM 10'\nOdd: 12 KB swings\nEven: 10 jumping lunges"}
+  ]
+};
+// travel-mode alternates — true zero equipment: no barbell, no KB, no pull-up bar, no rings, no jump rope
+// (a wall/floor is assumed available, same as any standard bodyweight/travel workout)
+const SKILLS_BW = {
+  strength: [
+    {text:"STRENGTH (bodyweight)\nWALKING LUNGES + PISTOL SQUAT PROGRESSION\n5 x 10 lunges each leg\n5 x 5 pistol progressions each leg\nEach 2 min"},
+    {text:"STRENGTH (bodyweight)\nPISTOL SQUAT PROGRESSION\n5 x 5 each leg (assisted as needed)\nEach 2 min"}
+  ],
+  gymnastics: [
+    {text:"GYMNASTIC (bodyweight)\nEMOM 10'\nOdd: 10 hollow rocks\nEven: 5-10 handstand hold (against wall)"},
+    {text:"GYMNASTIC (bodyweight)\n5 sets x 10 superman pulls\nEach 1:30"}
+  ],
+  weightlifting: [
+    {text:"EXPLOSIVE POWER (bodyweight)\nEMOM 10'\nOdd: 5 broad jumps\nEven: 5 jump squats"},
+    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets: 5 jump squats + 5 burpees\nEach 2 min"}
+  ],
+  accessory: [
+    {text:"ACCESSORY (bodyweight)\n4 sets:\n12 push-ups\n12 superman pulls\n20 air squats\nRest 1'"}
+  ],
+  conditioning: [
+    {text:"ENDURANCE (bodyweight)\nEMOM 8'\nOdd: 10 jump squats\nEven: 8 burpees"},
+    {text:"ENDURANCE (bodyweight)\n4 sets: 30 high knees + max effort burpees\nRest 1' between sets"},
+    {text:"ENDURANCE (bodyweight)\nEMOM 10'\nOdd: 12 mountain climbers\nEven: 10 jumping lunges"}
+  ]
+};
+
+// ---------- WOD MOVEMENT LIBRARY (every movement carries a rep range so nothing is ever reps-less) ----------
+// range: [low, high] reps, step: rounding increment, equip: 'kb'|'barbell'|'bar'|'rings'|'rope'|'none'
+const MOVEMENT_LIB = {
+  strength: [
+    {name:'KB Swings (23kg)', range:[12,20], step:2, equip:'kb'},
+    {name:'Pull-Ups', range:[5,10], step:1, equip:'bar'},
+    {name:'Ring Push-Ups', range:[8,15], step:1, equip:'rings'},
+    {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
+    {name:'Air Squats', range:[15,25], step:5, equip:'none'},
+    {name:'Push-Ups', range:[10,20], step:2, equip:'none'},
+    {name:'Walking Lunges', range:[16,24], step:4, equip:'none'},
+    {name:'Glute Bridges', range:[15,25], step:5, equip:'none'}
+  ],
+  gymnastics: [
+    {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
+    {name:'Ring Rows', range:[8,15], step:1, equip:'rings'},
+    {name:'KB Goblet Squats', range:[10,15], step:5, equip:'kb'},
+    {name:'Pull-Ups', range:[5,10], step:1, equip:'bar'},
+    {name:'Toes to Bar', range:[5,10], step:1, equip:'bar'},
+    {name:'Lying Leg Raises', range:[10,15], step:5, equip:'none'},
+    {name:'Plank Shoulder Taps', range:[16,24], step:4, equip:'none'},
+    {name:'Inchworms', range:[6,10], step:2, equip:'none'}
+  ],
+  weightlifting: [
+    {name:'Thrusters (light barbell)', range:[8,15], step:1, equip:'barbell'},
+    {name:'Pull-Ups', range:[5,10], step:1, equip:'bar'},
+    {name:'Burpees', range:[8,15], step:1, equip:'none'},
+    {name:'Deadlift (moderate)', range:[5,10], step:1, equip:'barbell'},
+    {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
+    {name:'Broad Jumps', range:[8,12], step:2, equip:'none'},
+    {name:'Jump Squats', range:[10,20], step:5, equip:'none'},
+    {name:'Star Jumps', range:[15,25], step:5, equip:'none'},
+    {name:'Mountain Climbers', range:[20,30], step:5, equip:'none'}
+  ],
+  accessory: [
+    {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
+    {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
+    {name:'Ring Rows', range:[8,15], step:1, equip:'rings'},
+    {name:'Push-Ups', range:[10,20], step:2, equip:'none'},
+    {name:'Barbell Floor Press (light)', range:[8,15], step:1, equip:'barbell'},
+    {name:'Air Squats', range:[15,25], step:5, equip:'none'},
+    {name:'Diamond Push-Ups', range:[6,12], step:2, equip:'none'},
+    {name:'Bicycle Crunches', range:[16,24], step:4, equip:'none'}
+  ],
+  conditioning: [
+    {name:'Double Unders', range:[20,40], step:10, equip:'rope'},
+    {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
+    {name:'Sit-Ups', range:[15,25], step:5, equip:'none'},
+    {name:'Burpees', range:[8,15], step:1, equip:'none'},
+    {name:'Jumping Lunges', range:[10,20], step:5, equip:'none'},
+    {name:'Mountain Climbers', range:[20,30], step:5, equip:'none'},
+    {name:'High Knees', range:[30,50], step:10, equip:'none'},
+    {name:'Jumping Jacks', range:[20,40], step:10, equip:'none'}
+  ]
+};
+
+const FORMATS = {
+  strength: ["AMRAP 12'","AMRAP 10'","3 RFT","21-15-9","3 RFT - cap 12'"],
+  gymnastics: ["4 RFT","EMOM 12'","FOR TIME - cap 16'","21-15-9","15-12-9"],
+  weightlifting: ["FOR TIME - cap 15'","AMRAP 14'","5 RFT","21-15-9 - cap 12'","5 RFT - cap 14'"],
+  accessory: ["AMRAP 10'","3 RFT","AMRAP 12'","15-12-9"],
+  conditioning: ["FOR TIME - cap 18'","AMRAP 15'","5 RFT","21-15-9","10-8-6-4-2"]
+};
+
+// ---------- BENCHMARK WODS ----------
+// Classic named tests (same idea as your original program's "Benchmark Cindy" days) — fixed prescriptions,
+// retested periodically so progress is visible and comparable over time, not randomized like normal WODs.
+const BENCHMARKS = [
+  {name:'Cindy', format:"AMRAP 20'", scoreType:'rounds', equip:'bar', repsPerRound:30,
+   movements:[{name:'Pull-Ups', reps:5},{name:'Push-Ups', reps:10},{name:'Air Squats', reps:15}]},
+  {name:'Annie', format:"FOR TIME", scoreType:'time', equip:'rope',
+   movements:[{name:'Double Unders', reps:'50-40-30-20-10'},{name:'Sit-Ups', reps:'50-40-30-20-10'}]},
+  {name:'Fran', format:"FOR TIME", scoreType:'time', equip:'barbell',
+   movements:[{name:'Thrusters (barbell)', reps:'21-15-9'},{name:'Pull-Ups', reps:'21-15-9'}]},
+  {name:'Donny', format:"FOR TIME", scoreType:'time', equip:'barbell',
+   movements:[{name:'Deadlift (moderate)', reps:'21-15-9-9-15-21'},{name:'Burpees', reps:'21-15-9-9-15-21'}]}
+];
+const BENCHMARK_RETEST_DAYS = 21;
+
+function eligibleBenchmarks(bw){
+  return BENCHMARKS.filter(b => !bw || b.equip==='none');
+}
+// picks the most-overdue eligible benchmark if one is due for a retest, else null
+function dueBenchmark(){
+  const candidates = eligibleBenchmarks(state.bodyweightOnly);
+  let best = null, bestDays = -1;
+  candidates.forEach(b=>{
+    const hist = (state.benchmarks[b.name] && state.benchmarks[b.name].history) || [];
+    const last = hist.length ? hist[hist.length-1].date : null;
+    const days = last===null ? Infinity : daysSince(last);
+    if(days >= BENCHMARK_RETEST_DAYS && days > bestDays){ bestDays = days; best = b; }
+  });
+  return best;
+}
+function computeBenchmarkScore(benchmark, perf){
+  if(!perf) return null;
+  if(benchmark.scoreType==='rounds'){
+    if(perf.rounds==null) return null;
+    return perf.rounds*(benchmark.repsPerRound||0) + (perf.extraReps||0);
+  }
+  if(benchmark.scoreType==='time'){
+    if(!perf.time) return null;
+    const parts = perf.time.split(':').map(Number);
+    if(parts.length!==2 || parts.some(isNaN)) return null;
+    return parts[0]*60 + parts[1];
+  }
+  return null;
+}
+function fmtBenchmarkScore(benchmark, score){
+  if(score==null) return '—';
+  if(benchmark.scoreType==='rounds') return `${score} reps`;
+  return fmtClock(score);
+}
+
+const CORE = [
+  {text:"3 rds\n20 sit-ups\n20 flutter kicks\n30\" plank hold\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"Tabata 20\"/10\" x8\n1- Hollow hold\n2- Arch hold (alternate rounds)", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8}},
+  {text:"3 rds\n15 V-ups\n15 Russian twists (add a plate if you have one)\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"3 rds\n1' plank hold\n1' rest", timer:{kind:'COUNTDOWN', minutes:1}},
+  {text:"2' accumulate plank hold", timer:{kind:'COUNTDOWN', minutes:2}},
+  {text:"20 leg raises\n20 flutter kicks\n20 mountain climbers", timer:null},
+  {text:"3 rds\n30\" side plank each side\n10 superman", timer:{kind:'COUNTDOWN', minutes:0.5}}
+];
+
+// ---------- EXERCISE GLOSSARY ----------
+// Explains the workout format abbreviations (AMRAP, RFT, EMOM, etc.) — shown as clickable "FORMAT:" links
+// Short, plain-English explainer shown directly under the format headline — uses the real
+// prescribed numbers (minutes/rounds/work-rest) rather than generic copy.
+// Detects a straight-sets rep scheme in Skill text (e.g. "5-5-3-3-2-2" or "5 x 5") so it can be
+// rendered as a numbered checklist with a weight input per set. Returns an array of rep counts, or null.
+// For non-timer steps (e.g. Warm-Up's "2X:" rounds) — how many rounds counts as done
+function parseRoundTarget(text){
+  if(!text) return 1;
+  const m = text.match(/(\d+)\s*x:?/i);
+  return m ? Number(m[1]) : 1;
+}
+
+function refreshStepCompletion(w, currentKey, stepData){
+  let done = false;
+  if(currentKey==='skill' && w.skillLiftKey){
+    const scheme = parseSetScheme(stepData.text, w.skillLiftKey);
+    if(scheme) done = state.focusSetChecks.length===scheme.length && state.focusSetChecks.every(Boolean);
+  } else if(stepData.timerSpec){
+    done = !!(focusTimer && focusTimer.doneBeeped);
+  } else {
+    done = state.focusTapCount >= parseRoundTarget(stepData.text);
+    if(done && !state.focusStepDone[currentKey]){
+      const log = document.getElementById('gw-roundlog');
+      if(log && !log.querySelector('.gw-roundlog-done')){
+        const doneLine = document.createElement('div');
+        doneLine.className = 'gw-roundlog-done';
+        doneLine.textContent = 'DONE';
+        log.appendChild(doneLine);
+      }
+    }
+  }
+  state.focusStepDone[currentKey] = done;
+}
+
+// Appends a round to the live in-content log, computing the split (time since last round) and
+// the delta vs the previous split — matches the "Round 2  01:20  -10s" pattern from the design.
+function logRoundTap(elapsedSeconds){
+  const log = document.getElementById('gw-roundlog');
+  if(!log) return;
+  const roundNum = state.focusRoundLog.length + 1;
+  const prevElapsed = state.focusRoundLog.length ? state.focusRoundLog[state.focusRoundLog.length-1].elapsedAtTap : 0;
+  const splitSeconds = elapsedSeconds!=null ? Math.round(elapsedSeconds - prevElapsed) : null;
+  const prevSplit = state.focusRoundLog.length ? state.focusRoundLog[state.focusRoundLog.length-1].split : null;
+  const delta = (splitSeconds!=null && prevSplit!=null) ? splitSeconds - prevSplit : null;
+  state.focusRoundLog.push({round: roundNum, elapsedAtTap: elapsedSeconds, split: splitSeconds});
+
+  const row = document.createElement('div');
+  row.className = 'gw-roundlog-row';
+  let html = `<span>Round ${roundNum}</span>`;
+  if(splitSeconds!=null){
+    html += `<span><span class="gw-roundlog-time">${fmtClock(splitSeconds)}</span>`;
+    if(delta!=null && delta!==0){
+      const sign = delta>0 ? '+' : '';
+      html += `<span class="gw-roundlog-delta ${delta>0?'pos':'neg'}">${sign}${delta}s</span>`;
+    }
+    html += `</span>`;
+  }
+  row.innerHTML = html;
+  log.appendChild(row);
+}
+
+function parseSetScheme(text, liftKey){
+  if(!liftKey || !text) return null;
+  const lines = text.split('\n');
+  for(const line of lines){
+    const trimmed = line.trim();
+    const dashMatch = trimmed.match(/^(\d+(?:-\d+){1,})$/);
+    if(dashMatch) return trimmed.split('-').map(Number);
+    const xMatch = trimmed.match(/^(\d+)\s*x\s*(\d+)$/i);
+    if(xMatch) return Array(Number(xMatch[1])).fill(Number(xMatch[2]));
+  }
+  return null;
+}
+
+function timerExplainer(spec){
+  if(!spec) return '';
+  if(spec.kind==='AMRAP') return `${spec.minutes} minutes. Do as many rounds as you can.`;
+  if(spec.kind==='EMOM') return `New minute starts, do the work, rest till next minute. ${spec.minutes} times.`;
+  if(spec.kind==='TABATA') return `${spec.workSec} sec work, ${spec.restSec} sec rest. ${spec.rounds} rounds.`;
+  if(spec.kind==='RFT'){
+    const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
+    return `For Time — ${spec.rounds} identical rounds, finish as fast as you can${capPart}.`;
+  }
+  if(spec.kind==='LADDER'){
+    const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
+    return `For Time — descending ${spec.rungs.join('-')}, finish as fast as you can${capPart}.`;
+  }
+  if(spec.kind==='FORTIME'){
+    const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
+    return `For Time — one round through, finish as fast as you can${capPart}.`;
+  }
+  if(spec.kind==='INTERVAL') return spec.totalRounds ? `Rest between sets — ${spec.totalRounds} sets total.` : `Rest between rounds — repeat as prescribed.`;
+  if(spec.kind==='COUNTDOWN') return `Go until the clock hits zero.`;
+  return '';
+}
+
+const EXERCISE_INFO = {
+  "KB Swings": {desc: "Hinge at the hips (not a squat) and hike the kettlebell back between your legs, then snap your hips forward to drive it up to chest/eye height. Arms stay relaxed — the hips do the work."},
+  "Pull-Ups": {desc: "Hang from the bar with an overhand grip, pull your chin over the bar, then lower under control. Kip or use a band if you can't do strict reps yet.", url: "https://www.crossfit.com/essentials/the-kipping-pull-up"},
+  "Ring Push-Ups": {desc: "Push-ups with your hands on the rings instead of the floor — the instability hits your chest, shoulders, and core harder than a standard push-up.", url: "https://www.crossfit.com/essentials/the-ring-push-up"},
+  "Ring Rows": {desc: "Set the rings low, lean back with feet on the floor and body straight, then pull your chest to the rings. The more horizontal your body, the harder it is.", url: "https://www.crossfit.com/essentials/the-ring-row"},
+  "Ring Dips": {desc: "Support yourself on the rings with arms locked out, lower until your shoulders are below your elbows, then press back up. Keep the rings close to your body.", url: "https://www.crossfit.com/essentials/the-ring-dip"},
+  "Single Unders": {desc: "Regular jump rope — one jump per rope pass under your feet.", url: "https://www.crossfit.com/essentials/the-single-under"},
+  "Double Unders": {desc: "Jump rope where the rope passes under your feet twice per jump. Jump a little higher than normal and speed up your wrist turnover, not your jump height.", url: "https://www.crossfit.com/essentials/the-double-under"},
+  "Air Squats": {desc: "Bodyweight squat: feet shoulder-width, sit your hips back and down until thighs are at least parallel, drive back up through your heels.", url: "https://www.crossfit.com/essentials/the-air-squat"},
+  "KB Goblet Squats": {desc: "Hold the kettlebell close to your chest with both hands and squat, keeping your torso upright and elbows brushing your knees at the bottom."},
+  "Toes to Bar": {desc: "Hang from the pull-up bar and raise your feet to touch the bar, keeping some control on the way down. Scale to hanging knee raises if needed.", url: "https://www.crossfit.com/essentials/the-kipping-toes-to-bar"},
+  "Thrusters": {desc: "Front squat into an overhead press in one motion — dip down, then drive up and punch the bar overhead as your legs finish extending.", url: "https://www.crossfit.com/essentials/the-thruster"},
+  "Burpees": {desc: "Drop to the floor, chest touches down, feet jump back to plank, jump feet back in, then jump up with hands overhead.", url: "https://www.crossfit.com/essentials/the-burpee-2"},
+  "Deadlift": {desc: "Feet hip-width, bar over midfoot, flat back, drive through the floor with your legs and hips to stand tall — bar stays close to your body the whole way.", url: "https://www.crossfit.com/essentials/the-deadlift"},
+  "Broad Jumps": {desc: "Two-foot standing jump for maximum forward distance, landing softly with bent knees."},
+  "Jump Squats": {desc: "Air squat that finishes with an explosive vertical jump, landing softly back into the next squat."},
+  "Sit-Ups": {desc: "Lie on your back, knees bent, feet anchored or flat; curl your torso all the way up to touch your toes, then lower with control.", url: "https://www.crossfit.com/essentials/the-abmat-sit-up"},
+  "Jumping Lunges": {desc: "Alternate lunge where you jump and switch legs in the air each rep, landing softly in the next lunge."},
+  "Push-Ups": {desc: "Hands under shoulders, body in a straight line from head to heels, lower your chest to the floor and press back up.", url: "https://www.crossfit.com/essentials/the-push-up"},
+  "Barbell Floor Press": {desc: "Lie on your back (mat) with the barbell at chest height, press it straight up until arms lock out, then lower until your triceps touch the floor."},
+  "Back Squat": {desc: "Bar racked across your upper back/traps, squat down until hips drop below knee level, then drive back up.", url: "https://www.crossfit.com/essentials/the-back-squat"},
+  "Front Squat": {desc: "Bar racked across the front of your shoulders (fingertip grip, elbows high), squat down keeping your torso upright, then stand.", url: "https://www.crossfit.com/essentials/the-front-squat"},
+  "Push Jerk": {desc: "Dip slightly at the knees, then drive the bar overhead explosively while re-bending your knees to catch it locked out overhead.", url: "https://www.crossfit.com/essentials/the-push-jerk"},
+  "Power Clean": {desc: "Pull the bar from the floor explosively, shrug and pull yourself under it to catch it on your shoulders in a quarter-squat, then stand.", url: "https://www.crossfit.com/essentials/the-power-clean"},
+  "Power Snatch": {desc: "Same explosive pull as a power clean, but the bar goes straight overhead in one motion, caught in a quarter-squat with arms locked out.", url: "https://www.crossfit.com/essentials/the-power-snatch"},
+  "Snatch Deadlift": {desc: "A deadlift using the wide snatch grip — same mechanics as a normal deadlift, just a wider hand placement to groove snatch positioning."},
+  "Hang Power Snatch": {desc: "Power snatch started from a hang position (bar around knee/thigh height) instead of the floor.", url: "https://www.crossfit.com/essentials/the-hang-power-snatch"},
+  "OHS": {desc: "Overhead Squat — squat down while holding the bar locked out overhead with a wide grip, keeping the bar balanced over your midfoot the whole way.", url: "https://www.crossfit.com/essentials/the-overhead-squat"},
+  "Good Mornings": {desc: "Bar on your back like a back squat, hinge forward at the hips with a flat back until you feel a hamstring stretch, then return to standing.", url: "https://www.crossfit.com/essentials/the-good-morning"},
+  "Strict Press": {desc: "Standing, press the bar from your shoulders straight overhead without using your legs to drive it.", url: "https://www.crossfit.com/essentials/the-shoulder-press"},
+  "Muscle Snatch": {desc: "A snatch pulled straight through without dropping under the bar — press/pull it directly overhead, keeping elbows high and outside.", url: "https://www.crossfit.com/essentials/the-muscle-snatch"},
+  "KB Deadlifts": {desc: "Hinge at the hips to pick the kettlebell up from the floor between your feet, standing tall with a flat back, then lower it back down."},
+  "Walking Lunges": {desc: "Step forward into a lunge, back knee grazing the floor, then bring your back foot through into the next lunge — continuous forward walking.", url: "https://www.crossfit.com/essentials/the-walking-lunge"},
+  "Dislocates": {desc: "Hold a light bar/PVC with a wide grip and rotate it from in front of your hips over your head to behind your back, keeping arms straight — a shoulder mobility drill."},
+  "W-bar Curls": {desc: "Standard bicep curl using the curved W-bar (curl bar) — easier on the wrists than a straight bar."},
+  "W-bar Skull Crushers": {desc: "Lying down, lower the W-bar toward your forehead by bending only your elbows, then extend back up — isolates the triceps."},
+  "Single Arm KB Row": {desc: "Hinge forward with one hand braced, row the kettlebell up to your ribcage keeping your elbow close to your body."},
+  "V-ups": {desc: "Lying flat, simultaneously raise your straight legs and torso to touch your hands to your toes in a 'V' shape, then lower back down."},
+  "Russian Twists": {desc: "Sit with knees bent and torso leaned back slightly, rotate your torso side to side, tapping the floor (or a plate) on each side."},
+  "Flutter Kicks": {desc: "Lying on your back, hands under your hips, alternate small up-and-down kicks with straight legs a few inches off the floor."},
+  "Plank Hold": {desc: "Forearms and toes on the floor, body in a straight line from head to heels, core braced — hold the position."},
+  "Side Plank": {desc: "Balance on one forearm and the outside edge of one foot, body in a straight line, hips lifted — hold, then switch sides."},
+  "Mountain Climbers": {desc: "In a plank position, drive your knees alternately toward your chest at a quick pace, keeping your hips low."},
+  "Leg Raises": {desc: "Lying on your back, keep legs straight and raise them to vertical (or a bar overhead if hanging), then lower with control."},
+  "Superman": {desc: "Lying face down, simultaneously lift your arms, chest, and legs off the floor, squeezing your lower back and glutes, then release."},
+  "Scap Pull-Ups": {desc: "Hang from the bar and, without bending your elbows, pull your shoulder blades down and together to lift your body an inch or two — builds the base for kipping/strict pull-ups."},
+  "Hollow Rocks": {desc: "Lie on your back, arms and legs extended and slightly off the floor in a 'banana' shape, and rock gently back and forth keeping the shape rigid."},
+  "L-sit": {desc: "Support yourself on the rings, bar, or floor with arms locked out and legs held straight out in front at hip height — hold the position.", url: "https://www.crossfit.com/essentials/the-l-sit"},
+  "High Knees": {desc: "Jog in place driving your knees up toward your chest as quickly as you can, staying light on your feet."},
+  "PVC Pass-throughs": {desc: "Hold a light bar/PVC wide with both hands and pass it from in front of your body over your head to behind your back and back again, keeping arms straight — a shoulder warm-up."},
+  "Bulgarian Split Squat": {desc: "Rear foot elevated behind you on a bench/step, front leg does the work — lower straight down and drive back up, then switch legs."},
+  "Pistol Squat": {desc: "Single-leg squat — one leg extended straight out in front, lower yourself down on the standing leg as far as you can control, then stand back up.", url: "https://www.crossfit.com/essentials/the-single-leg-squat"},
+  "Half Burpee": {desc: "A burpee without the push-up and without the jump — drop to plank, step or jump feet back in, and stand up (no clap overhead).", url: "https://www.crossfit.com/essentials/the-burpee-2"},
+  "Half Burpees": {desc: "A burpee without the push-up and without the jump — drop to plank, step or jump feet back in, and stand up (no clap overhead).", url: "https://www.crossfit.com/essentials/the-burpee-2"},
+  "Glute Bridges": {desc: "Lying on your back, knees bent, feet flat — squeeze your glutes to lift your hips until your body forms a straight line from shoulders to knees, then lower."},
+  "Lying Leg Raises": {desc: "Lying on your back, hands under your hips, keep legs straight and raise them to vertical, then lower with control without letting your lower back arch off the floor."},
+  "Plank Shoulder Taps": {desc: "Hold a push-up plank position and alternate tapping each hand to the opposite shoulder, keeping your hips as still and square as possible."},
+  "Inchworms": {desc: "Stand tall, fold forward and walk your hands out to a plank, then walk your feet up to your hands and stand back up — a full-body warm-up flow."},
+  "Star Jumps": {desc: "Squat slightly then jump up, spreading your arms and legs out into an 'X' shape at the top, landing softly back into the next squat."},
+  "Diamond Push-Ups": {desc: "Push-up with your hands close together under your chest, thumbs and index fingers touching to form a diamond — shifts more load onto the triceps."},
+  "Bicycle Crunches": {desc: "Lying on your back, alternate bringing opposite elbow to opposite knee in a pedaling motion, extending the other leg straight out."},
+  "Jumping Jacks": {desc: "Jump your feet out while raising your arms overhead, then jump back to standing with arms at your sides — classic full-body cardio move."},
+  "Superman Pulls": {desc: "Lying face down like a Superman hold, pull your elbows back as if rowing while squeezing your shoulder blades together, then release forward — a no-equipment substitute for a pulling movement."},
+  "Handstand Hold": {desc: "Kick up into a handstand against a wall for support, arms locked out and body as straight as you can hold, and hold the position.", url: "https://www.crossfit.com/essentials/the-freestanding-handstand"},
+  "Pistol Squat Progression": {desc: "Working toward a single-leg squat — use a wall, a slow controlled descent, or partial range of motion on one leg at a time until you can do a full pistol.", url: "https://www.crossfit.com/essentials/the-single-leg-squat"},
+  "KB Romanian Deadlift": {desc: "Holding a kettlebell in front of your thighs, push your hips back and lower it down your legs keeping a flat back and slight knee bend, then squeeze your glutes to stand back up."}
+};
+function findKnownMovements(text){
+  const found = [];
+  const lower = text.toLowerCase();
+  Object.keys(EXERCISE_INFO).forEach(name=>{
+    if(lower.includes(name.toLowerCase()) && !found.includes(name)) found.push(name);
+  });
+  return found;
+}
+
+// ---------- selection helpers (favor whatever hasn't been used in the longest time, per focus) ----------
+function sessionsAgoUsed(type, value, fieldGetter){
+  const typeHistory = state.history.filter(h=>h.type===type);
+  for(let i=typeHistory.length-1;i>=0;i--){
+    const field = fieldGetter(typeHistory[i]);
+    const match = Array.isArray(field) ? field.includes(value) : field===value;
+    if(match) return typeHistory.length-1-i;
+  }
+  return Infinity;
+}
+function pickLRU(pool, type, fieldGetter){
+  let bestScore = -1, best = [];
+  pool.forEach(candidate=>{
+    const score = sessionsAgoUsed(type, candidate, fieldGetter);
+    if(score > bestScore){ bestScore = score; best = [candidate]; }
+    else if(score === bestScore){ best.push(candidate); }
+  });
+  return best[Math.floor(Math.random()*best.length)];
+}
+function pickMovementsLRU(pool, type, n){
+  const scored = pool.map(m=>{
+    const score = sessionsAgoUsed(type, m.name, h=>h.movementNames||[]);
+    return {m, score: (score===Infinity ? 999 : score) + Math.random()*0.75};
+  });
+  scored.sort((a,b)=>b.score-a.score);
+  return scored.slice(0, Math.min(n, pool.length)).map(s=>s.m);
+}
+function buildWodText(format, wodMovements){
+  return `${format}\n` + wodMovements.map(m => `- ${m.reps} ${m.name}`).join('\n');
+}
+function repsFor(movement, formatStr, multiplier=1){
+  let [lo, hi] = movement.range;
+  lo = lo*multiplier; hi = hi*multiplier;
+  if(/^EMOM/.test(formatStr)){ hi = lo + (hi-lo)*0.5; } // EMOM = smaller per-minute chunks
+  const steps = Math.max(1, Math.round((hi-lo)/movement.step));
+  let count = lo + Math.floor(Math.random()*(steps+1))*movement.step;
+  count = Math.round(count/movement.step)*movement.step;
+  return Math.max(movement.step, count);
+}
+function platesForSide(sideTarget){
+  let remaining = sideTarget, used = [];
+  for(const p of SIDE_PLATES){ if(p <= remaining){ used.push(p); remaining -= p; } }
+  return {used, remaining};
+}
+function plateBreakdown(totalWeight){
+  const sideTarget = Math.max(0, (totalWeight - 45) / 2);
+  const {used, remaining} = platesForSide(sideTarget);
+  const actualTotal = 45 + used.reduce((a,b)=>a+b,0)*2;
+  let text = used.length ? used.join('+') + ' lb per side' : 'bar only (45 lb)';
+  text += `  →  ${actualTotal} lb total`;
+  if(remaining >= 5) text += ` (closest with your plates; ${remaining.toFixed(0)} lb/side short of exact target)`;
+  return text;
+}
+// A "ladder" format string starts with a descending rep sequence, e.g. "21-15-9" or "21-15-9 - cap 15'"
+function isLadderFormat(formatStr){
+  return /^\d+(-\d+)+/.test(formatStr);
+}
+function ladderRungsFor(formatStr){
+  const m = formatStr.match(/^(\d+(?:-\d+)+)/);
+  return m ? m[1].split('-').map(Number) : null;
+}
+function applyTimeCap(formatStr, minutes){
+  if(/^(AMRAP|EMOM)/.test(formatStr)) return formatStr.replace(/\d+/, minutes);
+  if(/cap \d+/.test(formatStr)) return formatStr.replace(/cap \d+/, 'cap '+minutes);
+  return formatStr + ` - cap ${minutes}'`;
+}
+// splits available minutes across warmup/skill/wod/core; trims skill/core first when time is tight
+function allocateTime(total){
+  if(!total) return null;
+  total = Math.max(10, Math.round(total));
+  let warmup, skill, core;
+  if(total <= 15){ warmup=3; skill=0; core=0; }
+  else if(total <= 25){ warmup=5; skill=5; core=0; }
+  else if(total <= 40){ warmup=5; skill=10; core=5; }
+  else { warmup=6; skill=12; core=6; }
+  const wod = Math.max(6, total - warmup - skill - core);
+  return {warmup, skill, core, wod, skipSkill: skill===0, skipCore: core===0};
+}
+
+// ---------- state ----------
+let state = {
+  weights: {...DEFAULT_WEIGHTS},
+  volume: {...DEFAULT_VOLUME},
+  history: [],
+  currentType: 'strength',
+  currentWorkout: null,
+  bodyweightOnly: false,
+  timeAvailable: null,
+  profile: {name:'', bodyweight:null},
+  logFilterDate: null,
+  showActivityForm: false,
+  benchmarks: {},
+  focusMode: false,
+  focusSectionKey: null,
+  focusTapCount: 0,
+  focusStepDone: {},
+  focusSetChecks: [],
+  focusRoundLog: [],
+  loaded: false
+};
+
+async function loadState(){
+  try{ const w = await window.storage.get('garage-wod-weights'); if(w && w.value) state.weights = {...DEFAULT_WEIGHTS, ...JSON.parse(w.value)}; }catch(e){}
+  try{ const v = await window.storage.get('garage-wod-volume'); if(v && v.value) state.volume = {...DEFAULT_VOLUME, ...JSON.parse(v.value)}; }catch(e){}
+  try{ const h = await window.storage.get('garage-wod-history'); if(h && h.value) state.history = JSON.parse(h.value); }catch(e){}
+  try{ const p = await window.storage.get('garage-wod-prefs'); if(p && p.value){ const prefs = JSON.parse(p.value); state.bodyweightOnly = !!prefs.bodyweightOnly; state.timeAvailable = prefs.timeAvailable || null; } }catch(e){}
+  try{ const pr = await window.storage.get('garage-wod-profile'); if(pr && pr.value) state.profile = {...state.profile, ...JSON.parse(pr.value)}; }catch(e){}
+  try{ const bm = await window.storage.get('garage-wod-benchmarks'); if(bm && bm.value) state.benchmarks = JSON.parse(bm.value); }catch(e){}
+  state.loaded = true;
+  document.getElementById('gw-bw-toggle').checked = state.bodyweightOnly;
+  document.getElementById('gw-controls').classList.toggle('gw-travel-on', state.bodyweightOnly);
+  if(state.timeAvailable) document.getElementById('gw-time-input').value = state.timeAvailable;
+  updateTimeClearVisibility();
+  const rec = recommendedFocus();
+  generateWorkout(rec.type);
+}
+async function saveWeights(){ await window.storage.set('garage-wod-weights', JSON.stringify(state.weights)); }
+async function saveVolume(){ await window.storage.set('garage-wod-volume', JSON.stringify(state.volume)); }
+async function saveHistory(){ await window.storage.set('garage-wod-history', JSON.stringify(state.history)); }
+async function savePrefs(){ await window.storage.set('garage-wod-prefs', JSON.stringify({bodyweightOnly: state.bodyweightOnly, timeAvailable: state.timeAvailable})); }
+async function saveProfile(){ await window.storage.set('garage-wod-profile', JSON.stringify(state.profile)); }
+async function saveBenchmarks(){ await window.storage.set('garage-wod-benchmarks', JSON.stringify(state.benchmarks)); }
+
+// ---------- logging activities done outside the app ----------
+const ACTIVITY_PRESETS = ['BJJ / Grappling', 'Running', 'Cycling', 'Swimming', 'Walking / Hiking', 'Yoga / Mobility', 'Other'];
+// which of our 5 focuses each external activity counts toward, for recency/recovery purposes (null = doesn't count as training load)
+const ACTIVITY_FOCUS_MAP = {
+  'BJJ / Grappling': 'conditioning',
+  'Running': 'conditioning',
+  'Cycling': 'conditioning',
+  'Swimming': 'conditioning',
+  'Walking / Hiking': null,
+  'Yoga / Mobility': null,
+  'Other': null
+};
+
+function daysSince(ts){ return (Date.now() - ts) / (1000*60*60*24); }
+function lastSessionDate(type){
+  let last = null;
+  state.history.forEach(h=>{
+    const t = h.kind==='external' ? h.mappedType : h.type;
+    if(t===type && (last===null || h.date>last)) last = h.date;
+  });
+  return last;
+}
+// if it's been a while since this focus was last trained, ease back in rather than jumping straight to the progressed weight/volume
+function layoffFactor(type){
+  const last = lastSessionDate(type);
+  if(last===null) return {factor:1, days:null, isReturning:false};
+  const days = daysSince(last);
+  if(days > 14) return {factor:0.9, days:Math.round(days), isReturning:true};
+  return {factor:1, days:Math.round(days), isReturning:false};
+}
+// if a hard external activity mapped to this focus happened very recently, ease off today rather than stacking fatigue
+function recentExternalLoadFactor(type){
+  const recent = [...state.history].reverse().find(h => h.kind==='external' && h.mappedType===type && daysSince(h.date) < 1.5);
+  if(recent && recent.intensity==='hard') return {factor:0.9, activity:recent.activity};
+  return {factor:1, activity:null};
+}
+// picks the best focus for today: whatever's gone longest without training, avoiding an immediate repeat of last time
+function recommendedFocus(){
+  if(state.history.length===0) return {type: DAY_TYPES[0].key, days:null};
+  const lastGenerated = [...state.history].reverse().find(h=>h.kind!=='external');
+  const lastType = lastGenerated ? lastGenerated.type : null;
+  const scored = DAY_TYPES.map(dt=>{
+    const last = lastSessionDate(dt.key);
+    const days = last===null ? Infinity : daysSince(last);
+    return {key:dt.key, days};
+  });
+  const candidates = scored.filter(s=>s.key!==lastType);
+  const pool = candidates.length ? candidates : scored;
+  pool.sort((a,b)=>b.days-a.days);
+  return {type: pool[0].key, days: pool[0].days===Infinity ? null : Math.round(pool[0].days)};
+}
+
+function computeSuggestedLoad(liftKey){
+  const entries = state.history.filter(h=>h.liftKey===liftKey && h.loggedLoad != null);
+  if(entries.length===0) return {load: state.weights[liftKey], deload:false};
+  const last = entries[entries.length-1];
+  const prevLoad = last.loggedLoad;
+  const prevRpe = last.rpe || 'right';
+  if(entries.length>=2){
+    const secondLast = entries[entries.length-2];
+    if(prevRpe==='hard' && secondLast.rpe==='hard') return {load: Math.round((prevLoad*0.9)/5)*5, deload:true};
+  }
+  const adj = (ADJUST[liftKey] && ADJUST[liftKey][prevRpe] != null) ? ADJUST[liftKey][prevRpe] : 5;
+  return {load: Math.round((prevLoad+adj)/5)*5, deload:false};
+}
+
+function generateWorkout(type){
+  state.currentType = type;
+  const bw = state.bodyweightOnly;
+  const alloc = allocateTime(state.timeAvailable);
+  const layoff = layoffFactor(type);
+  const external = recentExternalLoadFactor(type);
+  const coachNotes = [];
+
+  const warmupPool = bw && WARMUPS_BW[type] ? WARMUPS_BW[type] : WARMUPS[type];
+  const warmup = pickLRU(warmupPool, type, h=>h.warmup);
+
+  let skillTplText = null, skillLiftKey = null, suggestedLoad = null, deload = false;
+  if(!(alloc && alloc.skipSkill)){
+    const skillPool = bw ? SKILLS_BW[type] : SKILLS[type];
+    skillTplText = pickLRU(skillPool.map(s=>s.text), type, h=>h.skillTplText);
+    const skillTpl = skillPool.find(s=>s.text===skillTplText);
+    skillLiftKey = (!bw && skillTpl.liftKey) ? skillTpl.liftKey : null;
+    if(skillLiftKey){
+      const result = computeSuggestedLoad(skillLiftKey);
+      suggestedLoad = result.load; deload = result.deload;
+      if(deload) coachNotes.push(`${LIFT_LABELS[skillLiftKey]}: last two sessions rated Hard — backing off ~10% today.`);
+      if(layoff.isReturning){
+        suggestedLoad = Math.round((suggestedLoad*layoff.factor)/5)*5;
+        coachNotes.push(`It's been ${layoff.days} days since your last ${DAY_TYPES.find(d=>d.key===type).label} session — easing the load back ~10% today.`);
+      }
+      if(external.activity){
+        suggestedLoad = Math.round((suggestedLoad*external.factor)/5)*5;
+        coachNotes.push(`You logged a hard ${external.activity} session recently — easing the load back ~10% today.`);
+      }
+    }
+  }
+
+  const baseVolume = state.volume[type];
+  const effectiveVolume = clamp(baseVolume * layoff.factor * external.factor, 0.5, 1.4);
+  if(Math.abs(baseVolume - 1.0) >= 0.09){
+    const pct = Math.round((baseVolume-1)*100);
+    coachNotes.push(`${DAY_TYPES.find(d=>d.key===type).label} volume ${pct>0?'up':'down'} ${Math.abs(pct)}% based on how recent sessions felt.`);
+  }
+  if(layoff.isReturning && !skillLiftKey){
+    coachNotes.push(`It's been ${layoff.days} days since your last ${DAY_TYPES.find(d=>d.key===type).label} session — dialing back volume ~10% today.`);
+  }
+  if(external.activity && !skillLiftKey){
+    coachNotes.push(`You logged a hard ${external.activity} session recently — dialing back volume ~10% today.`);
+  }
+
+  let movementPool = MOVEMENT_LIB[type];
+  if(bw) movementPool = movementPool.filter(m=>m.equip==='none');
+  let format = pickLRU(FORMATS[type], type, h=>h.format);
+  if(alloc) format = applyTimeCap(format, alloc.wod);
+  const rungs = ladderRungsFor(format);
+  let wodMovements = pickMovementsLRU(movementPool, type, 3).map(m => ({
+    name: m.name,
+    reps: rungs ? rungs.join('-') : repsFor(m, format, effectiveVolume)
+  }));
+  let isBenchmark = false, benchmarkName = null;
+
+  if(type==='conditioning' && (!alloc || alloc.wod >= 15)){
+    const benchmark = dueBenchmark();
+    if(benchmark){
+      isBenchmark = true;
+      benchmarkName = benchmark.name;
+      format = benchmark.format;
+      wodMovements = benchmark.movements.map(m => ({ name: m.name, reps: m.reps }));
+      const hist = (state.benchmarks[benchmark.name] && state.benchmarks[benchmark.name].history) || [];
+      if(hist.length){
+        const best = benchmark.scoreType==='rounds'
+          ? Math.max(...hist.map(h=>h.score))
+          : Math.min(...hist.map(h=>h.score));
+        coachNotes.push(`Benchmark retest: ${benchmark.name}. Your best so far is ${fmtBenchmarkScore(benchmark, best)} — let's see where you're at now.`);
+      } else {
+        coachNotes.push(`Benchmark: ${benchmark.name}. This is your first time testing it — whatever you get today becomes the baseline to beat.`);
+      }
+    }
+  }
+
+  let core = null, coreTimer = null;
+  if(!(alloc && alloc.skipCore)){
+    core = pickLRU(CORE.map(c=>c.text), type, h=>h.core);
+    coreTimer = CORE.find(c=>c.text===core).timer;
+  }
+
+  state.currentWorkout = {
+    type, warmup, skillTplText, skillLiftKey, suggestedLoad, deload,
+    format, wodMovements, movements: wodMovements.map(m=>m.name), core, coreTimer, rpe: null, wodRpe: null, bw,
+    volumeUsed: effectiveVolume, coachNotes, isBenchmark, benchmarkName,
+    sectionsDone: {warmup:true, skill:true, core:true}, wodPerformance: {}
+  };
+  renderTimeBanner(alloc);
+  render();
+}
+
+function renderTimeBanner(alloc){
+  const banner = document.getElementById('gw-timebanner');
+  if(!alloc){ banner.style.display='none'; return; }
+  const parts = [`~${alloc.warmup}' warm-up`];
+  parts.push(alloc.skipSkill ? 'skill skipped (time)' : `~${alloc.skill}' skill`);
+  parts.push(`${alloc.wod}' WOD`);
+  parts.push(alloc.skipCore ? 'core skipped (time)' : `~${alloc.core}' core`);
+  banner.textContent = `Fitting today into ${state.timeAvailable}': ${parts.join(' · ')}`;
+  banner.style.display = 'block';
+}
+
+function renderCoachNotes(notes){
+  const box = document.getElementById('gw-coachnotes');
+  if(!notes || notes.length===0){ box.style.display='none'; return; }
+  box.innerHTML = '<strong>Coach notes:</strong> ' + notes.join(' ');
+  box.style.display = 'block';
+}
+
+function formatPerformance(perf){
+  if(!perf) return '';
+  if(perf.rounds != null) return `scored ${perf.rounds} rd${perf.rounds===1?'':'s'}${perf.extraReps ? ' + '+perf.extraReps+' reps' : ''}`;
+  if(perf.time) return `finished in ${perf.time}${perf.hitCap ? ' (hit cap)' : ''}`;
+  if(perf.completedAll != null) return perf.completedAll ? 'completed all rounds' : 'missed some rounds';
+  return '';
+}
+
+function fmtDate(d){ return new Date(d).toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'}); }
+
+function buildSkillLoadRow(w){
+  if(!w.skillLiftKey) return null;
+  const row = document.createElement('div');
+  row.className = 'gw-load-row';
+  row.innerHTML = `<label>${LIFT_LABELS[w.skillLiftKey]} load (lb)</label>`;
+  const input = document.createElement('input');
+  input.type = 'number'; input.step = '5'; input.value = w.suggestedLoad;
+  input.oninput = ()=>{ w.suggestedLoad = Number(input.value)||0; plates.textContent = plateBreakdown(w.suggestedLoad); };
+  row.appendChild(input);
+  const plates = document.createElement('div');
+  plates.className = 'gw-plates';
+  plates.textContent = plateBreakdown(w.suggestedLoad);
+  row.appendChild(plates);
+  if(w.deload){
+    const note = document.createElement('div');
+    note.className = 'gw-plates'; note.style.color = 'var(--danger)';
+    note.textContent = 'Last two sessions on this lift were rated Hard — suggested weight backs off ~10%.';
+    row.appendChild(note);
+  }
+  return row;
+}
+
+// builds the DOM node for one section (warmup/skill/wod/core); returns null if that section isn't part of today's workout
+const SECTION_START_LABELS = {warmup:'Start Warmup', skill:'Start Skill', wod:'Start WOD', core:'Start Core'};
+function addStartSectionButton(node, key){
+  const btn = document.createElement('button');
+  btn.className = 'gw-section-start-btn';
+  btn.innerHTML = `${ICON_PLAY}<span>${SECTION_START_LABELS[key]}</span>`;
+  btn.onclick = ()=>openSectionFocus(key);
+  node.bodyEl.appendChild(btn);
+}
+
+function renderSectionNode(key, w, opts){
+  opts = opts || {};
+  if(key==='warmup'){
+    if(!w.warmup) return null;
+    const node = sectionWithChips('Warm-Up', w.warmup, DAY_TYPES.find(d=>d.key===w.type).label, {
+      onReroll: opts.simple ? null : ()=>rerollSection('warmup'), onRemove: opts.simple ? null : ()=>removeSection('warmup')
+    });
+    node.finalize();
+    addStartSectionButton(node, 'warmup');
+    return node;
+  }
+  if(key==='skill'){
+    if(!w.skillTplText) return null;
+    const node = sectionWithChips('Skill', w.skillTplText, w.deload ? 'DELOAD' : (w.bw ? 'TRAVEL' : ''), {
+      onReroll: opts.simple ? null : ()=>rerollSection('skill'), onRemove: opts.simple ? null : ()=>removeSection('skill')
+    });
+    const loadRow = buildSkillLoadRow(w);
+    if(loadRow) node.bodyEl.appendChild(loadRow);
+    node.finalize();
+    addStartSectionButton(node, 'skill');
+    return node;
+  }
+  if(key==='wod'){
+    return renderWodSection(w);
+  }
+  if(key==='core'){
+    if(!w.core) return null;
+    const node = sectionWithChips('Extra Core', w.core, '', {
+      onReroll: opts.simple ? null : ()=>rerollSection('core'), onRemove: opts.simple ? null : ()=>removeSection('core')
+    });
+    node.finalize();
+    addStartSectionButton(node, 'core');
+    return node;
+  }
+  return null;
+}
+
+function buildRateBlock(labelText, currentVal, onPick){
+  const block = document.createElement('div');
+  block.className = 'gw-rate-block';
+  const lbl = document.createElement('div');
+  lbl.className = 'gw-rate-label';
+  lbl.textContent = labelText;
+  block.appendChild(lbl);
+  const optsRow = document.createElement('div');
+  optsRow.className = 'gw-rate-options';
+  ['easy','right','hard'].forEach(r=>{
+    const b = mkBtn(RPE_LABELS[r], currentVal===r ? 'gw-primary' : 'gw-btn', ()=>onPick(r));
+    optsRow.appendChild(b);
+  });
+  block.appendChild(optsRow);
+  return block;
+}
+
+// builds the rating blocks + Log & Save button; used by both the normal view and the session-mode "rate" step
+function renderRatingAndLogBlock(container, w, onChange){
+  if(w.skillLiftKey){
+    container.appendChild(buildRateBlock(
+      'How did ' + LIFT_LABELS[w.skillLiftKey] + ' feel?',
+      w.rpe, (r)=>{ w.rpe = r; onChange(); }
+    ));
+  }
+  container.appendChild(buildRateBlock('How did the WOD feel?', w.wodRpe, (r)=>{ w.wodRpe = r; onChange(); }));
+
+  const logBtn = mkBtn('Log & Save to History', 'gw-teal', ()=>logWorkout());
+  const missingRating = (w.skillLiftKey && !w.rpe) || !w.wodRpe;
+  logBtn.disabled = missingRating;
+  container.appendChild(logBtn);
+  if(missingRating){
+    const hint = document.createElement('div');
+    hint.style.cssText = 'width:100%; font-size:11.5px; color:var(--muted); text-align:center; font-weight:700;';
+    hint.textContent = w.skillLiftKey && !w.rpe && !w.wodRpe
+      ? "Rate the lift and the WOD above to save this session."
+      : (w.skillLiftKey && !w.rpe ? "Rate the lift above to save this session." : "Rate the WOD above to save this session.");
+    container.appendChild(hint);
+  }
+}
+
+function render(){
+  const rec = recommendedFocus();
+  const focusLine = document.getElementById('gw-focusline');
+  const recLabel = DAY_TYPES.find(d=>d.key===rec.type).label;
+  focusLine.innerHTML = state.currentType===rec.type
+    ? `Today's recommended focus: <strong>${recLabel}</strong>${rec.days!=null ? ` (last trained ${rec.days}d ago)` : ' (first session)'}`
+    : `Recommended focus today is <strong>${recLabel}</strong> — showing ${DAY_TYPES.find(d=>d.key===state.currentType).label} instead.`;
+
+  const tabs = document.getElementById('gw-daytabs');
+  tabs.innerHTML = '';
+  DAY_TYPES.forEach(dt=>{
+    const b = document.createElement('div');
+    b.className = 'gw-tab' + (state.currentType===dt.key ? ' active' : '');
+    b.textContent = dt.label + (rec && rec.type===dt.key ? ' •' : '');
+    b.title = rec && rec.type===dt.key
+      ? (rec.days===null ? "Recommended — you haven't trained this focus yet" : `Recommended today — last trained ${rec.days} day${rec.days===1?'':'s'} ago`)
+      : '';
+    b.onclick = ()=>{ generateWorkout(dt.key); };
+    tabs.appendChild(b);
+  });
+
+  const board = document.getElementById('gw-board');
+  const actions = document.getElementById('gw-actions');
+  const focus = document.getElementById('gw-focus');
+  const w = state.currentWorkout;
+
+  if(!w){
+    state.focusMode = false;
+    focus.style.display = 'none';
+    board.style.display = '';
+    actions.style.display = '';
+    document.getElementById('gw-focus-gradientbg').style.display = 'none';
+    const rec = recommendedFocus();
+    board.innerHTML = `<div id="gw-empty">
+      <div class="gw-display" style="font-size:15px; color:var(--muted);">READY FOR THE NEXT ONE</div>
+      <div style="font-size:13px; color:var(--muted); margin-top:6px;">Recommended focus: ${DAY_TYPES.find(d=>d.key===rec.type).label}. Tap below, or pick a different focus above.</div>
+    </div>`;
+    document.getElementById('gw-empty').appendChild(mkBtn('Generate Workout', 'gw-primary', ()=>generateWorkout(rec.type)));
+    actions.innerHTML = '';
+    renderCoachNotes(null);
+    return;
+  }
+
+  if(state.focusMode){
+    board.style.display = 'none';
+    actions.style.display = 'none';
+    focus.style.display = '';
+    setPreFocusControlsVisible(false);
+    document.getElementById('gw-header').style.display = 'none';
+    document.getElementById('gw-pagetabs').style.display = 'none';
+    document.getElementById('gw-focus-header').style.display = '';
+    document.getElementById('gw-focus-gradientbg').style.display = '';
+    renderSectionFocus();
+    return;
+  }
+  focus.style.display = 'none';
+  board.style.display = '';
+  actions.style.display = '';
+  setPreFocusControlsVisible(true);
+  document.getElementById('gw-header').style.display = '';
+  document.getElementById('gw-pagetabs').style.display = '';
+  document.getElementById('gw-focus-header').style.display = 'none';
+  document.getElementById('gw-focus-gradientbg').style.display = 'none';
+
+  board.innerHTML = '';
+  renderCoachNotes(w.coachNotes);
+  ['warmup','skill','wod','core'].forEach(key=>{
+    const node = renderSectionNode(key, w, {});
+    if(node) board.appendChild(node);
+  });
+
+  actions.innerHTML = '';
+  actions.appendChild(mkBtn('Refresh Workout', 'gw-btn-secondary', ()=>generateWorkout(w.type), ICON_REFRESH));
+  renderRatingAndLogBlock(actions, w, render);
+}
+
+function setPreFocusControlsVisible(visible){
+  ['gw-controls','gw-focusline','gw-daytabs'].forEach(id=>{
+    document.getElementById(id).style.display = visible ? '' : 'none';
+  });
+}
+
+// ---------- Section Focus ----------
+function getSectionFocusData(w, key){
+  w.wodText = buildWodText(w.format, w.wodMovements);
+  const defs = {
+    warmup: {label:'Warm-Up', text: w.warmup},
+    skill: {label:'Skill', text: w.skillTplText},
+    wod: {label:'WOD', text: w.wodText},
+    core: {label:'Extra Core', text: w.core}
+  };
+  const d = defs[key];
+  if(!d) return null;
+  const timerSpec = key==='core' ? w.coreTimer : parseTimerFromText(d.text);
+  return {key, label: d.label, text: d.text, timerSpec};
+}
+function openSectionFocus(key){
+  if(!state.currentWorkout) return;
+  state.focusMode = true;
+  state.focusSectionKey = key;
+  state.focusTapCount = 0;
+  render();
+}
+// The floating timer card overlays the bottom of the screen while a timer runs
+function openFloatCard(){
+  document.getElementById('gw-floatcard').style.display = '';
+  updateGradientHeight();
+}
+function cancelTimerAndClose(){
+  document.getElementById('gw-timerstop-backdrop').classList.remove('show');
+  focusStopTicking();
+  focusReset();
+  document.getElementById('gw-floatcard').style.display = 'none';
+  const startBtn = document.getElementById('gw-starttimer-btn');
+  if(startBtn) startBtn.style.display = '';
+  updateGradientHeight();
+}
+function requestCloseFloatCard(){
+  document.getElementById('gw-timerstop-backdrop').classList.add('show');
+}
+function cancelCloseFloatCard(){
+  document.getElementById('gw-timerstop-backdrop').classList.remove('show');
+}
+// keeps the gradient's solid backdrop starting exactly 40px above the floating card, when it's open
+function updateGradientHeight(){
+  const grad = document.getElementById('gw-focus-gradientbg');
+  if(!grad || grad.style.display==='none') return;
+  const card = document.getElementById('gw-floatcard');
+  if(!card || card.style.display === 'none'){ grad.style.height = '0px'; return; }
+  const rect = card.getBoundingClientRect();
+  const height = Math.max(60, window.innerHeight - rect.top + 40);
+  grad.style.height = height + 'px';
+}
+function requestExitFocus(){
+  if(focusTimer && (focusTimer.running || focusTimer.elapsedBefore > 0)){
+    focusStopTicking();
+    document.getElementById('gw-stopconfirm-backdrop').classList.add('show');
+  } else {
+    confirmExitFocus();
+  }
+}
+function cancelExitFocus(){
+  document.getElementById('gw-stopconfirm-backdrop').classList.remove('show');
+}
+function confirmExitFocus(){
+  document.getElementById('gw-stopconfirm-backdrop').classList.remove('show');
+  state.focusMode = false;
+  focusTimer = null;
+  render();
+}
+
+function renderSectionFocus(){
+  const w = state.currentWorkout;
+  const key = state.focusSectionKey;
+  const stepData = w ? getSectionFocusData(w, key) : null;
+  if(!w || !stepData || !stepData.text){ state.focusMode = false; render(); return; }
+
+  document.getElementById('gw-focus-header-name').textContent = stepData.label;
+
+  const container = document.getElementById('gw-focus');
+  container.innerHTML = '';
+  state.focusSetChecks = [];
+  state.focusRoundLog = [];
+
+  const focusExplainerText = timerExplainer(stepData.timerSpec);
+  if(focusExplainerText){
+    const explainEl = document.createElement('div');
+    explainEl.className = 'gw-format-explainer';
+    explainEl.textContent = focusExplainerText;
+    container.appendChild(explainEl);
+  }
+
+  const detail = document.createElement('div');
+  detail.className = 'gw-focus-detail';
+  detail.textContent = stepData.text;
+  container.appendChild(detail);
+
+  if(key==='skill' && w.skillLiftKey){
+    const scheme = parseSetScheme(stepData.text, w.skillLiftKey);
+    if(scheme){
+      state.focusSetChecks = new Array(scheme.length).fill(false);
+      const checklist = document.createElement('div');
+      checklist.className = 'gw-checklist';
+      scheme.forEach((reps, idx)=>{
+        const row = document.createElement('div');
+        row.className = 'gw-checklist-row';
+        const num = document.createElement('button');
+        num.type = 'button';
+        num.className = 'gw-checklist-num';
+        num.textContent = String(idx+1).padStart(2,'0') + '.';
+        num.onclick = ()=>{
+          state.focusSetChecks[idx] = !state.focusSetChecks[idx];
+          num.innerHTML = state.focusSetChecks[idx] ? ICON_CHECK : (String(idx+1).padStart(2,'0') + '.');
+          num.classList.toggle('gw-checklist-num-done', state.focusSetChecks[idx]);
+          vibrate(15);
+          refreshStepCompletion(w, key, stepData);
+        };
+        row.appendChild(num);
+        const repsLabel = document.createElement('span');
+        repsLabel.className = 'gw-checklist-reps';
+        repsLabel.textContent = `${reps} reps`;
+        row.appendChild(repsLabel);
+
+        const inputWrap = document.createElement('div');
+        inputWrap.className = 'gw-checklist-inputwrap';
+        const inputBox = document.createElement('div');
+        inputBox.className = 'gw-checklist-inputbox';
+        const input = document.createElement('input');
+        input.type = 'number'; input.step = '5'; input.value = w.suggestedLoad;
+        const plates = document.createElement('div');
+        plates.className = 'gw-checklist-plates';
+        plates.textContent = plateBreakdown(w.suggestedLoad);
+        const unitRow = document.createElement('div');
+        unitRow.className = 'gw-checklist-units';
+        const lbBtn = document.createElement('button');
+        lbBtn.type = 'button'; lbBtn.className = 'gw-unit active'; lbBtn.textContent = 'lb';
+        const kgBtn = document.createElement('button');
+        kgBtn.type = 'button'; kgBtn.className = 'gw-unit'; kgBtn.textContent = 'kg';
+        let unit = 'lb';
+        input.oninput = ()=>{
+          const val = Number(input.value)||0;
+          w.suggestedLoad = unit==='kg' ? Math.round(val/0.453592/5)*5 : val;
+          plates.textContent = plateBreakdown(w.suggestedLoad);
+        };
+        lbBtn.onclick = ()=>{
+          unit = 'lb'; lbBtn.classList.add('active'); kgBtn.classList.remove('active');
+          input.value = w.suggestedLoad;
+        };
+        kgBtn.onclick = ()=>{
+          unit = 'kg'; kgBtn.classList.add('active'); lbBtn.classList.remove('active');
+          input.value = Math.round(w.suggestedLoad*0.453592*10)/10;
+        };
+        unitRow.appendChild(lbBtn); unitRow.appendChild(kgBtn);
+        inputBox.appendChild(input); inputBox.appendChild(unitRow);
+        inputWrap.appendChild(inputBox); inputWrap.appendChild(plates);
+        row.appendChild(inputWrap);
+        checklist.appendChild(row);
+      });
+      container.appendChild(checklist);
+    }
+  }
+
+  // live round-by-round log — built as rounds are logged, for AMRAP/RFT and non-timer round-based steps
+  if(key==='wod' || !stepData.timerSpec){
+    const roundLog = document.createElement('div');
+    roundLog.className = 'gw-roundlog';
+    roundLog.id = 'gw-roundlog';
+    container.appendChild(roundLog);
+  }
+
+  if(stepData.timerSpec){
+    const kind = stepData.timerSpec.kind;
+
+    const startBtn = document.createElement('button');
+    startBtn.className = 'gw-starttimer-btn';
+    startBtn.id = 'gw-starttimer-btn';
+    startBtn.innerHTML = `${ICON_PLAY}<span>Start Timer</span>`;
+    startBtn.onclick = ()=>{
+      openFloatCard();
+      startBtn.style.display = 'none';
+      focusStartWithLeadIn();
+    };
+    container.appendChild(startBtn);
+
+    const card = document.createElement('div');
+    card.className = 'gw-floatcard';
+    card.id = 'gw-floatcard';
+    card.style.display = 'none';
+    card.innerHTML = `
+      <button class="gw-floatcard-close" id="gw-floatcard-close" aria-label="Cancel timer">${ICON_X}</button>
+      <div class="gw-focus-phaseword" id="gw-focus-phase"></div>
+      <div class="gw-floatcard-label" id="gw-focus-sub"></div>
+      <div class="gw-floatcard-clock" id="gw-focus-number">00:00</div>
+      <div class="gw-floatcard-secondary" id="gw-focus-secondary"></div>
+      <div class="gw-floatcard-ringwrap">
+        <svg viewBox="0 0 80 80">
+          <circle class="gw-focus-ring-track" cx="40" cy="40" r="34" transform="rotate(-90 40 40)"/>
+          <circle class="gw-focus-ring-fill" id="gw-focus-ring" cx="40" cy="40" r="34" stroke-dasharray="${2*Math.PI*34}" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
+        </svg>
+        <button class="gw-floatcard-playpause" id="gw-floatcard-playpause" aria-label="Play or pause">${ICON_PLAY}</button>
+      </div>
+      <div class="gw-floatcard-round" id="gw-floatcard-round" style="display:none;">
+        <button id="gw-focus-plus">
+          <span>Round</span>
+          <span class="gw-floatcard-round-badge" id="gw-focus-roundsbadge">0</span>
+          <span class="gw-round-target" id="gw-focus-round-target"></span>
+        </button>
+      </div>
+      <div class="gw-floatcard-next" id="gw-floatcard-next" style="display:none;">
+        <button id="gw-focus-skipnext"><span>Next</span>${ICON_PLAY}</button>
+        <div class="gw-floatcard-nextpreview" id="gw-floatcard-nextpreview"></div>
+      </div>`;
+    container.appendChild(card);
+
+    if((kind==='AMRAP' || kind==='RFT' || kind==='LADDER')){
+      card.querySelector('#gw-floatcard-round').style.display = '';
+    }
+    if(kind==='INTERVAL'){
+      card.querySelector('#gw-floatcard-next').style.display = '';
+    }
+    const roundCap = (kind==='RFT') ? stepData.timerSpec.rounds : (kind==='LADDER' ? stepData.timerSpec.rungs.length : null);
+    if(roundCap) document.getElementById('gw-focus-round-target').textContent = `/ ${roundCap}`;
+
+    document.getElementById('gw-focus-plus').onclick = ()=>{
+      if(roundCap && state.focusTapCount >= roundCap) return;
+      state.focusTapCount++;
+      if(key==='wod'){
+        if(!w.wodPerformance) w.wodPerformance = {};
+        w.wodPerformance.rounds = state.focusTapCount;
+      }
+      document.getElementById('gw-focus-roundsbadge').textContent = state.focusTapCount;
+      document.getElementById('gw-focus-plus').classList.add('gw-tap-flash');
+      setTimeout(()=>document.getElementById('gw-focus-plus').classList.remove('gw-tap-flash'), 120);
+      vibrate(15);
+      logRoundTap(focusCurrentElapsed());
+      if(roundCap && state.focusTapCount >= roundCap){
+        // last prescribed round just got logged — this finishes the WOD, same as swiping to finish
+        focusManualFinish(key);
+        document.getElementById('gw-focus-plus').disabled = true;
+      } else {
+        focusUpdateDisplay();
+      }
+    };
+    document.getElementById('gw-focus-skipnext').onclick = focusSkipToNextRound;
+    document.getElementById('gw-floatcard-playpause').onclick = focusToggleFromTap;
+    document.getElementById('gw-floatcard-close').onclick = requestCloseFloatCard;
+
+    // RFT / LADDER / uncapped FOR TIME end on the athlete's own judgment — swipe locks it in
+    if((kind==='RFT' || kind==='FORTIME' || kind==='LADDER') && !stepData.timerSpec.cap){
+      const swipeZone = document.createElement('div');
+      swipeZone.className = 'gw-focus-swipezone';
+      swipeZone.id = 'gw-focus-swipezone';
+      swipeZone.innerHTML = `<div class="gw-focus-swipe-track">
+          <div class="gw-focus-swipe-fill" id="gw-focus-swipe-fill"></div>
+          <span>Swipe to finish</span>
+          <div class="gw-focus-swipe-thumb" id="gw-focus-swipe-thumb">${ICON_PLAY}</div>
+        </div>`;
+      container.appendChild(swipeZone);
+      wireSwipeToFinish(swipeZone, key);
+    }
+
+    focusOpenTimer(stepData.timerSpec, key);
+  } else {
+    focusTimer = null;
+    const target = parseRoundTarget(stepData.text);
+    const roundBtn = document.createElement('button');
+    roundBtn.className = 'gw-section-round-btn';
+    roundBtn.id = 'gw-inline-round-btn';
+    roundBtn.innerHTML = `<span>Round</span><span class="gw-navmid-badge" id="gw-inline-round-badge">0</span><span class="gw-round-target">/ ${target}</span>`;
+    roundBtn.onclick = ()=>{
+      if(state.focusTapCount >= target) return;
+      state.focusTapCount++;
+      document.getElementById('gw-inline-round-badge').textContent = state.focusTapCount;
+      logRoundTap(null);
+      vibrate(15);
+      refreshStepCompletion(w, key, stepData);
+      if(state.focusTapCount >= target){
+        roundBtn.disabled = true;
+        roundBtn.innerHTML = `${ICON_CHECK}<span>Completed</span>`;
+        vibrate([80,40,120]);
+      }
+    };
+    container.appendChild(roundBtn);
+  }
+}
+
+function vibrate(pattern){
+  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
+}
+
+function wireSwipeToFinish(zone, stepKey){
+  const track = zone.querySelector('.gw-focus-swipe-track');
+  const thumb = zone.querySelector('.gw-focus-swipe-thumb');
+  const fill = document.getElementById('gw-focus-swipe-fill');
+  const THUMB_SIZE = 44, EDGE_GAP = 6;
+  let dragging = false, startX = 0, maxTravel = 1;
+  function onDown(e){
+    dragging = true;
+    startX = (e.touches ? e.touches[0].clientX : e.clientX);
+    maxTravel = Math.max(1, track.getBoundingClientRect().width - THUMB_SIZE - EDGE_GAP*2);
+  }
+  function onMove(e){
+    if(!dragging) return;
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    const delta = Math.max(0, Math.min(maxTravel, x - startX));
+    thumb.style.transform = `translateX(${delta}px)`;
+    fill.style.width = (delta + THUMB_SIZE) + 'px';
+    if(delta / maxTravel > 0.85){ finishSwipe(); }
+  }
+  function onUp(){
+    if(!dragging) return;
+    dragging = false;
+    thumb.style.transform = 'translateX(0)';
+    fill.style.width = '0%';
+  }
+  function finishSwipe(){
+    dragging = false;
+    thumb.style.transform = `translateX(${maxTravel}px)`;
+    fill.style.width = '100%';
+    focusManualFinish(stepKey);
+  }
+  thumb.addEventListener('touchstart', onDown, {passive:true});
+  thumb.addEventListener('touchmove', onMove, {passive:true});
+  thumb.addEventListener('touchend', onUp);
+  thumb.addEventListener('mousedown', onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
+
+function focusManualFinish(stepKey){
+  if(!focusTimer) return;
+  focusTimer.elapsedBefore = focusCurrentElapsed();
+  focusTimer.running = false;
+  cancelAnimationFrame(focusTimer.raf);
+  focusTimer.doneBeeped = true;
+  if(stepKey==='wod'){
+    const w = state.currentWorkout;
+    if(w){
+      if(!w.wodPerformance) w.wodPerformance = {};
+      w.wodPerformance.time = fmtClock(Math.floor(focusTimer.elapsedBefore));
+    }
+  }
+  beepTriple();
+  vibrate([80,40,80,40,160]);
+  focusUpdateDisplay();
+  focusUpdateButtonStates();
+  state.focusStepDone[stepKey] = true;
+  toast('✓ Finished — time locked in.');
+}
+
+// independent timer engine for Focus Mode (mirrors the modal's logic but keeps its own state,
+// so opening the section-timer modal separately never conflicts with an in-progress Focus Mode timer)
+let focusTimer = null;
+function focusCurrentElapsed(){
+  if(!focusTimer) return 0;
+  const running = focusTimer.running ? (performance.now() - focusTimer.startedAt)/1000 : 0;
+  return focusTimer.elapsedBefore + running;
+}
+function focusOpenTimer(spec, sectionKey){
+  focusTimer = { ...spec, running:false, startedAt:null, elapsedBefore:0, lastBeepUnit:-1, lastPhaseKey:null, lastTickSecond:null, doneBeeped:false, halfwayBeeped:false, leadIn:false, sectionKey };
+  focusUpdateDisplay();
+  focusUpdateButtonStates();
+}
+function focusMaybeTick(secondsRemaining){
+  if(!focusTimer || !focusTimer.running) return;
+  const whole = Math.ceil(secondsRemaining);
+  if(whole>=1 && whole<=3 && whole !== focusTimer.lastTickSecond){
+    tickBeep();
+    vibrate(20);
+    focusTimer.lastTickSecond = whole;
+  } else if(whole>3){
+    focusTimer.lastTickSecond = null;
+  }
+}
+function focusFinish(){
+  if(focusTimer && !focusTimer.doneBeeped){
+    focusTimer.doneBeeped = true;
+    focusTimer.running = false;
+    beepTriple();
+    vibrate([100,60,100,60,200]);
+    focusUpdateButtonStates();
+    if(focusTimer.sectionKey){
+      state.focusStepDone[focusTimer.sectionKey] = true;
+      if(focusTimer.sectionKey==='wod'){
+        const w = state.currentWorkout;
+        if(w){
+          if(!w.wodPerformance) w.wodPerformance = {};
+          if(focusTimer.kind==='FORTIME' || focusTimer.kind==='RFT' || focusTimer.kind==='LADDER'){
+            w.wodPerformance.time = fmtClock(Math.floor(focusCurrentElapsed()));
+          }
+        }
+      }
+    }
+  }
+}
+function focusTick(){
+  if(!focusTimer || !focusTimer.running) return;
+  focusUpdateDisplay();
+  focusTimer.raf = requestAnimationFrame(focusTick);
+}
+function focusStopTicking(){
+  if(focusTimer) cancelAnimationFrame(focusTimer.raf);
+}
+// "3-2-1-go" lead-in before the very first start of a fresh timer — matches how a real class starts a clock
+function focusStartWithLeadIn(){
+  if(!focusTimer || focusTimer.running || focusTimer.leadIn) return;
+  const freshStart = focusTimer.elapsedBefore===0 && !focusTimer.doneBeeped;
+  if(!freshStart){ focusStart(); return; }
+  focusTimer.leadIn = true;
+  const numberEl = document.getElementById('gw-focus-number');
+  const seq = ['3','2','1','GO'];
+  let i = 0;
+  function step(){
+    if(!focusTimer) return;
+    if(numberEl) numberEl.textContent = seq[i];
+    if(seq[i]==='GO') beepTriple(); else tickBeep();
+    vibrate(seq[i]==='GO' ? [80,40,120] : 30);
+    i++;
+    if(i < seq.length){ setTimeout(step, 700); }
+    else { setTimeout(()=>{ focusTimer.leadIn = false; focusStart(); }, 500); }
+  }
+  step();
+}
+function focusToggleFromTap(){
+  if(!focusTimer || focusTimer.leadIn) return;
+  if(focusTimer.running) focusPause();
+  else if(focusTimer.elapsedBefore > 0) focusStart();
+  // if never started, the tap-hint says "tap the time to pause" only once running — before that, use the play button
+}
+// lets the athlete manually skip ahead to the next rest interval instead of waiting for it to elapse naturally
+function focusSkipToNextRound(){
+  if(!focusTimer || focusTimer.kind!=='INTERVAL') return;
+  const cycle = focusTimer.minutes*60;
+  const elapsed = focusCurrentElapsed();
+  const currentUnit = Math.floor(elapsed/cycle);
+  const nextBoundary = (currentUnit+1)*cycle;
+  focusTimer.elapsedBefore = nextBoundary;
+  focusTimer.startedAt = focusTimer.running ? performance.now() : null;
+  focusUpdateDisplay();
+  vibrate(20);
+}
+function focusStart(){
+  if(!focusTimer || focusTimer.running) return;
+  focusTimer.running = true;
+  focusTimer.startedAt = performance.now();
+  focusTimer.doneBeeped = false;
+  cancelAnimationFrame(focusTimer.raf);
+  focusTick();
+  focusUpdateButtonStates();
+  vibrate(25);
+}
+function focusPause(){
+  if(!focusTimer || !focusTimer.running) return;
+  focusTimer.elapsedBefore = focusCurrentElapsed();
+  focusTimer.running = false;
+  cancelAnimationFrame(focusTimer.raf);
+  focusUpdateDisplay();
+  focusUpdateButtonStates();
+  vibrate(25);
+}
+function focusReset(){
+  if(!focusTimer) return;
+  cancelAnimationFrame(focusTimer.raf);
+  focusTimer.running = false; focusTimer.startedAt = null; focusTimer.elapsedBefore = 0;
+  focusTimer.lastBeepUnit = -1; focusTimer.lastPhaseKey = null; focusTimer.lastTickSecond = null;
+  focusTimer.doneBeeped = false; focusTimer.halfwayBeeped = false;
+  focusUpdateDisplay();
+  focusUpdateButtonStates();
+}
+function focusUpdateButtonStates(){
+  if(!focusTimer) return;
+  const playPauseBtn = document.getElementById('gw-floatcard-playpause');
+  if(!playPauseBtn || focusTimer.leadIn) return;
+  playPauseBtn.innerHTML = focusTimer.running ? ICON_PAUSE : ICON_PLAY;
+}
+function focusUpdateDisplay(){
+  if(!focusTimer || focusTimer.leadIn) return;
+  const numberEl = document.getElementById('gw-focus-number');
+  const subEl = document.getElementById('gw-focus-sub');
+  const phaseEl = document.getElementById('gw-focus-phase');
+  const ring = document.getElementById('gw-focus-ring');
+  const stage = document.getElementById('gw-focus-stage');
+  const secondaryEl = document.getElementById('gw-focus-secondary');
+  if(!numberEl) return;
+  const elapsed = focusCurrentElapsed();
+  const CIRC = 2*Math.PI*34;
+  let displaySeconds = 0, warn = false, fraction = 1, isRest = false;
+  function setRing(frac){ if(ring) ring.style.strokeDashoffset = String(CIRC * (1-Math.max(0,Math.min(1,frac)))); }
+
+  if(focusTimer.kind==='AMRAP' || focusTimer.kind==='COUNTDOWN'){
+    const total = focusTimer.minutes*60;
+    displaySeconds = total - elapsed;
+    if(focusTimer.kind==='AMRAP' && !focusTimer.halfwayBeeped && elapsed >= total/2 && focusTimer.running){
+      focusTimer.halfwayBeeped = true; switchBeep(); vibrate(40);
+    }
+    if(displaySeconds<=0){ displaySeconds=0; warn=true; fraction=0; focusFinish(); }
+    else { if(displaySeconds<=10) warn=true; focusMaybeTick(displaySeconds); fraction = total>0 ? displaySeconds/total : 0; }
+    setRing(fraction);
+    subEl.textContent = focusTimer.kind==='AMRAP' ? `${focusTimer.minutes} min AMRAP — counts down` : `${focusTimer.minutes} min countdown`;
+
+  } else if(focusTimer.kind==='EMOM'){
+    const total = focusTimer.minutes*60;
+    const clamped = Math.min(elapsed, total);
+    const unit = Math.floor(clamped/60);
+    const withinMinute = clamped - unit*60;
+    displaySeconds = 60 - withinMinute;
+    if(displaySeconds===60) displaySeconds=0;
+    subEl.textContent = `Minute ${Math.min(unit+1, focusTimer.minutes)} of ${focusTimer.minutes}`;
+    if(secondaryEl) secondaryEl.textContent = `Workout time left: ${fmtClock(Math.max(0,total-clamped))}`;
+    if(unit > focusTimer.lastBeepUnit && unit < focusTimer.minutes && focusTimer.running){ switchBeep(); vibrate([60,40,60]); focusTimer.lastBeepUnit = unit; }
+    if(elapsed >= total){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+    else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = displaySeconds/60; }
+    setRing(fraction);
+
+  } else if(focusTimer.kind==='INTERVAL'){
+    const cycle = focusTimer.minutes*60;
+    const nextPreviewEl = document.getElementById('gw-floatcard-nextpreview');
+    if(focusTimer.totalRounds){
+      const totalDuration = cycle*focusTimer.totalRounds;
+      const clamped = Math.min(elapsed, totalDuration);
+      const unit = Math.floor(clamped/cycle);
+      const withinUnit = clamped - unit*cycle;
+      displaySeconds = cycle - withinUnit;
+      if(displaySeconds===cycle) displaySeconds=0;
+      subEl.textContent = `Rest after set ${Math.min(unit+1, focusTimer.totalRounds)} of ${focusTimer.totalRounds}`;
+      if(nextPreviewEl) nextPreviewEl.textContent = unit+1 < focusTimer.totalRounds ? `Set ${unit+2}` : 'Finish';
+      if(unit > focusTimer.lastBeepUnit && unit < focusTimer.totalRounds && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
+      if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+      else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = displaySeconds/cycle; }
+    } else {
+      const unit = Math.floor(elapsed/cycle);
+      const withinUnit = elapsed - unit*cycle;
+      displaySeconds = cycle - withinUnit;
+      if(displaySeconds===cycle) displaySeconds=0;
+      subEl.textContent = `Round ${unit+1} — beeps each time it resets`;
+      if(nextPreviewEl) nextPreviewEl.textContent = `Round ${unit+2}`;
+      if(unit > focusTimer.lastBeepUnit && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
+      if(displaySeconds<=3) warn=true;
+      focusMaybeTick(displaySeconds);
+      fraction = displaySeconds/cycle;
+    }
+    setRing(fraction);
+
+  } else if(focusTimer.kind==='TABATA'){
+    const cycle = focusTimer.workSec + focusTimer.restSec;
+    const totalDuration = cycle*focusTimer.rounds;
+    const clamped = Math.min(elapsed, totalDuration);
+    const roundIdx = Math.min(Math.floor(clamped/cycle), focusTimer.rounds-1);
+    const withinCycle = clamped - roundIdx*cycle;
+    isRest = withinCycle >= focusTimer.workSec;
+    const phaseSecTotal = isRest ? focusTimer.restSec : focusTimer.workSec;
+    const phaseElapsed = isRest ? withinCycle - focusTimer.workSec : withinCycle;
+    displaySeconds = phaseSecTotal - phaseElapsed;
+    if(displaySeconds===phaseSecTotal) displaySeconds = 0;
+    const phaseKey = roundIdx+'-'+(isRest?'rest':'work');
+    if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
+    phaseEl.textContent = isRest ? 'REST' : 'WORK';
+    phaseEl.classList.toggle('rest', isRest);
+    subEl.textContent = `Round ${roundIdx+1} of ${focusTimer.rounds}`;
+    if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+    else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0; }
+    setRing(fraction);
+    if(stage) stage.classList.toggle('gw-focus-rest', isRest);
+    if(ring) ring.classList.toggle('rest', isRest);
+    numberEl.classList.toggle('rest', isRest);
+
+  } else if(focusTimer.kind==='LADDER'){
+    displaySeconds = elapsed;
+    if(focusTimer.cap){
+      const capSec = focusTimer.cap*60;
+      fraction = Math.max(0, 1 - elapsed/capSec);
+      if(elapsed >= capSec){ warn = true; focusFinish(); }
+    } else {
+      fraction = 1;
+    }
+    setRing(fraction);
+    const rungs = focusTimer.rungs;
+    const roundIdx = Math.min(state.focusTapCount, rungs.length-1);
+    subEl.textContent = state.focusTapCount >= rungs.length
+      ? `All ${rungs.length} rounds done`
+      : `Round ${roundIdx+1} of ${rungs.length} — ${rungs[roundIdx]} reps this round`;
+  } else { // FORTIME / RFT / stopwatch
+    displaySeconds = elapsed;
+    if(focusTimer.cap){
+      const capSec = focusTimer.cap*60;
+      fraction = Math.max(0, 1 - elapsed/capSec);
+      if(elapsed >= capSec){ warn = true; focusFinish(); }
+    } else {
+      fraction = 1;
+    }
+    setRing(fraction);
+    const roundsPart = focusTimer.rounds ? `Complete ${focusTimer.rounds} rounds — you track them. ` : '';
+    subEl.textContent = focusTimer.cap ? `${roundsPart}Time cap ${focusTimer.cap}'` : (roundsPart || 'Counts up — stop when you finish');
+  }
+
+  if(secondaryEl && focusTimer.kind!=='EMOM') secondaryEl.textContent = '';
+  if(phaseEl && focusTimer.kind!=='TABATA') phaseEl.textContent = '';
+  numberEl.textContent = fmtClock(displaySeconds);
+  numberEl.classList.toggle('warn', warn);
+
+  // once finished, locking the + / swipe controls prevents mis-taps from changing a score that's already locked in
+  const plusBtn = document.getElementById('gw-focus-plus');
+  if(plusBtn) plusBtn.disabled = focusTimer.doneBeeped;
+  const swipeZone = document.getElementById('gw-focus-swipezone');
+  if(swipeZone) swipeZone.classList.toggle('gw-swipe-locked', focusTimer.doneBeeped);
+}
+
+function splitHeadline(body){
+  const lines = body.split('\n');
+  const first = (lines[0] || '').trim();
+  const rest = lines.slice(1).join('\n');
+  const repeatMatch = first.match(/^(\d+)\s*X:?$/i);
+  if(repeatMatch) return {headline: 'REPEAT ' + repeatMatch[1] + 'X', detail: rest};
+  return {headline: first.replace(/:$/,''), detail: rest};
+}
+
+function appendInfoAndTimer(bodyEl, fullText){
+  const known = findKnownMovements(fullText);
+  if(known.length){
+    const info = document.createElement('div');
+    info.className = 'gw-info-links';
+    const infoLabel = document.createElement('span');
+    infoLabel.className = 'gw-info-label';
+    infoLabel.textContent = 'INFO:';
+    info.appendChild(infoLabel);
+    known.forEach(name=>{
+      const link = document.createElement('span');
+      link.className = 'gw-info-link';
+      link.textContent = name;
+      link.onclick = ()=>showModal(name, EXERCISE_INFO[name].desc, EXERCISE_INFO[name].url);
+      info.appendChild(link);
+    });
+    bodyEl.appendChild(info);
+  }
+}
+
+function sectionWithChips(title, body, tag, opts){
+  opts = opts || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'gw-section';
+  const head = document.createElement('div');
+  head.className = 'gw-section-head';
+  const titleWrap = document.createElement('span');
+  titleWrap.className = 'gw-section-title';
+  titleWrap.textContent = title;
+  head.appendChild(titleWrap);
+
+  const rightWrap = document.createElement('span');
+  rightWrap.style.cssText = 'display:flex; align-items:center; gap:8px; flex-shrink:0;';
+  if(opts.onReroll){
+    const rBtn = document.createElement('button');
+    rBtn.className = 'gw-icon-btn';
+    rBtn.innerHTML = ICON_REFRESH;
+    rBtn.title = 'Swap this section';
+    rBtn.onclick = opts.onReroll;
+    rightWrap.appendChild(rBtn);
+  }
+  if(opts.onRemove){
+    const xBtn = document.createElement('button');
+    xBtn.className = 'gw-icon-btn';
+    xBtn.textContent = '✕';
+    xBtn.title = 'Skip this section today';
+    xBtn.onclick = opts.onRemove;
+    rightWrap.appendChild(xBtn);
+  }
+  head.appendChild(rightWrap);
+
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'gw-section-body';
+
+  const {headline, detail} = splitHeadline(body);
+  const headlineRow = document.createElement('div');
+  headlineRow.className = 'gw-headline-row';
+  const headEl = document.createElement('div');
+  headEl.className = 'gw-section-headline';
+  headEl.textContent = headline;
+  headlineRow.appendChild(headEl);
+  if(tag){
+    const tagEl = document.createElement('span');
+    tagEl.className = 'gw-tag';
+    tagEl.textContent = tag;
+    headlineRow.appendChild(tagEl);
+  }
+  bodyEl.appendChild(headlineRow);
+  const timerSpecForExplainer = parseTimerFromText(body);
+  const explainerText = timerExplainer(timerSpecForExplainer);
+  if(explainerText){
+    const explainEl = document.createElement('div');
+    explainEl.className = 'gw-format-explainer';
+    explainEl.textContent = explainerText;
+    bodyEl.appendChild(explainEl);
+  }
+  if(detail.trim()){
+    const detailEl = document.createElement('div');
+    detailEl.className = 'gw-section-detail';
+    detailEl.textContent = detail;
+    bodyEl.appendChild(detailEl);
+  }
+
+  wrap.appendChild(head); wrap.appendChild(bodyEl);
+  wrap.bodyEl = bodyEl;
+  wrap.finalize = ()=>{
+    appendInfoAndTimer(bodyEl, body);
+  };
+  return wrap;
+}
+
+function renderWodSection(w){
+  w.wodText = buildWodText(w.format, w.wodMovements);
+  const wrap = document.createElement('div');
+  wrap.className = 'gw-section';
+  const head = document.createElement('div');
+  head.className = 'gw-section-head';
+  const titleWrap = document.createElement('span');
+  titleWrap.className = 'gw-section-title';
+  titleWrap.textContent = 'WOD';
+  head.appendChild(titleWrap);
+
+  const rightWrap = document.createElement('span');
+  rightWrap.style.cssText = 'display:flex; align-items:center; gap:8px; flex-shrink:0;';
+  if(!w.isBenchmark){
+    const rBtn = document.createElement('button');
+    rBtn.className = 'gw-icon-btn';
+    rBtn.innerHTML = ICON_REFRESH;
+    rBtn.title = 'Swap the whole WOD';
+    rBtn.onclick = ()=>rerollSection('wod');
+    rightWrap.appendChild(rBtn);
+  }
+  head.appendChild(rightWrap);
+
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'gw-section-body';
+  const headlineRow = document.createElement('div');
+  headlineRow.className = 'gw-headline-row';
+  const formatLine = document.createElement('div');
+  formatLine.className = 'gw-section-headline';
+  formatLine.textContent = w.format;
+  headlineRow.appendChild(formatLine);
+  if(w.isBenchmark){
+    const tagEl = document.createElement('span');
+    tagEl.className = 'gw-tag';
+    tagEl.textContent = 'BENCHMARK: ' + w.benchmarkName.toUpperCase();
+    headlineRow.appendChild(tagEl);
+  } else if(w.bw){
+    const tagEl = document.createElement('span');
+    tagEl.className = 'gw-tag';
+    tagEl.textContent = 'TRAVEL';
+    headlineRow.appendChild(tagEl);
+  }
+  bodyEl.appendChild(headlineRow);
+  const wodTimerSpec = parseTimerFromText(w.format);
+  const wodExplainerText = timerExplainer(wodTimerSpec);
+  if(wodExplainerText){
+    const explainEl = document.createElement('div');
+    explainEl.className = 'gw-format-explainer';
+    explainEl.textContent = wodExplainerText;
+    bodyEl.appendChild(explainEl);
+  }
+
+  const listEl = document.createElement('div');
+  listEl.className = 'gw-movement-list';
+  w.wodMovements.forEach((m)=>{
+    const row = document.createElement('div');
+    row.className = 'gw-movement-row';
+    const txt = document.createElement('span');
+    txt.textContent = `${m.reps} ${m.name}`;
+    row.appendChild(txt);
+    listEl.appendChild(row);
+  });
+  bodyEl.appendChild(listEl);
+  wrap.appendChild(head); wrap.appendChild(bodyEl);
+  wrap.bodyEl = bodyEl;
+
+  appendInfoAndTimer(bodyEl, w.wodText);
+  addStartSectionButton(wrap, 'wod');
+  return wrap;
+}
+
+function rerollSection(section){
+  const w = state.currentWorkout;
+  if(!w) return;
+  const bw = w.bw;
+  if(section==='warmup'){
+    const pool = bw && WARMUPS_BW[w.type] ? WARMUPS_BW[w.type] : WARMUPS[w.type];
+    let choice = w.warmup;
+    if(pool.length>1){ do{ choice = pool[Math.floor(Math.random()*pool.length)]; } while(choice===w.warmup); }
+    w.warmup = choice;
+  } else if(section==='skill'){
+    const skillPool = bw ? SKILLS_BW[w.type] : SKILLS[w.type];
+    let choiceTpl = skillPool.find(s=>s.text===w.skillTplText) || skillPool[0];
+    if(skillPool.length>1){ do{ choiceTpl = skillPool[Math.floor(Math.random()*skillPool.length)]; } while(choiceTpl.text===w.skillTplText); }
+    w.skillTplText = choiceTpl.text;
+    w.skillLiftKey = (!bw && choiceTpl.liftKey) ? choiceTpl.liftKey : null;
+    if(w.skillLiftKey){
+      const result = computeSuggestedLoad(w.skillLiftKey);
+      w.suggestedLoad = result.load; w.deload = result.deload;
+    } else { w.suggestedLoad = null; w.deload = false; }
+    w.rpe = null;
+  } else if(section==='wod'){
+    let movementPool = MOVEMENT_LIB[w.type];
+    if(bw) movementPool = movementPool.filter(m=>m.equip==='none');
+    const formatPool = FORMATS[w.type];
+    let newFormat = formatPool[Math.floor(Math.random()*formatPool.length)];
+    const alloc = allocateTime(state.timeAvailable);
+    if(alloc) newFormat = applyTimeCap(newFormat, alloc.wod);
+    const defs = pickMovementsLRU(movementPool, w.type, 3);
+    w.format = newFormat;
+    const newRungs = ladderRungsFor(newFormat);
+    w.wodMovements = defs.map(m => ({
+      name: m.name,
+      reps: newRungs ? newRungs.join('-') : repsFor(m, newFormat, w.volumeUsed || 1)
+    }));
+    w.movements = w.wodMovements.map(m=>m.name);
+    w.wodRpe = null;
+    w.wodPerformance = {};
+  } else if(section==='core'){
+    let choice = CORE.find(c=>c.text===w.core) || CORE[0];
+    if(CORE.length>1){ do{ choice = CORE[Math.floor(Math.random()*CORE.length)]; } while(choice.text===w.core); }
+    w.core = choice.text;
+    w.coreTimer = choice.timer;
+  }
+  render();
+}
+
+function removeSection(section){
+  const w = state.currentWorkout;
+  if(!w) return;
+  if(section==='warmup'){ w.warmup = null; w.sectionsDone.warmup = false; }
+  if(section==='skill'){ w.skillTplText = null; w.skillLiftKey = null; w.suggestedLoad = null; w.deload = false; w.rpe = null; w.sectionsDone.skill = false; }
+  if(section==='core'){ w.core = null; w.sectionsDone.core = false; }
+  render();
+}
+
+
+function addWodPerformanceUI(bodyEl, w, timerSpec){
+  if(!timerSpec) return;
+  const perf = w.wodPerformance || (w.wodPerformance = {});
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex; gap:12px; width:100%;';
+
+  function makeBox(labelText, inputEl){
+    const box = document.createElement('div');
+    box.style.cssText = 'display:flex; flex-direction:column; gap:8px; flex:1;';
+    const lbl = document.createElement('div');
+    lbl.textContent = labelText;
+    lbl.style.cssText = 'font-size:11px; font-weight:900; color:var(--muted); text-transform:uppercase; font-family:var(--font-body);';
+    box.appendChild(lbl);
+    box.appendChild(inputEl);
+    return box;
+  }
+  function makeNumberInput(value, onInput){
+    const input = document.createElement('input');
+    input.type='number'; input.min='0'; input.value = value ?? '';
+    input.style.cssText = 'width:100%; height:40px; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px; text-align:center; font-size:18px; font-weight:900; font-family:var(--font-body);';
+    input.oninput = onInput;
+    return input;
+  }
+
+  if(timerSpec.kind==='AMRAP'){
+    const roundsInput = makeNumberInput(perf.rounds, (e)=>{ perf.rounds = e.target.value===''?null:Number(e.target.value); });
+    const repsInput = makeNumberInput(perf.extraReps, (e)=>{ perf.extraReps = e.target.value===''?null:Number(e.target.value); });
+    wrap.appendChild(makeBox('Rounds', roundsInput));
+    wrap.appendChild(makeBox('+ Reps', repsInput));
+
+  } else if(timerSpec.kind==='FORTIME' || timerSpec.kind==='RFT'){
+    const timeInput = document.createElement('input');
+    timeInput.type='text'; timeInput.placeholder='mm:ss';
+    timeInput.value = perf.time || '';
+    timeInput.style.cssText = 'width:100%; height:40px; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px; text-align:center; font-size:18px; font-weight:900; font-family:var(--font-body);';
+    timeInput.oninput = ()=>{ perf.time = timeInput.value; };
+    wrap.appendChild(makeBox('Finish time', timeInput));
+    if(timerSpec.cap){
+      const capLabel = document.createElement('label');
+      capLabel.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-weight:700; margin-top:auto; padding-bottom:2px;';
+      const capCheckbox = document.createElement('input');
+      capCheckbox.type='checkbox'; capCheckbox.checked = !!perf.hitCap;
+      capCheckbox.style.cssText = 'width:16px; height:16px; accent-color:var(--coral);';
+      capCheckbox.onchange = ()=>{ perf.hitCap = capCheckbox.checked; };
+      capLabel.appendChild(capCheckbox);
+      capLabel.append('Hit time cap');
+      const capBox = document.createElement('div');
+      capBox.style.cssText = 'display:flex; flex-direction:column; justify-content:flex-end; flex:1;';
+      capBox.appendChild(capLabel);
+      wrap.appendChild(capBox);
+    }
+
+  } else if(timerSpec.kind==='EMOM'){
+    const label = document.createElement('label');
+    label.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:13px; color:#fff; font-weight:600;';
+    const checkbox = document.createElement('input');
+    checkbox.type='checkbox'; checkbox.checked = perf.completedAll !== false;
+    checkbox.style.cssText = 'width:16px; height:16px; accent-color:var(--coral);';
+    checkbox.onchange = ()=>{ perf.completedAll = checkbox.checked; };
+    label.appendChild(checkbox);
+    label.append(' Completed all rounds');
+    wrap.appendChild(label);
+
+  } else {
+    return;
+  }
+  bodyEl.appendChild(wrap);
+}
+
+function mkBtn(label, cls, onclick, iconSvg){
+  const b = document.createElement('button');
+  b.className = 'gw-btn ' + cls;
+  if(iconSvg){
+    b.innerHTML = iconSvg + '<span>' + label + '</span>';
+    b.classList.add('gw-btn-with-icon');
+  } else {
+    b.textContent = label;
+  }
+  b.onclick = onclick;
+  return b;
+}
+
+async function logWorkout(){
+  const w = state.currentWorkout;
+  if(!w) return;
+  try{
+    if(w.skillLiftKey && w.suggestedLoad){
+      state.weights[w.skillLiftKey] = w.suggestedLoad;
+      await saveWeights();
+    }
+    if(w.wodRpe && !w.isBenchmark){
+      const adj = VOLUME_ADJUST[w.wodRpe] ?? 0;
+      state.volume[w.type] = clamp((state.volume[w.type] || 1.0) + adj, 0.7, 1.4);
+      await saveVolume();
+    }
+    let prMessage = null;
+    if(w.isBenchmark){
+      const benchmark = BENCHMARKS.find(b=>b.name===w.benchmarkName);
+      const score = computeBenchmarkScore(benchmark, w.wodPerformance);
+      if(benchmark && score!=null){
+        const prevHist = (state.benchmarks[benchmark.name] && state.benchmarks[benchmark.name].history) || [];
+        const prevBest = prevHist.length
+          ? (benchmark.scoreType==='rounds' ? Math.max(...prevHist.map(h=>h.score)) : Math.min(...prevHist.map(h=>h.score)))
+          : null;
+        const isPR = prevBest!=null && ((benchmark.scoreType==='rounds' && score>prevBest) || (benchmark.scoreType==='time' && score<prevBest));
+        state.benchmarks[benchmark.name] = state.benchmarks[benchmark.name] || {history:[]};
+        state.benchmarks[benchmark.name].history.push({date: Date.now(), score});
+        await saveBenchmarks();
+        if(isPR) prMessage = `New best on ${benchmark.name}! ${fmtBenchmarkScore(benchmark, score)} (previous: ${fmtBenchmarkScore(benchmark, prevBest)})`;
+        else if(prevBest==null) prMessage = `${benchmark.name} baseline set: ${fmtBenchmarkScore(benchmark, score)}. Next retest will compare against this.`;
+      }
+    }
+    state.history.push({
+      date: Date.now(), type: w.type, warmup: w.warmup, skillTplText: w.skillTplText,
+      liftKey: w.skillLiftKey, loggedLoad: w.suggestedLoad || null, rpe: w.rpe || null,
+      wodRpe: w.wodRpe || null, volumeUsed: w.volumeUsed || 1.0,
+      format: w.format, movements: w.movements, movementNames: w.movements, core: w.core, bw: w.bw,
+      sectionsDone: w.sectionsDone || null, wodPerformance: w.wodPerformance || null,
+      isBenchmark: w.isBenchmark || false, benchmarkName: w.benchmarkName || null
+    });
+    await saveHistory();
+    toast(prMessage || ('Logged. Next ' + DAY_TYPES.find(d=>d.key===w.type).label + ' session will build on this.'));
+    focusStopTicking();
+    state.currentWorkout = null;
+    document.getElementById('gw-timebanner').style.display = 'none';
+    render();
+  }catch(err){
+    console.error('logWorkout failed', err);
+    toast('Something went wrong saving — please try again.');
+  }
+}
+
+function toast(msg){
+  const t = document.getElementById('gw-toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(()=>t.classList.remove('show'), 3800);
+}
+function showModal(name, desc, url){
+  document.getElementById('gw-modal-title').textContent = name;
+  document.getElementById('gw-modal-desc').textContent = desc;
+  const linkWrap = document.getElementById('gw-modal-link');
+  if(url){
+    linkWrap.innerHTML = `<a href="${url}" target="_blank" rel="noopener">Watch demo on CrossFit.com ↗</a><span class="gw-modal-credit">Demo courtesy of CrossFit, Inc.</span>`;
+    linkWrap.style.display = 'block';
+  } else {
+    linkWrap.innerHTML = '';
+    linkWrap.style.display = 'none';
+  }
+  document.getElementById('gw-modal-backdrop').classList.add('show');
+}
+document.getElementById('gw-modal-close').onclick = ()=>document.getElementById('gw-modal-backdrop').classList.remove('show');
+document.getElementById('gw-modal-backdrop').onclick = (e)=>{ if(e.target.id==='gw-modal-backdrop') e.currentTarget.classList.remove('show'); };
+
+document.getElementById('gw-bw-toggle').onchange = async (e)=>{
+  state.bodyweightOnly = e.target.checked;
+  document.getElementById('gw-controls').classList.toggle('gw-travel-on', state.bodyweightOnly);
+  await savePrefs();
+  if(state.currentType) generateWorkout(state.currentType);
+  toast(state.bodyweightOnly ? '✓ Travel mode ON — workout refreshed for zero equipment.' : '✓ Travel mode OFF — workout refreshed.');
+};
+function updateTimeClearVisibility(){
+  document.getElementById('gw-time-clear').style.display = state.timeAvailable ? 'inline-flex' : 'none';
+}
+async function applyTimeChange(newValue){
+  state.timeAvailable = newValue;
+  document.getElementById('gw-time-input').value = newValue || '';
+  updateTimeClearVisibility();
+  await savePrefs();
+  if(state.currentType) generateWorkout(state.currentType);
+  toast(state.timeAvailable ? `✓ Time budget set to ${state.timeAvailable} min — workout refreshed.` : '✓ Time budget cleared — workout refreshed.');
+}
+document.getElementById('gw-time-input').onchange = (e)=>{
+  applyTimeChange(Number(e.target.value) || null);
+};
+document.getElementById('gw-time-minus').onclick = ()=>{
+  const current = Number(document.getElementById('gw-time-input').value) || 10;
+  applyTimeChange(Math.max(10, current - 5));
+};
+document.getElementById('gw-time-plus').onclick = ()=>{
+  const current = Number(document.getElementById('gw-time-input').value) || 5;
+  applyTimeChange(current + 5);
+};
+document.getElementById('gw-time-clear').onclick = ()=>{
+  applyTimeChange(null);
+};
+
+let state_page = 'wod';
+const PAGE_HEADERS = {
+  wod: {title: 'GARAGE <span>WOD</span>', sub: 'RACK · RINGS · ONE BELL · ONE BAR · A ROPE'},
+  log: {title: 'WORKOUT<span> LOG</span>', sub: 'TRACKING PERFORMANCE'},
+  profile: {title: 'USER<span> PROFILE</span>', sub: 'CURRENT STATISTICS'}
+};
+function switchPage(page){
+  state_page = page;
+  ['wod','log','profile'].forEach(p=>{
+    document.getElementById('gw-page-'+p).style.display = (p===page) ? 'block' : 'none';
+  });
+  document.querySelectorAll('.gw-pagetab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.page===page);
+  });
+  const h = PAGE_HEADERS[page];
+  document.querySelector('#gw-header h1').innerHTML = h.title;
+  document.querySelector('#gw-header .gw-sub').textContent = h.sub;
+  if(page==='log') renderLogPage();
+  if(page==='profile') renderProfilePage();
+}
+document.querySelectorAll('.gw-pagetab').forEach(t=>{
+  t.onclick = ()=>switchPage(t.dataset.page);
+});
+let activityDraft = null;
+function renderActivityForm(container){
+  activityDraft = activityDraft || {activity: ACTIVITY_PRESETS[0], custom:'', duration:null, intensity:null, notes:''};
+  container.innerHTML = '';
+
+  const row1 = document.createElement('div');
+  row1.className = 'gw-setting-row';
+  row1.innerHTML = '<span>Activity</span>';
+  const select = document.createElement('select');
+  select.className = 'gw-activity-select';
+  ACTIVITY_PRESETS.forEach(a=>{
+    const opt = document.createElement('option');
+    opt.value = a; opt.textContent = a;
+    if(a===activityDraft.activity) opt.selected = true;
+    select.appendChild(opt);
+  });
+  select.onchange = ()=>{ activityDraft.activity = select.value; renderActivityForm(container); };
+  row1.appendChild(select);
+  container.appendChild(row1);
+
+  if(activityDraft.activity==='Other'){
+    const row1b = document.createElement('div');
+    row1b.className = 'gw-setting-row';
+    row1b.innerHTML = '<span>Describe it</span>';
+    const customInput = document.createElement('input');
+    customInput.type = 'text'; customInput.value = activityDraft.custom; customInput.style.width='140px';
+    customInput.oninput = ()=>{ activityDraft.custom = customInput.value; };
+    row1b.appendChild(customInput);
+    container.appendChild(row1b);
+  }
+
+  const row2 = document.createElement('div');
+  row2.className = 'gw-setting-row';
+  row2.innerHTML = '<span>Duration (min)</span>';
+  const durInput = document.createElement('input');
+  durInput.type = 'number'; durInput.min='0'; durInput.step='5'; durInput.value = activityDraft.duration ?? '';
+  durInput.oninput = ()=>{ activityDraft.duration = durInput.value===''?null:Number(durInput.value); };
+  row2.appendChild(durInput);
+  container.appendChild(row2);
+
+  const row3 = document.createElement('div');
+  row3.className = 'gw-rate-block'; row3.style.padding = '0'; row3.style.border = 'none'; row3.style.background = 'none';
+  const intLabel = document.createElement('div');
+  intLabel.className = 'gw-rate-label';
+  intLabel.style.marginBottom = '8px';
+  intLabel.textContent = 'Intensity';
+  row3.appendChild(intLabel);
+  const btnRow = document.createElement('div');
+  btnRow.className = 'gw-rate-options';
+  ['easy','right','hard'].forEach(r=>{
+    const b = mkBtn(RPE_LABELS[r], activityDraft.intensity===r ? 'gw-primary' : 'gw-btn', ()=>{ activityDraft.intensity = r; renderActivityForm(container); });
+    btnRow.appendChild(b);
+  });
+  row3.appendChild(btnRow);
+  container.appendChild(row3);
+
+  const row4 = document.createElement('div');
+  row4.style.cssText = 'padding:8px 0;';
+  const notesLabel = document.createElement('div');
+  notesLabel.style.cssText = 'font-size:12px; color:var(--muted); margin-bottom:6px;';
+  notesLabel.textContent = 'Notes (optional)';
+  row4.appendChild(notesLabel);
+  const notesInput = document.createElement('textarea');
+  notesInput.className = 'gw-activity-notes';
+  notesInput.value = activityDraft.notes;
+  notesInput.oninput = ()=>{ activityDraft.notes = notesInput.value; };
+  row4.appendChild(notesInput);
+  container.appendChild(row4);
+
+  const saveBtn = mkBtn('Save Activity', 'gw-teal', saveActivity);
+  saveBtn.style.cssText = 'margin-top:10px; width:100%; padding:20px;';
+  if(!activityDraft.intensity) saveBtn.disabled = true;
+  container.appendChild(saveBtn);
+  if(!activityDraft.intensity){
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:11.5px; color:var(--muted); margin-top:8px; text-align:center; font-weight:700;';
+    hint.textContent = 'Rate the intensity above to save.';
+    container.appendChild(hint);
+  }
+}
+
+async function saveActivity(){
+  const d = activityDraft;
+  if(!d || !d.intensity) return;
+  try{
+    const activityName = d.activity==='Other' && d.custom.trim() ? d.custom.trim() : d.activity;
+    const mappedType = ACTIVITY_FOCUS_MAP[d.activity] || null;
+    state.history.push({
+      date: Date.now(), kind:'external', activity: activityName, mappedType,
+      duration: d.duration, intensity: d.intensity, notes: d.notes || ''
+    });
+    await saveHistory();
+    toast('Activity logged.');
+    activityDraft = null;
+    state.showActivityForm = false;
+    renderLogPage();
+    if(state_page==='wod') render(); // refresh recommendation/coach notes if visible
+  }catch(err){
+    console.error('saveActivity failed', err);
+    toast('Something went wrong saving — please try again.');
+  }
+}
+
+function buildSparkline(values, w, h){
+  w = w || 160; h = h || 34;
+  if(values.length<2) return '';
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = (max-min) || 1;
+  const stepX = w/(values.length-1);
+  const pts = values.map((v,i)=>{
+    const x = i*stepX;
+    const y = h - ((v-min)/range)*h*0.85 - h*0.075;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;">
+    <polyline points="${pts}" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function renderProfilePage(){
+  const panel = document.getElementById('gw-profile-content');
+  panel.innerHTML = '';
+
+  const personalCard = document.createElement('div');
+  personalCard.className = 'gw-card';
+
+  const nameRow = document.createElement('div');
+  nameRow.className = 'gw-setting-row';
+  nameRow.innerHTML = '<span>Name</span>';
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text'; nameInput.value = state.profile.name || ''; nameInput.placeholder = 'Your name';
+  nameInput.onchange = async ()=>{ state.profile.name = nameInput.value; await saveProfile(); toast('Saved.'); };
+  nameRow.appendChild(nameInput);
+  personalCard.appendChild(nameRow);
+
+  const bwRow = document.createElement('div');
+  bwRow.className = 'gw-setting-row';
+  bwRow.style.marginBottom = '0';
+  bwRow.innerHTML = '<span>Bodyweight (lb)</span>';
+  const bwInput = document.createElement('input');
+  bwInput.type = 'number'; bwInput.step = '1'; bwInput.value = state.profile.bodyweight ?? '';
+  bwInput.onchange = async ()=>{ state.profile.bodyweight = bwInput.value===''?null:Number(bwInput.value); await saveProfile(); toast('Saved.'); };
+  bwRow.appendChild(bwInput);
+  personalCard.appendChild(bwRow);
+  panel.appendChild(personalCard);
+
+  const h3 = document.createElement('h3');
+  h3.textContent = 'Current Working Weights (lb)';
+  panel.appendChild(h3);
+
+  const weightsCard = document.createElement('div');
+  weightsCard.className = 'gw-card';
+  Object.keys(LIFT_LABELS).forEach(key=>{
+    const row = document.createElement('div');
+    row.className = 'gw-weights-row';
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'gw-weights-label';
+    labelSpan.textContent = LIFT_LABELS[key].toUpperCase();
+    row.appendChild(labelSpan);
+    const input = document.createElement('input');
+    input.type = 'number'; input.step = '5'; input.value = state.weights[key];
+    input.onchange = async ()=>{ state.weights[key] = Number(input.value)||0; await saveWeights(); toast('Saved.'); };
+    row.appendChild(input);
+    weightsCard.appendChild(row);
+
+    const entries = state.history.filter(h=>h.liftKey===key && h.loggedLoad!=null).map(h=>h.loggedLoad);
+    if(entries.length>=2){
+      const chartWrap = document.createElement('div');
+      chartWrap.style.cssText = 'width:100%; padding:0 0 12px;';
+      chartWrap.innerHTML = buildSparkline(entries);
+      weightsCard.appendChild(chartWrap);
+    }
+  });
+  panel.appendChild(weightsCard);
+}
+
+function weekStart(ts){
+  const d = new Date(ts);
+  const day = d.getDay();
+  const diffToMonday = (day===0 ? -6 : 1-day);
+  const monday = new Date(d);
+  monday.setDate(d.getDate()+diffToMonday);
+  monday.setHours(0,0,0,0);
+  return monday.getTime();
+}
+function weekLabel(ts){
+  const start = new Date(ts);
+  const end = new Date(ts + 6*24*60*60*1000);
+  const fmt = (d)=>d.toLocaleDateString(undefined,{month:'short', day:'numeric'});
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+
+function renderLogPage(){
+  const container = document.getElementById('gw-log-content');
+  container.innerHTML = '';
+
+  // ---- day strip (current week, today highlighted) ----
+  const stripWrap = document.createElement('div');
+  stripWrap.id = 'gw-daystrip';
+  const today = new Date();
+  const day = today.getDay();
+  const diffToMonday = (day===0 ? -6 : 1-day);
+  const monday = new Date(today);
+  monday.setDate(today.getDate()+diffToMonday);
+  monday.setHours(0,0,0,0);
+  const todayKey = today.toDateString();
+
+  for(let i=0;i<7;i++){
+    const d = new Date(monday);
+    d.setDate(monday.getDate()+i);
+    const dKey = d.toDateString();
+    const cell = document.createElement('div');
+    cell.className = 'gw-daystrip-cell' + (dKey===todayKey ? ' today' : '') + (state.logFilterDate===dKey ? ' selected' : '');
+    const hasEntry = state.history.some(h => new Date(h.date).toDateString()===dKey);
+    cell.innerHTML = `<div class="gw-daystrip-dow">${d.toLocaleDateString(undefined,{weekday:'short'})}</div><div class="gw-daystrip-num">${d.getDate()}</div>` + (hasEntry ? '<div class="gw-daystrip-dot"></div>' : '');
+    cell.onclick = ()=>{ state.logFilterDate = (state.logFilterDate===dKey) ? null : dKey; renderLogPage(); };
+    stripWrap.appendChild(cell);
+  }
+  container.appendChild(stripWrap);
+
+  // ---- log an outside activity (inline) ----
+  const actBtn = mkBtn(state.showActivityForm ? 'Cancel' : '+ Log an Outside Activity', state.showActivityForm ? 'gw-btn' : 'gw-teal', ()=>{
+    state.showActivityForm = !state.showActivityForm;
+    renderLogPage();
+  });
+  actBtn.style.cssText = 'margin-bottom:16px; width:100%; padding:16px;';
+  container.appendChild(actBtn);
+  if(state.showActivityForm){
+    const formWrap = document.createElement('div');
+    formWrap.className = 'gw-card';
+    container.appendChild(formWrap);
+    renderActivityForm(formWrap);
+  }
+
+  if(state.history.length===0){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--muted); font-size:13px;';
+    empty.textContent = 'Nothing logged yet — generate and log a workout, or log an outside activity, to start building history.';
+    container.appendChild(empty);
+    return;
+  }
+
+  if(state.logFilterDate){
+    const clearRow = document.createElement('div');
+    clearRow.style.cssText = 'font-size:12px; color:var(--coral); cursor:pointer; margin-bottom:12px; text-decoration:underline;';
+    clearRow.textContent = `Showing ${new Date(state.logFilterDate).toLocaleDateString(undefined,{month:'short', day:'numeric'})} only — clear filter`;
+    clearRow.onclick = ()=>{ state.logFilterDate = null; renderLogPage(); };
+    container.appendChild(clearRow);
+  }
+
+  // ---- progress summary (only when not filtered to a single day) ----
+  if(!state.logFilterDate){
+    const summary = document.createElement('div');
+    summary.className = 'gw-card';
+    summary.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.7; padding:16px;';
+    let summaryHtml = `<div style="color:#fff; font-weight:700; margin-bottom:4px;">${state.history.length} entr${state.history.length===1?'y':'ies'} logged</div>`;
+    Object.keys(LIFT_LABELS).forEach(key=>{
+      const entries = state.history.filter(h=>h.liftKey===key && h.loggedLoad!=null);
+      if(entries.length===0) return;
+      const first = entries[0].loggedLoad, latest = entries[entries.length-1].loggedLoad;
+      const delta = latest - first;
+      summaryHtml += `${LIFT_LABELS[key]}: ${first} → ${latest} lb (${delta>=0?'+':''}${delta} lb over ${entries.length} session${entries.length===1?'':'s'})<br>`;
+    });
+    summaryHtml += `<div style="margin-top:6px;">Last trained — ` + DAY_TYPES.map(dt=>{
+      const last = lastSessionDate(dt.key);
+      const txt = last===null ? 'never' : Math.round(daysSince(last))+'d ago';
+      return `${dt.label}: ${txt}`;
+    }).join(' · ') + `</div>`;
+    summary.innerHTML = summaryHtml;
+    container.appendChild(summary);
+
+    // ---- weekly counts ----
+    const weekCounts = {};
+    state.history.forEach(h=>{
+      const wk = weekStart(h.date);
+      weekCounts[wk] = (weekCounts[wk]||0) + 1;
+    });
+    const weekKeys = Object.keys(weekCounts).map(Number).sort((a,b)=>b-a).slice(0,6);
+    if(weekKeys.length){
+      const weekBox = document.createElement('div');
+      weekBox.className = 'gw-card';
+      weekBox.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.8; padding:16px;';
+      weekBox.innerHTML = '<div style="color:#fff; font-weight:700; margin-bottom:4px;">Workouts per week</div>' +
+        weekKeys.map(wk => `Week of ${weekLabel(wk)}: <strong style="color:#fff;">${weekCounts[wk]}</strong>`).join('<br>');
+      container.appendChild(weekBox);
+    }
+
+    // ---- benchmark progress ----
+    const testedBenchmarks = BENCHMARKS.filter(b => state.benchmarks[b.name] && state.benchmarks[b.name].history.length);
+    if(testedBenchmarks.length){
+      const bmBox = document.createElement('div');
+      bmBox.className = 'gw-card';
+      bmBox.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.8; padding:16px;';
+      let bmHtml = '<div style="color:#fff; font-weight:700; margin-bottom:4px;">Benchmark progress</div>';
+      testedBenchmarks.forEach(b=>{
+        const hist = state.benchmarks[b.name].history;
+        const scores = hist.map(h => fmtBenchmarkScore(b, h.score));
+        const trend = scores.length > 4 ? ['…', ...scores.slice(-4)] : scores;
+        bmHtml += `${b.name}: ${trend.join(' → ')}<br>`;
+      });
+      const nextDue = eligibleBenchmarks(state.bodyweightOnly).filter(b => !testedBenchmarks.includes(b) || true).map(b=>{
+        const hist = (state.benchmarks[b.name] && state.benchmarks[b.name].history) || [];
+        const last = hist.length ? hist[hist.length-1].date : null;
+        const daysLeft = last===null ? 0 : Math.max(0, BENCHMARK_RETEST_DAYS - Math.round(daysSince(last)));
+        return {name:b.name, daysLeft, tested: hist.length>0};
+      }).sort((a,b)=>a.daysLeft-b.daysLeft)[0];
+      if(nextDue && nextDue.tested && nextDue.daysLeft>0){
+        bmHtml += `<span style="font-size:11px;">Next retest (${nextDue.name}) due in ${nextDue.daysLeft} day${nextDue.daysLeft===1?'':'s'}</span>`;
+      }
+      bmBox.innerHTML = bmHtml;
+      container.appendChild(bmBox);
+    }
+  }
+
+  // ---- session list (filtered by selected day, if any) ----
+  const visibleHistory = state.logFilterDate
+    ? state.history.filter(h => new Date(h.date).toDateString()===state.logFilterDate)
+    : state.history;
+
+  if(state.logFilterDate && visibleHistory.length===0){
+    const none = document.createElement('div');
+    none.style.cssText = 'color:var(--muted); font-size:13px;';
+    none.textContent = 'Nothing logged on this day.';
+    container.appendChild(none);
+  }
+
+  [...visibleHistory].reverse().forEach(h=>{
+    const item = document.createElement('div');
+    item.className = 'gw-hist-item';
+
+    if(h.kind==='external'){
+      const mappedNote = h.mappedType ? ` · counts toward ${DAY_TYPES.find(d=>d.key===h.mappedType).label}` : '';
+      item.innerHTML = `<div class="gw-hist-date">${fmtDate(h.date)} — ${h.activity} <span style="color:var(--coral);">(outside activity)</span></div>
+        <div class="gw-hist-detail">${h.duration ? h.duration+' min · ' : ''}felt ${RPE_LABELS[h.intensity]||'—'}${mappedNote}${h.notes ? ' · '+h.notes : ''}</div>`;
+      container.appendChild(item);
+      return;
+    }
+
+    const typeLabel = DAY_TYPES.find(d=>d.key===h.type).label;
+    const perfText = formatPerformance(h.wodPerformance);
+    const skipped = [];
+    if(h.sectionsDone){
+      if(h.sectionsDone.warmup===false) skipped.push('warm-up');
+      if(h.sectionsDone.skill===false) skipped.push('skill');
+      if(h.sectionsDone.core===false) skipped.push('core');
+    }
+    const bmLabel = h.isBenchmark ? ` <span style="color:var(--coral);">(Benchmark: ${h.benchmarkName})</span>` : '';
+    item.innerHTML = `<div class="gw-hist-date">${fmtDate(h.date)} — ${typeLabel}${h.bw ? ' · travel' : ''}${bmLabel}</div>
+      <div class="gw-hist-detail">${h.format} · ${h.movements.join(', ')}${h.liftKey? ' · '+LIFT_LABELS[h.liftKey]+' @ '+h.loggedLoad+' lb ('+(RPE_LABELS[h.rpe]||'—')+')' : ''}${h.wodRpe? ' · WOD felt '+RPE_LABELS[h.wodRpe] : ''}${perfText? ' · '+perfText : ''}${skipped.length? ' · skipped: '+skipped.join(', ') : ''}</div>`;
+    container.appendChild(item);
+  });
+
+  const clearBtn = mkBtn('Clear History', 'gw-btn', async ()=>{
+    state.history = [];
+    state.logFilterDate = null;
+    state.benchmarks = {};
+    await saveHistory();
+    await saveBenchmarks();
+    renderLogPage();
+    toast('History cleared.');
+  });
+  clearBtn.style.marginTop = '12px';
+  container.appendChild(clearBtn);
+}
+
+// ---------- WORKOUT TIMER ----------
+// AudioContext is created lazily on first user interaction (required by browsers)
+let audioCtx = null;
+function beep(freq=880, durationMs=180, delayMs=0, gainLevel=0.35){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime + delayMs/1000;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    gain.gain.setValueAtTime(gainLevel, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + durationMs/1000);
+    osc.start(t0); osc.stop(t0 + durationMs/1000);
+  }catch(e){}
+}
+// short, low "tick" for the final 3 seconds of any countdown window
+function tickBeep(){ beep(360, 110, 0, 0.28); }
+// higher, longer "switch" beep for round/minute/phase changes
+function switchBeep(){ beep(1000, 320, 0, 0.4); }
+function beepTriple(){ beep(1000,180,0,0.4); beep(1000,180,220,0.4); beep(1300,420,440,0.45); }
+
+// fires the 3-2-1 tick once per whole second during the final 3 seconds of a countdown; resets once past that window
+function maybeTick(secondsRemaining){
+  if(!timer || !timer.running) return;
+  const whole = Math.ceil(secondsRemaining);
+  if(whole>=1 && whole<=3 && whole !== timer.lastTickSecond){
+    tickBeep();
+    timer.lastTickSecond = whole;
+  } else if(whole>3){
+    timer.lastTickSecond = null;
+  }
+}
+
+// Scans any section's text for a recognizable time structure. Returns null if the section isn't time-based.
+function parseTimerFromText(text){
+  let m;
+  if(m = text.match(/AMRAP\s+(\d+)'/i)) return {kind:'AMRAP', minutes:Number(m[1])};
+  if(m = text.match(/EMOM\s+(\d+)'/i)) return {kind:'EMOM', minutes:Number(m[1])};
+  if(m = text.match(/Tabata\s+(\d+)"\s*\/\s*(\d+)"\s*(?:x\s*(\d+))?/i)){
+    return {kind:'TABATA', workSec:Number(m[1]), restSec:Number(m[2]), rounds:Number(m[3]||8)};
+  }
+  if(m = text.match(/^(\d+(?:-\d+){1,})/)){
+    const rungs = m[1].split('-').map(Number);
+    const capM = text.match(/cap\s+(\d+)'/i);
+    return {kind:'LADDER', rungs, cap: capM ? Number(capM[1]) : null};
+  }
+  if(m = text.match(/FOR TIME[\s\S]*?cap\s+(\d+)'/i)) return {kind:'FORTIME', cap:Number(m[1])};
+  if(/FOR TIME/i.test(text)) return {kind:'FORTIME', cap:null};
+  if(m = text.match(/(\d+)\s*RFT/i)){
+    const capM = text.match(/cap\s+(\d+)'/i);
+    return {kind:'RFT', cap: capM ? Number(capM[1]) : null, rounds: Number(m[1])};
+  }
+  if(m = text.match(/(\d+)'\s*accumulate/i) || (m = text.match(/accumulate\s+(\d+)'/i))){
+    return {kind:'COUNTDOWN', minutes:Number(m[1])};
+  }
+  // "5 x 5" / "4 x 8-10" etc — used to bound the rest-interval timer below at the right number of sets
+  const setCountMatch = text.match(/(\d+)\s*x\s*\d+/i);
+  const setCount = setCountMatch ? Number(setCountMatch[1]) : null;
+  if(m = text.match(/each\s+(\d+)\s*min/i)) return {kind:'INTERVAL', minutes:Number(m[1]), totalRounds:setCount};
+  if(m = text.match(/rest\s+(\d+)\s*sec/i)) return {kind:'INTERVAL', minutes:Number(m[1])/60, totalRounds:setCount};
+  return null;
+}
+
+let timer = null; // {kind, ...spec, running, startedAt, elapsedBefore, lastBeepUnit, raf}
+
+function fmtClock(totalSeconds){
+  const s = Math.max(0, Math.round(totalSeconds));
+  const m = Math.floor(s/60), sec = s%60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function openTimer(spec, label, contextText, sectionKey){
+  timer = { ...spec, running:false, startedAt:null, elapsedBefore:0, lastBeepUnit:-1, lastPhaseKey:null, lastTickSecond:null, doneBeeped:false, sectionKey: sectionKey || null };
+  document.getElementById('gw-timer-label').textContent = label || spec.kind;
+  document.getElementById('gw-timer-sub').textContent = timerSubLabel();
+  const phaseEl = document.getElementById('gw-timer-phase');
+  phaseEl.classList.remove('show','work','rest');
+  phaseEl.textContent = '';
+  const ctxBox = document.getElementById('gw-timer-context');
+  if(contextText){
+    document.getElementById('gw-timer-context-text').textContent = contextText;
+    ctxBox.classList.add('show');
+  } else {
+    ctxBox.classList.remove('show');
+  }
+  updateTimerDisplay();
+  updateTimerButtonStates();
+  document.getElementById('gw-timer-backdrop').classList.add('show');
+}
+function timerSubLabel(){
+  if(!timer) return '';
+  if(timer.kind==='AMRAP') return `${timer.minutes} minute AMRAP — counts down`;
+  if(timer.kind==='EMOM') return `${timer.minutes} minute EMOM — beeps every minute`;
+  if(timer.kind==='TABATA') return `${timer.rounds} rounds — ${timer.workSec}s work / ${timer.restSec}s rest`;
+  if(timer.kind==='COUNTDOWN') return `${timer.minutes} minute countdown`;
+  if(timer.kind==='INTERVAL'){
+    const totalSec = Math.round(timer.minutes*60);
+    const label = totalSec < 60 ? `${totalSec} sec` : `${timer.minutes} min`;
+    return timer.totalRounds
+      ? `${timer.totalRounds} sets, ${label} rest between — stops automatically after set ${timer.totalRounds}`
+      : `Repeats every ${label} — beeps each round, stop when done`;
+  }
+  if(timer.kind==='FORTIME' || timer.kind==='RFT'){
+    const roundsPart = timer.rounds ? `Complete ${timer.rounds} rounds — ` : '';
+    return timer.cap ? `${roundsPart}counts up, time cap ${timer.cap}'` : `${roundsPart}counts up — stop when you finish (you track rounds)`;
+  }
+  return timer.cap ? `Counts up — time cap ${timer.cap}'` : 'Stopwatch';
+}
+function currentElapsed(){
+  if(!timer) return 0;
+  const running = timer.running ? (performance.now() - timer.startedAt)/1000 : 0;
+  return timer.elapsedBefore + running;
+}
+function updateTimerDisplay(){
+  if(!timer) return;
+  const elapsed = currentElapsed();
+  const clock = document.getElementById('gw-timer-clock');
+  let displaySeconds, warn = false;
+
+  if(timer.kind==='AMRAP' || timer.kind==='COUNTDOWN'){
+    const total = timer.minutes*60;
+    displaySeconds = total - elapsed;
+    if(displaySeconds <= 0){ displaySeconds = 0; warn = true; finishIfNeeded(); }
+    else { if(displaySeconds <= 10) warn = true; maybeTick(displaySeconds); }
+
+  } else if(timer.kind==='EMOM'){
+    const total = timer.minutes*60;
+    const clamped = Math.min(elapsed, total);
+    const unit = Math.floor(clamped/60);
+    const withinMinute = clamped - unit*60;
+    displaySeconds = 60 - withinMinute;
+    if(displaySeconds===60) displaySeconds=0;
+    document.getElementById('gw-timer-sub').textContent = `Minute ${Math.min(unit+1, timer.minutes)} of ${timer.minutes}`;
+    if(unit > timer.lastBeepUnit && unit < timer.minutes && timer.running){ switchBeep(); timer.lastBeepUnit = unit; }
+    if(elapsed >= total){ warn = true; finishIfNeeded(); displaySeconds = 0; }
+    else { if(displaySeconds <= 3) warn = true; maybeTick(displaySeconds); }
+
+  } else if(timer.kind==='INTERVAL'){
+    const cycle = timer.minutes*60;
+    if(timer.totalRounds){
+      const totalDuration = cycle*timer.totalRounds;
+      const clamped = Math.min(elapsed, totalDuration);
+      const unit = Math.floor(clamped/cycle);
+      const withinUnit = clamped - unit*cycle;
+      displaySeconds = cycle - withinUnit;
+      if(displaySeconds===cycle) displaySeconds=0;
+      document.getElementById('gw-timer-sub').textContent = `Rest after set ${Math.min(unit+1, timer.totalRounds)} of ${timer.totalRounds}`;
+      if(unit > timer.lastBeepUnit && unit < timer.totalRounds && timer.running){ switchBeep(); timer.lastBeepUnit = unit; }
+      if(elapsed >= totalDuration){ warn = true; finishIfNeeded(); displaySeconds = 0; }
+      else { if(displaySeconds <= 3) warn = true; maybeTick(displaySeconds); }
+    } else {
+      const unit = Math.floor(elapsed/cycle);
+      const withinUnit = elapsed - unit*cycle;
+      displaySeconds = cycle - withinUnit;
+      if(displaySeconds===cycle) displaySeconds=0;
+      document.getElementById('gw-timer-sub').textContent = `Round ${unit+1} — beeps each time it resets`;
+      if(unit > timer.lastBeepUnit && timer.running){ switchBeep(); timer.lastBeepUnit = unit; }
+      if(displaySeconds <= 3) warn = true;
+      maybeTick(displaySeconds);
+    }
+
+  } else if(timer.kind==='TABATA'){
+    const cycle = timer.workSec + timer.restSec;
+    const totalCycles = timer.rounds;
+    const clamped = Math.min(elapsed, cycle*totalCycles);
+    const unit = Math.floor(clamped/cycle);
+    const withinUnit = clamped - unit*cycle;
+    const inWork = withinUnit < timer.workSec;
+    displaySeconds = inWork ? (timer.workSec - withinUnit) : (cycle - withinUnit);
+    const phaseKey = unit + (inWork ? '-work' : '-rest');
+    const phaseEl = document.getElementById('gw-timer-phase');
+    phaseEl.textContent = inWork ? 'WORK' : 'REST';
+    phaseEl.classList.add('show');
+    phaseEl.classList.toggle('work', inWork);
+    phaseEl.classList.toggle('rest', !inWork);
+    document.getElementById('gw-timer-sub').textContent = `Round ${Math.min(unit+1, totalCycles)} of ${totalCycles}`;
+    if(phaseKey !== timer.lastPhaseKey && timer.running){ switchBeep(); timer.lastPhaseKey = phaseKey; }
+    if(elapsed >= cycle*totalCycles){ warn = true; finishIfNeeded(); displaySeconds = 0; phaseEl.classList.remove('show'); }
+    else { if(displaySeconds <= 3) warn = true; maybeTick(displaySeconds); }
+
+  } else { // FORTIME / RFT / STOPWATCH
+    displaySeconds = elapsed;
+    if(timer.cap){
+      const remaining = timer.cap*60 - elapsed;
+      document.getElementById('gw-timer-sub').textContent = remaining > 0
+        ? `Time cap in ${fmtClock(remaining)}` : 'Time cap reached';
+      if(remaining <= 0){ warn = true; finishIfNeeded(); displaySeconds = timer.cap*60; }
+      else { if(remaining <= 10) warn = true; maybeTick(remaining); }
+    }
+  }
+
+  clock.textContent = fmtClock(displaySeconds);
+  clock.classList.toggle('gw-warn', warn);
+}
+function finishIfNeeded(){
+  if(timer && !timer.doneBeeped){
+    timer.doneBeeped = true;
+    timer.running = false;
+    beepTriple();
+    updateTimerButtonStates();
+  }
+}
+function timerTick(){
+  if(!timer) return;
+  updateTimerDisplay();
+  timer.raf = requestAnimationFrame(timerTick);
+}
+
+function updateTimerButtonStates(){
+  if(!timer) return;
+  const startBtn = document.getElementById('gw-timer-start');
+  const pauseBtn = document.getElementById('gw-timer-pause');
+  const resetBtn = document.getElementById('gw-timer-reset');
+  const hasProgress = timer.running || timer.elapsedBefore > 0;
+  if(timer.running){
+    startBtn.style.display = 'none';
+    pauseBtn.style.display = '';
+    resetBtn.style.display = '';
+  } else if(hasProgress){
+    startBtn.style.display = '';
+    startBtn.textContent = 'Resume';
+    pauseBtn.style.display = 'none';
+    resetBtn.style.display = '';
+  } else {
+    startBtn.style.display = '';
+    startBtn.textContent = 'Start';
+    pauseBtn.style.display = 'none';
+    resetBtn.style.display = 'none';
+  }
+}
+document.getElementById('gw-timer-start').onclick = ()=>{
+  if(!timer || timer.running) return;
+  timer.running = true;
+  timer.startedAt = performance.now();
+  timer.doneBeeped = false;
+  cancelAnimationFrame(timer.raf);
+  timerTick();
+  updateTimerButtonStates();
+};
+document.getElementById('gw-timer-pause').onclick = ()=>{
+  if(!timer || !timer.running) return;
+  timer.elapsedBefore = currentElapsed();
+  timer.running = false;
+  cancelAnimationFrame(timer.raf);
+  updateTimerDisplay();
+  updateTimerButtonStates();
+};
+document.getElementById('gw-timer-reset').onclick = ()=>{
+  if(!timer) return;
+  cancelAnimationFrame(timer.raf);
+  timer.running = false; timer.startedAt = null; timer.elapsedBefore = 0;
+  timer.lastBeepUnit = -1; timer.lastPhaseKey = null; timer.lastTickSecond = null; timer.doneBeeped = false;
+  document.getElementById('gw-timer-sub').textContent = timerSubLabel();
+  updateTimerDisplay();
+  updateTimerButtonStates();
+};
+document.getElementById('gw-timer-close').onclick = ()=>{
+  if(timer){ cancelAnimationFrame(timer.raf); }
+  document.getElementById('gw-timer-backdrop').classList.remove('show');
+};
+document.getElementById('gw-stopconfirm-cancel').onclick = cancelExitFocus;
+document.getElementById('gw-stopconfirm-ok').onclick = confirmExitFocus;
+document.getElementById('gw-timerstop-cancel').onclick = cancelCloseFloatCard;
+document.getElementById('gw-timerstop-ok').onclick = cancelTimerAndClose;
+document.getElementById('gw-focus-close').innerHTML = ICON_X;
+document.getElementById('gw-focus-close').onclick = requestExitFocus;
+
+loadState();
+})();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
