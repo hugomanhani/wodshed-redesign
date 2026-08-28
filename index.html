@@ -1256,20 +1256,38 @@ function parseSetScheme(text, liftKey){
 
 function timerExplainer(spec){
   if(!spec) return '';
-  if(spec.kind==='AMRAP') return `${spec.minutes} minutes. Do as many rounds as you can.`;
-  if(spec.kind==='EMOM') return `New minute starts, do the work, rest till next minute. ${spec.minutes} times.`;
-  if(spec.kind==='TABATA') return `${spec.workSec} sec work, ${spec.restSec} sec rest. ${spec.rounds} rounds.`;
+  if(spec.kind==='AMRAP'){
+    const buyPart = spec.buyIn ? ` Buy-in first: ${spec.buyIn.text}.` : '';
+    if(spec.cycles) return `${spec.cycles} x ${spec.minutes} min AMRAP, rest ${spec.restMinutes} min between.${buyPart}`;
+    if(spec.mode==='reps') return `${spec.minutes} minutes. Rack up as many total reps as you can.${buyPart}`;
+    if(spec.mode==='ascending') return `${spec.minutes} minutes. Reps go up by ${spec.increment} every round — keep going as long as you can.${buyPart}`;
+    return `${spec.minutes} minutes. Do as many rounds as you can.${buyPart}`;
+  }
+  if(spec.kind==='EMOM'){
+    if(spec.openEnded) return `Every minute on the minute — keep going until you can't hold the target.`;
+    if(spec.alternate) return `New minute starts, alternate ${spec.alternate[0]} / ${spec.alternate[1]}. ${spec.minutes} times.`;
+    return `New minute starts, do the work, rest till next minute. ${spec.minutes} times.`;
+  }
+  if(spec.kind==='TABATA'){
+    if(spec.alternate) return `${spec.workSec}s ${spec.alternate[0]} / ${spec.workSec}s ${spec.alternate[1]}, ${spec.restSec}s rest between. ${spec.rounds} rounds total.`;
+    return `${spec.workSec} sec work, ${spec.restSec} sec rest. ${spec.rounds} rounds.`;
+  }
   if(spec.kind==='RFT'){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
-    return `For Time — ${spec.rounds} identical rounds, finish as fast as you can${capPart}.`;
+    const bookends = [spec.buyIn ? `buy-in: ${spec.buyIn.text}` : null, spec.buyOut ? `buy-out: ${spec.buyOut.text}` : null].filter(Boolean).join(', ');
+    const betweenPart = spec.betweenMovement ? ` ${spec.betweenMovement.text} between each round.` : '';
+    return `For Time — ${spec.rounds} identical rounds, finish as fast as you can${capPart}.${betweenPart}` + (bookends ? ` (${bookends})` : '');
   }
   if(spec.kind==='LADDER'){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
-    return `For Time — descending ${spec.rungs.join('-')}, finish as fast as you can${capPart}.`;
+    return `For Time — ${spec.rungs.join('-')}, finish as fast as you can${capPart}.`;
   }
   if(spec.kind==='FORTIME'){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
     return `For Time — one round through, finish as fast as you can${capPart}.`;
+  }
+  if(spec.kind==='FORTIME_REPEATS'){
+    return `${spec.rounds} efforts, each for time — rest ${spec.restSeconds}s between. Every round is scored.`;
   }
   if(spec.kind==='INTERVAL') return spec.totalRounds ? `Rest between sets — ${spec.totalRounds} sets total.` : `Rest between rounds — repeat as prescribed.`;
   if(spec.kind==='COUNTDOWN') return `Go until the clock hits zero.`;
@@ -1912,6 +1930,9 @@ function openSectionFocus(key){
   state.focusMode = true;
   state.focusSectionKey = key;
   state.focusTapCount = 0;
+  state.focusAscendingTotal = 0;
+  state.focusAmrepsTotal = 0;
+  state.focusSplits = [];
   render();
 }
 // The floating timer card overlays the bottom of the screen while a timer runs
@@ -1987,6 +2008,22 @@ function renderSectionFocus(){
   detail.className = 'gw-focus-detail';
   detail.textContent = stepData.text;
   container.appendChild(detail);
+
+  const spec = stepData.timerSpec;
+  if(spec && spec.buyIn){
+    const bi = document.createElement('div');
+    bi.className = 'gw-buyin-card';
+    bi.id = 'gw-buyin-card';
+    bi.innerHTML = `<div class="gw-buyin-check">${ICON_CHECK}</div><div class="gw-buyin-text"><div class="gw-buyin-label">Buy-In — do this first</div><div class="gw-buyin-detail">${spec.buyIn.text}</div></div>`;
+    bi.onclick = ()=>{ bi.classList.toggle('done'); vibrate(15); };
+    container.appendChild(bi);
+  }
+  if(spec && spec.betweenMovement){
+    const bm = document.createElement('div');
+    bm.className = 'gw-format-explainer';
+    bm.textContent = `Between each round: ${spec.betweenMovement.text}`;
+    container.appendChild(bm);
+  }
 
   if(key==='skill' && w.skillLiftKey){
     const scheme = parseSetScheme(stepData.text, w.skillLiftKey);
@@ -2081,10 +2118,15 @@ function renderSectionFocus(){
     card.style.display = 'none';
     card.innerHTML = `
       <button class="gw-floatcard-close" id="gw-floatcard-close" aria-label="Cancel timer">${ICON_X}</button>
+      <div class="gw-cycle-badge" id="gw-focus-cyclebadge" style="display:none;"></div>
       <div class="gw-focus-phaseword" id="gw-focus-phase"></div>
       <div class="gw-floatcard-label" id="gw-focus-sub"></div>
       <div class="gw-floatcard-clock" id="gw-focus-number">00:00</div>
       <div class="gw-floatcard-secondary" id="gw-focus-secondary"></div>
+      <div class="gw-alt-row" id="gw-focus-altrow" style="display:none; width:100%;">
+        <div class="gw-alt-chip" id="gw-focus-alt-a"></div>
+        <div class="gw-alt-chip" id="gw-focus-alt-b"></div>
+      </div>
       <div class="gw-floatcard-ringwrap">
         <svg viewBox="0 0 80 80">
           <circle class="gw-focus-ring-track" cx="40" cy="40" r="34" transform="rotate(-90 40 40)"/>
@@ -2092,9 +2134,14 @@ function renderSectionFocus(){
         </svg>
         <button class="gw-floatcard-playpause" id="gw-floatcard-playpause" aria-label="Play or pause">${ICON_PLAY}</button>
       </div>
+      <div class="gw-amreps-row" id="gw-floatcard-amreps" style="display:none;">
+        <button class="gw-amreps-btn" id="gw-amreps-minus" type="button">−</button>
+        <div class="gw-amreps-total" id="gw-amreps-total">0</div>
+        <button class="gw-amreps-btn" id="gw-amreps-plus" type="button">+</button>
+      </div>
       <div class="gw-floatcard-round" id="gw-floatcard-round" style="display:none;">
         <button id="gw-focus-plus">
-          <span>Round</span>
+          <span id="gw-focus-plus-label">Round</span>
           <span class="gw-floatcard-round-badge" id="gw-focus-roundsbadge">0</span>
           <span class="gw-round-target" id="gw-focus-round-target"></span>
         </button>
@@ -2105,23 +2152,52 @@ function renderSectionFocus(){
       </div>`;
     container.appendChild(card);
 
-    if((kind==='AMRAP' || kind==='RFT' || kind==='LADDER')){
+    if(spec.buyOut){
+      const bo = document.createElement('div');
+      bo.className = 'gw-buyin-card';
+      bo.id = 'gw-buyout-card';
+      bo.innerHTML = `<div class="gw-buyin-check">${ICON_CHECK}</div><div class="gw-buyin-text"><div class="gw-buyin-label">Buy-Out — after your last round</div><div class="gw-buyin-detail">${spec.buyOut.text}</div></div>`;
+      bo.onclick = ()=>{ bo.classList.toggle('done'); vibrate(15); };
+      container.appendChild(bo);
+    }
+
+    const isAmreps = kind==='AMRAP' && spec.mode==='reps';
+    const isAscending = kind==='AMRAP' && spec.mode==='ascending';
+    const isAlternate = (kind==='EMOM' || kind==='TABATA') && spec.alternate;
+
+    if((kind==='AMRAP' && !isAmreps) || kind==='RFT' || kind==='LADDER' || kind==='FORTIME_REPEATS'){
       card.querySelector('#gw-floatcard-round').style.display = '';
     }
     if(kind==='INTERVAL'){
       card.querySelector('#gw-floatcard-next').style.display = '';
     }
-    const roundCap = (kind==='RFT') ? stepData.timerSpec.rounds : (kind==='LADDER' ? stepData.timerSpec.rungs.length : null);
+    if(kind==='FORTIME_REPEATS') document.getElementById('gw-focus-plus-label').textContent = 'Round Done';
+    if(isAmreps){
+      card.querySelector('#gw-floatcard-amreps').style.display = '';
+    }
+    if(isAlternate){
+      const altRow = card.querySelector('#gw-focus-altrow');
+      altRow.style.display = 'flex';
+      card.querySelector('#gw-focus-alt-a').textContent = spec.alternate[0];
+      card.querySelector('#gw-focus-alt-b').textContent = spec.alternate[1];
+    }
+    if(isAscending) document.getElementById('gw-focus-plus-label').textContent = `+${spec.increment}`;
+
+    const roundCap = (kind==='RFT') ? spec.rounds : (kind==='LADDER' ? spec.rungs.length : (kind==='FORTIME_REPEATS' ? spec.rounds : null));
     if(roundCap) document.getElementById('gw-focus-round-target').textContent = `/ ${roundCap}`;
 
     document.getElementById('gw-focus-plus').onclick = ()=>{
       if(roundCap && state.focusTapCount >= roundCap) return;
       state.focusTapCount++;
+      if(isAscending){
+        state.focusAscendingTotal = (state.focusAscendingTotal||0) + (spec.startReps + (state.focusTapCount-1)*spec.increment);
+      }
       if(key==='wod'){
         if(!w.wodPerformance) w.wodPerformance = {};
         w.wodPerformance.rounds = state.focusTapCount;
+        if(isAscending) w.wodPerformance.extraReps = state.focusAscendingTotal;
       }
-      document.getElementById('gw-focus-roundsbadge').textContent = state.focusTapCount;
+      document.getElementById('gw-focus-roundsbadge').textContent = isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount;
       document.getElementById('gw-focus-plus').classList.add('gw-tap-flash');
       setTimeout(()=>document.getElementById('gw-focus-plus').classList.remove('gw-tap-flash'), 120);
       vibrate(15);
@@ -2131,15 +2207,27 @@ function renderSectionFocus(){
         focusManualFinish(key);
         document.getElementById('gw-focus-plus').disabled = true;
       } else {
+        if(kind==='FORTIME_REPEATS' && focusTimer) focusTimer.restUntil = focusCurrentElapsed() + spec.restSeconds;
         focusUpdateDisplay();
       }
     };
     document.getElementById('gw-focus-skipnext').onclick = focusSkipToNextRound;
     document.getElementById('gw-floatcard-playpause').onclick = focusToggleFromTap;
     document.getElementById('gw-floatcard-close').onclick = requestCloseFloatCard;
+    if(isAmreps){
+      state.focusAmrepsTotal = 0;
+      const bump = (delta)=>{
+        state.focusAmrepsTotal = Math.max(0, (state.focusAmrepsTotal||0) + delta);
+        document.getElementById('gw-amreps-total').textContent = state.focusAmrepsTotal;
+        if(key==='wod'){ if(!w.wodPerformance) w.wodPerformance = {}; w.wodPerformance.extraReps = state.focusAmrepsTotal; }
+        vibrate(10);
+      };
+      document.getElementById('gw-amreps-plus').onclick = ()=>bump(1);
+      document.getElementById('gw-amreps-minus').onclick = ()=>bump(-1);
+    }
 
-    // RFT / LADDER / uncapped FOR TIME end on the athlete's own judgment — swipe locks it in
-    if((kind==='RFT' || kind==='FORTIME' || kind==='LADDER') && !stepData.timerSpec.cap){
+    // RFT / LADDER / uncapped FOR TIME / open-ended EMOM end on the athlete's own judgment — swipe locks it in
+    if(((kind==='RFT' || kind==='FORTIME' || kind==='LADDER') && !spec.cap) || (kind==='EMOM' && spec.openEnded)){
       const swipeZone = document.createElement('div');
       swipeZone.className = 'gw-focus-swipezone';
       swipeZone.id = 'gw-focus-swipezone';
@@ -2152,7 +2240,7 @@ function renderSectionFocus(){
       wireSwipeToFinish(swipeZone, key);
     }
 
-    focusOpenTimer(stepData.timerSpec, key);
+    focusOpenTimer(spec, key);
   } else {
     focusTimer = null;
     const target = parseRoundTarget(stepData.text);
@@ -2278,7 +2366,7 @@ function focusFinish(){
         const w = state.currentWorkout;
         if(w){
           if(!w.wodPerformance) w.wodPerformance = {};
-          if(focusTimer.kind==='FORTIME' || focusTimer.kind==='RFT' || focusTimer.kind==='LADDER'){
+          if(focusTimer.kind==='FORTIME' || focusTimer.kind==='RFT' || focusTimer.kind==='LADDER' || focusTimer.kind==='FORTIME_REPEATS'){
             w.wodPerformance.time = fmtClock(Math.floor(focusCurrentElapsed()));
           }
         }
@@ -2377,10 +2465,35 @@ function focusUpdateDisplay(){
   if(!numberEl) return;
   const elapsed = focusCurrentElapsed();
   const CIRC = 2*Math.PI*34;
-  let displaySeconds = 0, warn = false, fraction = 1, isRest = false;
+  let displaySeconds = 0, warn = false, fraction = 1, isRest = false, phaseWordUsed = false, secondaryUsed = false;
   function setRing(frac){ if(ring) ring.style.strokeDashoffset = String(CIRC * (1-Math.max(0,Math.min(1,frac)))); }
 
-  if(focusTimer.kind==='AMRAP' || focusTimer.kind==='COUNTDOWN'){
+  if(focusTimer.kind==='AMRAP' && focusTimer.cycles){
+    const workSec = focusTimer.minutes*60, restSec = (focusTimer.restMinutes||0)*60, cycleLen = workSec+restSec;
+    const totalDuration = focusTimer.cycles*cycleLen - restSec;
+    const clamped = Math.min(elapsed, totalDuration);
+    const cycleIdx = Math.min(Math.floor(clamped/cycleLen), focusTimer.cycles-1);
+    const withinCycle = clamped - cycleIdx*cycleLen;
+    isRest = withinCycle >= workSec;
+    const phaseSecTotal = isRest ? restSec : workSec;
+    const phaseElapsed = isRest ? withinCycle-workSec : withinCycle;
+    displaySeconds = phaseSecTotal - phaseElapsed;
+    if(displaySeconds===phaseSecTotal) displaySeconds = 0;
+    const phaseKey = cycleIdx+'-'+(isRest?'rest':'work');
+    if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
+    phaseEl.textContent = isRest ? 'REST' : 'AMRAP';
+    phaseWordUsed = true;
+    phaseEl.classList.toggle('rest', isRest);
+    const cb = document.getElementById('gw-focus-cyclebadge');
+    if(cb){ cb.style.display = ''; cb.textContent = `Interval ${cycleIdx+1} of ${focusTimer.cycles}`; }
+    subEl.textContent = isRest ? 'Rest — get ready to go again' : `${focusTimer.minutes} min AMRAP`;
+    if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+    else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0; }
+    setRing(fraction);
+    if(ring) ring.classList.toggle('rest', isRest);
+    numberEl.classList.toggle('rest', isRest);
+
+  } else if(focusTimer.kind==='AMRAP' || focusTimer.kind==='COUNTDOWN'){
     const total = focusTimer.minutes*60;
     displaySeconds = total - elapsed;
     if(focusTimer.kind==='AMRAP' && !focusTimer.halfwayBeeped && elapsed >= total/2 && focusTimer.running){
@@ -2389,19 +2502,39 @@ function focusUpdateDisplay(){
     if(displaySeconds<=0){ displaySeconds=0; warn=true; fraction=0; focusFinish(); }
     else { if(displaySeconds<=10) warn=true; focusMaybeTick(displaySeconds); fraction = total>0 ? displaySeconds/total : 0; }
     setRing(fraction);
-    subEl.textContent = focusTimer.kind==='AMRAP' ? `${focusTimer.minutes} min AMRAP — counts down` : `${focusTimer.minutes} min countdown`;
+    if(focusTimer.kind==='AMRAP'){
+      const cb = document.getElementById('gw-focus-cyclebadge');
+      if(cb && focusTimer.buyIn) cb.style.display = 'none';
+      subEl.textContent = focusTimer.mode==='ascending'
+        ? `Next round: ${focusTimer.startReps + state.focusTapCount*focusTimer.increment} reps`
+        : focusTimer.mode==='reps' ? `${focusTimer.minutes} min — rack up total reps`
+        : `${focusTimer.minutes} min AMRAP — counts down`;
+    } else {
+      subEl.textContent = `${focusTimer.minutes} min countdown`;
+    }
 
   } else if(focusTimer.kind==='EMOM'){
-    const total = focusTimer.minutes*60;
-    const clamped = Math.min(elapsed, total);
+    const total = focusTimer.openEnded ? null : focusTimer.minutes*60;
+    const clamped = total!=null ? Math.min(elapsed, total) : elapsed;
     const unit = Math.floor(clamped/60);
     const withinMinute = clamped - unit*60;
     displaySeconds = 60 - withinMinute;
     if(displaySeconds===60) displaySeconds=0;
-    subEl.textContent = `Minute ${Math.min(unit+1, focusTimer.minutes)} of ${focusTimer.minutes}`;
-    if(secondaryEl) secondaryEl.textContent = `Workout time left: ${fmtClock(Math.max(0,total-clamped))}`;
-    if(unit > focusTimer.lastBeepUnit && unit < focusTimer.minutes && focusTimer.running){ switchBeep(); vibrate([60,40,60]); focusTimer.lastBeepUnit = unit; }
-    if(elapsed >= total){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+    if(focusTimer.alternate){
+      const which = unit % 2;
+      subEl.textContent = `Minute ${unit+1}${total!=null?` of ${focusTimer.minutes}`:''} — ${which===0?'ODD':'EVEN'}: ${focusTimer.alternate[which]}`;
+      const chipA = document.getElementById('gw-focus-alt-a'), chipB = document.getElementById('gw-focus-alt-b');
+      if(chipA && chipB){ chipA.classList.toggle('gw-alt-active', which===0); chipB.classList.toggle('gw-alt-active', which===1); }
+    } else if(focusTimer.openEnded){
+      subEl.textContent = `Minute ${unit+1} — go until you can't hold the pace`;
+    } else {
+      subEl.textContent = `Minute ${Math.min(unit+1, focusTimer.minutes)} of ${focusTimer.minutes}`;
+    }
+    if(secondaryEl) secondaryEl.textContent = total!=null ? `Workout time left: ${fmtClock(Math.max(0,total-clamped))}` : `Total elapsed: ${fmtClock(elapsed)}`;
+    secondaryUsed = true;
+    const unitCap = total!=null ? focusTimer.minutes : Infinity;
+    if(unit > focusTimer.lastBeepUnit && unit < unitCap && focusTimer.running){ switchBeep(); vibrate([60,40,60]); focusTimer.lastBeepUnit = unit; }
+    if(total!=null && elapsed >= total){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
     else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = displaySeconds/60; }
     setRing(fraction);
 
@@ -2447,9 +2580,18 @@ function focusUpdateDisplay(){
     if(displaySeconds===phaseSecTotal) displaySeconds = 0;
     const phaseKey = roundIdx+'-'+(isRest?'rest':'work');
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
-    phaseEl.textContent = isRest ? 'REST' : 'WORK';
+    phaseEl.textContent = isRest ? 'REST' : (focusTimer.alternate ? focusTimer.alternate[roundIdx % 2] : 'WORK');
     phaseEl.classList.toggle('rest', isRest);
+    phaseWordUsed = true;
     subEl.textContent = `Round ${roundIdx+1} of ${focusTimer.rounds}`;
+    if(focusTimer.alternate){
+      const altRow = document.getElementById('gw-focus-altrow');
+      if(altRow){
+        const chipA = document.getElementById('gw-focus-alt-a'), chipB = document.getElementById('gw-focus-alt-b');
+        chipA.classList.toggle('gw-alt-active', !isRest && roundIdx%2===0);
+        chipB.classList.toggle('gw-alt-active', !isRest && roundIdx%2===1);
+      }
+    }
     if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
     else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0; }
     setRing(fraction);
@@ -2472,7 +2614,7 @@ function focusUpdateDisplay(){
     subEl.textContent = state.focusTapCount >= rungs.length
       ? `All ${rungs.length} rounds done`
       : `Round ${roundIdx+1} of ${rungs.length} — ${rungs[roundIdx]} reps this round`;
-  } else { // FORTIME / RFT / stopwatch
+  } else { // FORTIME / RFT / FORTIME_REPEATS / stopwatch
     displaySeconds = elapsed;
     if(focusTimer.cap){
       const capSec = focusTimer.cap*60;
@@ -2482,12 +2624,22 @@ function focusUpdateDisplay(){
       fraction = 1;
     }
     setRing(fraction);
-    const roundsPart = focusTimer.rounds ? `Complete ${focusTimer.rounds} rounds — you track them. ` : '';
-    subEl.textContent = focusTimer.cap ? `${roundsPart}Time cap ${focusTimer.cap}'` : (roundsPart || 'Counts up — stop when you finish');
+    if(focusTimer.kind==='FORTIME_REPEATS'){
+      const resting = focusTimer.restUntil && elapsed < focusTimer.restUntil;
+      phaseEl.textContent = resting ? 'REST' : 'GO';
+      phaseEl.classList.toggle('rest', resting);
+      phaseWordUsed = true;
+      if(resting && secondaryEl){ secondaryEl.textContent = `Next round in ${fmtClock(focusTimer.restUntil-elapsed)}`; secondaryUsed = true; }
+      if(resting && focusTimer.running && Math.ceil(focusTimer.restUntil-elapsed)<=3) focusMaybeTick(focusTimer.restUntil-elapsed);
+      subEl.textContent = `Round ${Math.min(state.focusTapCount+1, focusTimer.rounds)} of ${focusTimer.rounds} — for time`;
+    } else {
+      const roundsPart = focusTimer.rounds ? `Complete ${focusTimer.rounds} rounds — you track them. ` : '';
+      subEl.textContent = focusTimer.cap ? `${roundsPart}Time cap ${focusTimer.cap}'` : (roundsPart || 'Counts up — stop when you finish');
+    }
   }
 
-  if(secondaryEl && focusTimer.kind!=='EMOM') secondaryEl.textContent = '';
-  if(phaseEl && focusTimer.kind!=='TABATA') phaseEl.textContent = '';
+  if(secondaryEl && !secondaryUsed) secondaryEl.textContent = '';
+  if(phaseEl && !phaseWordUsed) phaseEl.textContent = '';
   numberEl.textContent = fmtClock(displaySeconds);
   numberEl.classList.toggle('warn', warn);
 
@@ -2692,12 +2844,6 @@ function renderWodSection(w){
     explainEl.textContent = wodExplainerText;
     bodyEl.appendChild(explainEl);
   }
-  if(wodTimerSpec && wodTimerSpec.buyIn){
-    const bi = document.createElement('div');
-    bi.className = 'gw-format-explainer';
-    bi.textContent = `Buy-in: ${wodTimerSpec.buyIn.text}`;
-    bodyEl.appendChild(bi);
-  }
 
   const listEl = document.createElement('div');
   listEl.className = 'gw-movement-list';
@@ -2863,75 +3009,6 @@ function adjustSets(section, delta){
     w.wodTimerSpec.rounds = clamp(w.wodTimerSpec.rounds + delta, 1, 12);
   }
   render();
-}
-
-function addWodPerformanceUI(bodyEl, w, timerSpec){
-  if(!timerSpec) return;
-  const perf = w.wodPerformance || (w.wodPerformance = {});
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex; gap:12px; width:100%;';
-
-  function makeBox(labelText, inputEl){
-    const box = document.createElement('div');
-    box.style.cssText = 'display:flex; flex-direction:column; gap:8px; flex:1;';
-    const lbl = document.createElement('div');
-    lbl.textContent = labelText;
-    lbl.style.cssText = 'font-size:11px; font-weight:900; color:var(--muted); text-transform:uppercase; font-family:var(--font-body);';
-    box.appendChild(lbl);
-    box.appendChild(inputEl);
-    return box;
-  }
-  function makeNumberInput(value, onInput){
-    const input = document.createElement('input');
-    input.type='number'; input.min='0'; input.value = value ?? '';
-    input.style.cssText = 'width:100%; height:40px; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px; text-align:center; font-size:18px; font-weight:900; font-family:var(--font-body);';
-    input.oninput = onInput;
-    return input;
-  }
-
-  if(timerSpec.kind==='AMRAP'){
-    const roundsInput = makeNumberInput(perf.rounds, (e)=>{ perf.rounds = e.target.value===''?null:Number(e.target.value); });
-    const repsInput = makeNumberInput(perf.extraReps, (e)=>{ perf.extraReps = e.target.value===''?null:Number(e.target.value); });
-    wrap.appendChild(makeBox('Rounds', roundsInput));
-    wrap.appendChild(makeBox('+ Reps', repsInput));
-
-  } else if(timerSpec.kind==='FORTIME' || timerSpec.kind==='RFT'){
-    const timeInput = document.createElement('input');
-    timeInput.type='text'; timeInput.placeholder='mm:ss';
-    timeInput.value = perf.time || '';
-    timeInput.style.cssText = 'width:100%; height:40px; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px; text-align:center; font-size:18px; font-weight:900; font-family:var(--font-body);';
-    timeInput.oninput = ()=>{ perf.time = timeInput.value; };
-    wrap.appendChild(makeBox('Finish time', timeInput));
-    if(timerSpec.cap){
-      const capLabel = document.createElement('label');
-      capLabel.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-weight:700; margin-top:auto; padding-bottom:2px;';
-      const capCheckbox = document.createElement('input');
-      capCheckbox.type='checkbox'; capCheckbox.checked = !!perf.hitCap;
-      capCheckbox.style.cssText = 'width:16px; height:16px; accent-color:var(--coral);';
-      capCheckbox.onchange = ()=>{ perf.hitCap = capCheckbox.checked; };
-      capLabel.appendChild(capCheckbox);
-      capLabel.append('Hit time cap');
-      const capBox = document.createElement('div');
-      capBox.style.cssText = 'display:flex; flex-direction:column; justify-content:flex-end; flex:1;';
-      capBox.appendChild(capLabel);
-      wrap.appendChild(capBox);
-    }
-
-  } else if(timerSpec.kind==='EMOM'){
-    const label = document.createElement('label');
-    label.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:13px; color:#fff; font-weight:600;';
-    const checkbox = document.createElement('input');
-    checkbox.type='checkbox'; checkbox.checked = perf.completedAll !== false;
-    checkbox.style.cssText = 'width:16px; height:16px; accent-color:var(--coral);';
-    checkbox.onchange = ()=>{ perf.completedAll = checkbox.checked; };
-    label.appendChild(checkbox);
-    label.append(' Completed all rounds');
-    wrap.appendChild(label);
-
-  } else {
-    return;
-  }
-  bodyEl.appendChild(wrap);
 }
 
 function mkBtn(label, cls, onclick, iconSvg){
