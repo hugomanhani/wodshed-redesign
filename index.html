@@ -483,17 +483,28 @@
   #gw-modal-link .gw-modal-credit{display:block; font-size:11px; color:var(--muted); margin-top:2px; font-family:var(--font-body);}
   #gw-modal button{margin-top:16px; width:100%;}
 
-  /* ---- Focus Mode ---- */
-  #gw-focus{display:flex; flex-direction:column; gap:18px; margin-top:-20px; padding-bottom:40px;}
+  /* ---- Timer Drawer: the timer opens as a bottom sheet over the homepage, not a separate page ---- */
+  #gw-timer-drawer-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:210;
+    align-items:flex-end; justify-content:center;
+  }
+  #gw-timer-drawer-backdrop.show{display:flex;}
+  #gw-timer-drawer{
+    width:100%; max-width:480px; max-height:92dvh; background:var(--surface);
+    border-radius:22px 22px 0 0; display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 -10px 40px rgba(0,0,0,0.5);
+  }
+  #gw-timer-drawer-scroll{overflow-y:auto; flex:1; padding:0 16px calc(18px + env(safe-area-inset-bottom, 0px));}
+  #gw-focus{display:flex; flex-direction:column; gap:18px; padding-bottom:12px;}
   #gw-focus-header{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:calc(16px + env(safe-area-inset-top, 0px)) 20px 12px; background:var(--surface);
+    display:flex; justify-content:space-between; align-items:center; flex:none;
+    padding:8px 16px 4px;
   }
   #gw-focus-header-name{
     font-family:var(--font-display); font-weight:900; font-size:18px; color:#fff; text-transform:uppercase; letter-spacing:0.01em;
   }
   #gw-focus-close{
-    width:40px; height:40px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line-strong);
+    width:36px; height:36px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line-strong);
     color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
   }
   #gw-focus-close:hover{border-color:var(--coral); color:var(--coral);}
@@ -657,11 +668,6 @@
   .gw-stopconfirm-row{display:flex; gap:10px;}
   .gw-stopconfirm-row .gw-btn{flex:1; padding:14px; font-size:13px;}
 
-  #gw-focus-gradientbg{
-    position:fixed; left:0; right:0; bottom:0; height:100px;
-    background:linear-gradient(to bottom, rgba(13,27,42,0) 0%, rgba(13,27,42,0.75) 40px, rgba(13,27,42,0.75) 100%);
-    pointer-events:none; z-index:90;
-  }
 
   /* ---- new timer-taxonomy widgets: buy-in/out, alternate/cycle badges, AMReps tally ---- */
   .gw-buyin-card{
@@ -698,10 +704,6 @@
 </style>
 
 <div id="gw-root">
-  <div id="gw-focus-header" style="display:none;">
-    <span id="gw-focus-header-name"></span>
-    <button id="gw-focus-close" aria-label="Close and stop workout"></button>
-  </div>
   <div id="gw-header">
     <div class="gw-avatar" id="gw-avatar">–</div>
     <div class="gw-crumb" id="gw-crumb-profile">
@@ -757,8 +759,19 @@
     <div id="gw-coachnotes"></div>
     <div id="gw-board"></div>
     <div id="gw-actions"></div>
-    <div id="gw-focus" style="display:none;"></div>
-    <div id="gw-focus-gradientbg" style="display:none;"></div>
+  </div>
+
+  <div id="gw-timer-drawer-backdrop">
+    <div id="gw-timer-drawer">
+      <div class="gw-drawer-handle"></div>
+      <div id="gw-focus-header">
+        <span id="gw-focus-header-name"></span>
+        <button id="gw-focus-close" aria-label="Close and stop workout"></button>
+      </div>
+      <div id="gw-timer-drawer-scroll">
+        <div id="gw-focus"></div>
+      </div>
+    </div>
   </div>
 
   <div id="gw-daytabs-menu">
@@ -1855,15 +1868,10 @@ function render(){
   renderHero(w0);
   const board = document.getElementById('gw-board');
   const actions = document.getElementById('gw-actions');
-  const focus = document.getElementById('gw-focus');
   const w = state.currentWorkout;
 
   if(!w){
-    state.focusMode = false;
-    focus.style.display = 'none';
-    board.style.display = '';
-    actions.style.display = '';
-    document.getElementById('gw-focus-gradientbg').style.display = 'none';
+    closeTimerDrawer();
     const rec = recommendedFocus();
     board.innerHTML = `<div id="gw-empty">
       <div class="gw-display" style="font-size:15px; color:var(--muted);">READY FOR THE NEXT ONE</div>
@@ -1875,26 +1883,6 @@ function render(){
     return;
   }
 
-  if(state.focusMode){
-    board.style.display = 'none';
-    actions.style.display = 'none';
-    focus.style.display = '';
-    setPreFocusControlsVisible(false);
-    document.getElementById('gw-header').style.display = 'none';
-    document.getElementById('gw-pagetabs').style.display = 'none';
-    document.getElementById('gw-focus-header').style.display = '';
-    renderSectionFocus();
-    return;
-  }
-  focus.style.display = 'none';
-  board.style.display = '';
-  actions.style.display = '';
-  setPreFocusControlsVisible(true);
-  document.getElementById('gw-header').style.display = '';
-  document.getElementById('gw-pagetabs').style.display = '';
-  document.getElementById('gw-focus-header').style.display = 'none';
-  document.getElementById('gw-focus-gradientbg').style.display = 'none';
-
   board.innerHTML = '';
   renderCoachNotes(w.coachNotes);
   ['warmup','skill','wod','core'].forEach(key=>{
@@ -1904,12 +1892,9 @@ function render(){
 
   actions.innerHTML = '';
   renderRatingAndLogBlock(actions, w, render);
-}
 
-function setPreFocusControlsVisible(visible){
-  ['gw-hero','gw-controls','gw-focusline','gw-daytabs'].forEach(id=>{
-    document.getElementById(id).style.display = visible ? '' : 'none';
-  });
+  // the timer drawer floats above this homepage — re-render its contents in place if it's open
+  if(state.focusMode) renderSectionFocus();
 }
 
 // ---------- Section Focus ----------
@@ -1935,7 +1920,14 @@ function openSectionFocus(key){
   state.focusAscendingTotal = 0;
   state.focusAmrepsTotal = 0;
   state.focusSplits = [];
-  render();
+  document.getElementById('gw-timer-drawer-backdrop').classList.add('show');
+  renderSectionFocus();
+}
+function closeTimerDrawer(){
+  state.focusMode = false;
+  focusStopTicking();
+  focusTimer = null;
+  document.getElementById('gw-timer-drawer-backdrop').classList.remove('show');
 }
 function cancelTimerAndClose(){
   document.getElementById('gw-timerstop-backdrop').classList.remove('show');
@@ -1965,8 +1957,7 @@ function cancelExitFocus(){
 }
 function confirmExitFocus(){
   document.getElementById('gw-stopconfirm-backdrop').classList.remove('show');
-  state.focusMode = false;
-  focusTimer = null;
+  closeTimerDrawer();
   render();
 }
 
@@ -3613,6 +3604,7 @@ document.getElementById('gw-timerstop-cancel').onclick = cancelCloseFloatCard;
 document.getElementById('gw-timerstop-ok').onclick = cancelTimerAndClose;
 document.getElementById('gw-focus-close').innerHTML = ICON_X;
 document.getElementById('gw-focus-close').onclick = requestExitFocus;
+document.getElementById('gw-timer-drawer-backdrop').onclick = (e)=>{ if(e.target.id==='gw-timer-drawer-backdrop') requestExitFocus(); };
 
 loadState();
 })();
