@@ -1187,7 +1187,7 @@ const CORE = [
 // For non-timer steps (e.g. Warm-Up's "2X:" rounds) — how many rounds counts as done
 function parseRoundTarget(text){
   if(!text) return 1;
-  const m = text.match(/(\d+)\s*x:?/i);
+  const m = text.match(/(\d+)\s*(?:x\b|sets?\b|rds?\b|rounds?\b)/i);
   return m ? Number(m[1]) : 1;
 }
 
@@ -1670,14 +1670,20 @@ function formatPerformance(perf){
 
 function fmtDate(d){ return new Date(d).toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'}); }
 
-function buildSkillLoadRow(w){
+function buildSkillLoadRow(w, bodyEl){
   if(!w.skillLiftKey) return null;
   const row = document.createElement('div');
   row.className = 'gw-load-row';
   row.innerHTML = `<label>${LIFT_LABELS[w.skillLiftKey]} load (lb)</label>`;
   const input = document.createElement('input');
   input.type = 'number'; input.step = '5'; input.value = w.suggestedLoad;
-  input.oninput = ()=>{ w.suggestedLoad = Number(input.value)||0; plates.textContent = plateBreakdown(w.suggestedLoad); };
+  input.oninput = ()=>{
+    w.suggestedLoad = Number(input.value)||0;
+    plates.textContent = plateBreakdown(w.suggestedLoad);
+    if(bodyEl) bodyEl.querySelectorAll('.gw-setlist-reps').forEach(el=>{
+      el.textContent = `${el.dataset.reps} reps @ ${w.suggestedLoad} lb`;
+    });
+  };
   row.appendChild(input);
   const plates = document.createElement('div');
   plates.className = 'gw-plates';
@@ -1696,14 +1702,28 @@ function buildSkillLoadRow(w){
 const SECTION_START_LABELS = {warmup:'Start Warmup', skill:'Start Skill', wod:'Start WOD', core:'Start Core'};
 const TIMER_KIND_NAMES = {AMRAP:'AMRAP', EMOM:'EMOM', TABATA:'Tabata', RFT:'Rounds for Time', LADDER:'For Time',
   FORTIME:'For Time', FORTIME_REPEATS:'For Time Repeats', INTERVAL:'Interval', COUNTDOWN:'Countdown'};
+// short "10 min" / "8 rounds" / "6 sets" suffix so the CTA names the exact timer that's about to open
+function timerSpecShortDetail(spec){
+  if(!spec) return '';
+  if(spec.kind==='AMRAP') return spec.cycles ? `${spec.cycles} x ${spec.minutes} min` : `${spec.minutes} min`;
+  if(spec.kind==='EMOM') return spec.openEnded ? 'until failure' : `${spec.minutes} min`;
+  if(spec.kind==='TABATA') return `${spec.rounds} rounds`;
+  if(spec.kind==='RFT') return `${spec.rounds} rounds`;
+  if(spec.kind==='LADDER') return spec.rungs.join('-');
+  if(spec.kind==='FORTIME_REPEATS') return `${spec.rounds} rounds`;
+  if(spec.kind==='INTERVAL') return spec.totalRounds ? `${spec.totalRounds} sets` : '';
+  if(spec.kind==='COUNTDOWN') return `${spec.minutes} min`;
+  return '';
+}
 // the CTA names whichever timer will actually open — not a generic "focus mode" label
 function sectionStartLabel(key, w){
   if(!w) return SECTION_START_LABELS[key];
   const data = getSectionFocusData(w, key);
   const spec = data && data.timerSpec;
-  if(spec && spec.label) return `Start ${spec.label}`;
-  if(spec && TIMER_KIND_NAMES[spec.kind]) return `Start ${TIMER_KIND_NAMES[spec.kind]}`;
-  return SECTION_START_LABELS[key];
+  if(!spec) return SECTION_START_LABELS[key];
+  const name = spec.label || TIMER_KIND_NAMES[spec.kind] || SECTION_START_LABELS[key].replace('Start ', '');
+  const detail = timerSpecShortDetail(spec);
+  return detail ? `Start ${name} · ${detail}` : `Start ${name}`;
 }
 function addStartSectionButton(node, key){
   const btn = document.createElement('button');
@@ -1734,9 +1754,10 @@ function renderSectionNode(key, w, opts){
       isDone: !!w.sectionsDone.skill,
       timerSpec: w.skillTimer,
       setsList: w.skillSetReps,
+      setsWeight: w.skillLiftKey ? w.suggestedLoad : null,
       onSetsDelta: opts.simple ? null : (d)=>adjustSets('skill', d)
     });
-    const loadRow = buildSkillLoadRow(w);
+    const loadRow = buildSkillLoadRow(w, node.bodyEl);
     if(loadRow) node.bodyEl.appendChild(loadRow);
     node.finalize();
     addStartSectionButton(node, 'skill');
@@ -1750,7 +1771,8 @@ function renderSectionNode(key, w, opts){
     const node = sectionWithChips('Extra Core', w.core, '', {
       onReroll: opts.simple ? null : ()=>rerollSection('core'),
       onDone: opts.simple ? null : ()=>{ w.sectionsDone.core = !w.sectionsDone.core; render(); },
-      isDone: !!w.sectionsDone.core
+      isDone: !!w.sectionsDone.core,
+      timerSpec: w.coreTimer
     });
     node.finalize();
     addStartSectionButton(node, 'core');
@@ -2607,7 +2629,12 @@ function sectionWithChips(title, body, tag, opts){
   }
   bodyEl.appendChild(headlineRow);
   const timerSpecForExplainer = opts.timerSpec || parseTimerFromText(body);
-  const explainerText = timerExplainer(timerSpecForExplainer);
+  let explainerText = timerExplainer(timerSpecForExplainer);
+  if(!explainerText && !/^REPEAT/i.test(headline)){
+    // no formal timer for this section (e.g. travel-mode skill work) — still surface the round count, like warmup does
+    const roundTarget = parseRoundTarget(body);
+    if(roundTarget > 1) explainerText = `Repeat ${roundTarget} rounds.`;
+  }
   if(explainerText){
     const explainEl = document.createElement('div');
     explainEl.className = 'gw-format-explainer';
@@ -2631,7 +2658,8 @@ function sectionWithChips(title, body, tag, opts){
       num.textContent = `Set ${idx+1}`;
       const repsEl = document.createElement('span');
       repsEl.className = 'gw-setlist-reps';
-      repsEl.textContent = `${reps} reps`;
+      repsEl.dataset.reps = reps;
+      repsEl.textContent = (opts.setsWeight != null) ? `${reps} reps @ ${opts.setsWeight} lb` : `${reps} reps`;
       row.appendChild(num); row.appendChild(repsEl);
       listWrap.appendChild(row);
     });
