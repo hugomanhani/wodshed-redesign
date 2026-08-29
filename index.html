@@ -328,12 +328,18 @@
   .gw-sets-row-label{font-size:11px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:var(--muted);}
   .gw-setlist{display:flex; flex-direction:column; width:100%;}
   .gw-setlist-row{
-    display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);
     font-family:var(--font-body); font-size:13.5px;
   }
   .gw-setlist-row:last-child{border-bottom:none;}
-  .gw-setlist-num{color:var(--muted); font-weight:700;}
-  .gw-setlist-reps{color:#fff; font-weight:800;}
+  .gw-setlist-num{color:var(--muted); font-weight:700; flex:none; width:52px;}
+  .gw-setlist-reps{color:#fff; font-weight:800; flex:1;}
+  .gw-setlist-weight{display:flex; align-items:center; gap:5px; flex:none;}
+  .gw-setlist-weight input{
+    width:64px; height:34px; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff;
+    border-radius:7px; text-align:center; font-size:13px; font-weight:800; font-family:var(--font-body);
+  }
+  .gw-setlist-weight span{font-size:11px; color:var(--muted); font-weight:700;}
   .gw-setlist-controls{display:flex; gap:8px; margin-top:4px;}
   .gw-setlist-controls button{
     flex:1; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px;
@@ -341,6 +347,11 @@
   }
   .gw-setlist-controls button:hover{border-color:var(--coral); color:var(--coral);}
   .gw-setlist-controls button:disabled{opacity:0.4; cursor:default;}
+  .gw-apply-all-btn{
+    flex:none; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px;
+    padding:0 12px; font-family:var(--font-body); font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap;
+  }
+  .gw-apply-all-btn:hover{border-color:var(--coral); color:var(--coral);}
 
   /* ---- movement swap drawer (bottom sheet) ---- */
   #gw-swap-drawer-backdrop{
@@ -523,9 +534,9 @@
   .gw-starttimer-btn svg{width:20px; height:20px;}
   .gw-section-round-btn{
     width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-    background:var(--coral); border:none; border-radius:14px; padding:18px;
-    color:var(--bg); font-family:var(--font-display); font-weight:900; font-size:16px;
-    text-transform:uppercase; letter-spacing:0.02em; cursor:pointer;
+    background:var(--coral); border:none; border-radius:12px; padding:14px; margin-top:14px;
+    color:var(--bg); font-family:var(--font-body); font-weight:800; font-size:13.5px;
+    text-transform:none; letter-spacing:0; cursor:pointer;
   }
   .gw-section-round-btn:hover{background:var(--coral-dark);}
   .gw-round-target{opacity:0.7; font-size:13px;}
@@ -1547,6 +1558,9 @@ function buildSkillSetReps(skillTplText, skillTimer){
   const n = (skillTimer && skillTimer.totalRounds) || 3;
   return Array(n).fill(5);
 }
+function buildSkillSetWeights(n, suggestedLoad){
+  return Array(n).fill(suggestedLoad || 0);
+}
 
 function generateWorkout(type){
   state.currentType = type;
@@ -1630,13 +1644,15 @@ function generateWorkout(type){
     coreTimer = CORE.find(c=>c.text===core).timer;
   }
 
+  const initSkillSetReps = buildSkillSetReps(skillTplText, skillTimer);
   state.currentWorkout = {
     type, warmup, skillTplText, skillLiftKey, suggestedLoad, deload, skillTimer,
-    skillSetReps: buildSkillSetReps(skillTplText, skillTimer),
+    skillSetReps: initSkillSetReps,
+    skillSetWeights: buildSkillSetWeights(initSkillSetReps.length, suggestedLoad),
     formatId, format, wodMovements, movements: wodMovements.map(m=>m.name), wodTimerSpec,
     core, coreTimer, rpe: null, wodRpe: null, bw,
     volumeUsed: effectiveVolume, coachNotes, isBenchmark, benchmarkName,
-    sectionsDone: {warmup:false, skill:false, wod:false, core:false}, wodPerformance: {}
+    sectionsDone: {warmup:false, skill:false, wod:false, core:false}, roundCounts: {}, wodPerformance: {}
   };
   renderTimeBanner(alloc);
   render();
@@ -1670,21 +1686,29 @@ function formatPerformance(perf){
 
 function fmtDate(d){ return new Date(d).toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'}); }
 
-function buildSkillLoadRow(w, bodyEl){
+function buildSkillLoadRow(w){
   if(!w.skillLiftKey) return null;
   const row = document.createElement('div');
   row.className = 'gw-load-row';
-  row.innerHTML = `<label>${LIFT_LABELS[w.skillLiftKey]} load (lb)</label>`;
+  row.innerHTML = `<label>${LIFT_LABELS[w.skillLiftKey]} logged weight (lb)</label>`;
+  const inputRow = document.createElement('div');
+  inputRow.style.cssText = 'display:flex; gap:8px; align-items:center;';
   const input = document.createElement('input');
   input.type = 'number'; input.step = '5'; input.value = w.suggestedLoad;
+  input.style.flex = '1';
   input.oninput = ()=>{
     w.suggestedLoad = Number(input.value)||0;
     plates.textContent = plateBreakdown(w.suggestedLoad);
-    if(bodyEl) bodyEl.querySelectorAll('.gw-setlist-reps').forEach(el=>{
-      el.textContent = `${el.dataset.reps} reps @ ${w.suggestedLoad} lb`;
-    });
   };
-  row.appendChild(input);
+  const applyBtn = document.createElement('button');
+  applyBtn.type = 'button'; applyBtn.textContent = 'Apply to all sets';
+  applyBtn.className = 'gw-apply-all-btn';
+  applyBtn.onclick = ()=>{
+    if(w.skillSetWeights) w.skillSetWeights = w.skillSetWeights.map(()=>w.suggestedLoad);
+    render();
+  };
+  inputRow.appendChild(input); inputRow.appendChild(applyBtn);
+  row.appendChild(inputRow);
   const plates = document.createElement('div');
   plates.className = 'gw-plates';
   plates.textContent = plateBreakdown(w.suggestedLoad);
@@ -1725,12 +1749,44 @@ function sectionStartLabel(key, w){
   const detail = timerSpecShortDetail(spec);
   return detail ? `Start ${name} · ${detail}` : `Start ${name}`;
 }
-function addStartSectionButton(node, key){
+// drawers are for real timers only — a section with no timer (e.g. warmup) gets a plain round
+// counter right on the card instead of opening one just to tap through rounds
+function buildInlineRoundCounter(key, w, stepData){
+  const target = parseRoundTarget(stepData.text);
+  if(!w.roundCounts) w.roundCounts = {};
+  if(w.roundCounts[key] == null) w.roundCounts[key] = 0;
+  const count = w.roundCounts[key];
+  const done = count >= target;
   const btn = document.createElement('button');
-  btn.className = 'gw-section-start-btn';
-  btn.innerHTML = `${ICON_PLAY}<span>${sectionStartLabel(key, state.currentWorkout)}</span>`;
-  btn.onclick = ()=>openSectionFocus(key);
-  node.bodyEl.appendChild(btn);
+  btn.className = 'gw-section-round-btn';
+  btn.disabled = done;
+  btn.innerHTML = done
+    ? `${ICON_CHECK}<span>Completed</span>`
+    : `<span>Round</span><span class="gw-navmid-badge">${count}</span><span class="gw-round-target">/ ${target}</span>`;
+  btn.onclick = ()=>{
+    if(w.roundCounts[key] >= target) return;
+    w.roundCounts[key]++;
+    vibrate(15);
+    if(w.roundCounts[key] >= target){
+      w.sectionsDone[key] = true;
+      vibrate([80,40,120]);
+    }
+    render();
+  };
+  return btn;
+}
+function addStartSectionButton(node, key){
+  const w = state.currentWorkout;
+  const stepData = w && getSectionFocusData(w, key);
+  if(stepData && stepData.timerSpec){
+    const btn = document.createElement('button');
+    btn.className = 'gw-section-start-btn';
+    btn.innerHTML = `${ICON_PLAY}<span>${sectionStartLabel(key, w)}</span>`;
+    btn.onclick = ()=>openSectionFocus(key);
+    node.bodyEl.appendChild(btn);
+  } else if(stepData){
+    node.bodyEl.appendChild(buildInlineRoundCounter(key, w, stepData));
+  }
 }
 
 function renderSectionNode(key, w, opts){
@@ -1754,10 +1810,11 @@ function renderSectionNode(key, w, opts){
       isDone: !!w.sectionsDone.skill,
       timerSpec: w.skillTimer,
       setsList: w.skillSetReps,
-      setsWeight: w.skillLiftKey ? w.suggestedLoad : null,
+      setsWeights: w.skillLiftKey ? w.skillSetWeights : null,
+      onWeightChange: opts.simple ? null : (idx, val)=>{ w.skillSetWeights[idx] = val; },
       onSetsDelta: opts.simple ? null : (d)=>adjustSets('skill', d)
     });
-    const loadRow = buildSkillLoadRow(w, node.bodyEl);
+    const loadRow = buildSkillLoadRow(w);
     if(loadRow) node.bodyEl.appendChild(loadRow);
     node.finalize();
     addStartSectionButton(node, 'skill');
@@ -2133,26 +2190,9 @@ function renderSectionFocus(){
 
     focusOpenTimer(spec, key);
   } else {
-    focusTimer = null;
-    const target = parseRoundTarget(stepData.text);
-    const roundBtn = document.createElement('button');
-    roundBtn.className = 'gw-section-round-btn';
-    roundBtn.id = 'gw-inline-round-btn';
-    roundBtn.innerHTML = `<span>Round</span><span class="gw-navmid-badge" id="gw-inline-round-badge">0</span><span class="gw-round-target">/ ${target}</span>`;
-    roundBtn.onclick = ()=>{
-      if(state.focusTapCount >= target) return;
-      state.focusTapCount++;
-      document.getElementById('gw-inline-round-badge').textContent = state.focusTapCount;
-      logRoundTap(null);
-      vibrate(15);
-      refreshStepCompletion(w, key, stepData);
-      if(state.focusTapCount >= target){
-        roundBtn.disabled = true;
-        roundBtn.innerHTML = `${ICON_CHECK}<span>Completed</span>`;
-        vibrate([80,40,120]);
-      }
-    };
-    container.appendChild(roundBtn);
+    // the only way to reach the drawer is via a Start button gated on stepData.timerSpec — this shouldn't happen
+    state.focusMode = false;
+    render();
   }
 }
 
@@ -2205,13 +2245,12 @@ function focusManualFinish(stepKey){
   focusTimer.running = false;
   cancelAnimationFrame(focusTimer.raf);
   focusTimer.doneBeeped = true;
-  if(stepKey==='wod'){
-    const w = state.currentWorkout;
-    if(w){
-      if(!w.wodPerformance) w.wodPerformance = {};
-      w.wodPerformance.time = fmtClock(Math.floor(focusTimer.elapsedBefore));
-    }
+  const w = state.currentWorkout;
+  if(stepKey==='wod' && w){
+    if(!w.wodPerformance) w.wodPerformance = {};
+    w.wodPerformance.time = fmtClock(Math.floor(focusTimer.elapsedBefore));
   }
+  if(w && w.sectionsDone) w.sectionsDone[stepKey] = true;
   beepTriple();
   vibrate([80,40,80,40,160]);
   focusUpdateDisplay();
@@ -2253,13 +2292,12 @@ function focusFinish(){
     focusUpdateButtonStates();
     if(focusTimer.sectionKey){
       state.focusStepDone[focusTimer.sectionKey] = true;
-      if(focusTimer.sectionKey==='wod'){
-        const w = state.currentWorkout;
-        if(w){
-          if(!w.wodPerformance) w.wodPerformance = {};
-          if(focusTimer.kind==='FORTIME' || focusTimer.kind==='RFT' || focusTimer.kind==='LADDER' || focusTimer.kind==='FORTIME_REPEATS'){
-            w.wodPerformance.time = fmtClock(Math.floor(focusCurrentElapsed()));
-          }
+      const w = state.currentWorkout;
+      if(w && w.sectionsDone) w.sectionsDone[focusTimer.sectionKey] = true;
+      if(focusTimer.sectionKey==='wod' && w){
+        if(!w.wodPerformance) w.wodPerformance = {};
+        if(focusTimer.kind==='FORTIME' || focusTimer.kind==='RFT' || focusTimer.kind==='LADDER' || focusTimer.kind==='FORTIME_REPEATS'){
+          w.wodPerformance.time = fmtClock(Math.floor(focusCurrentElapsed()));
         }
       }
     }
@@ -2658,9 +2696,20 @@ function sectionWithChips(title, body, tag, opts){
       num.textContent = `Set ${idx+1}`;
       const repsEl = document.createElement('span');
       repsEl.className = 'gw-setlist-reps';
-      repsEl.dataset.reps = reps;
-      repsEl.textContent = (opts.setsWeight != null) ? `${reps} reps @ ${opts.setsWeight} lb` : `${reps} reps`;
+      repsEl.textContent = `${reps} reps`;
       row.appendChild(num); row.appendChild(repsEl);
+      if(opts.setsWeights){
+        const weightWrap = document.createElement('span');
+        weightWrap.className = 'gw-setlist-weight';
+        const input = document.createElement('input');
+        input.type = 'number'; input.step = '5'; input.value = opts.setsWeights[idx] ?? 0;
+        input.oninput = ()=>opts.onWeightChange && opts.onWeightChange(idx, Number(input.value)||0);
+        weightWrap.appendChild(input);
+        const unit = document.createElement('span');
+        unit.textContent = 'lb';
+        weightWrap.appendChild(unit);
+        row.appendChild(weightWrap);
+      }
       listWrap.appendChild(row);
     });
     bodyEl.appendChild(listWrap);
@@ -2812,6 +2861,8 @@ function rerollSection(section){
   const w = state.currentWorkout;
   if(!w) return;
   const bw = w.bw;
+  if(w.roundCounts) w.roundCounts[section] = 0;
+  if(w.sectionsDone) w.sectionsDone[section] = false;
   if(section==='warmup'){
     const pool = bw && WARMUPS_BW[w.type] ? WARMUPS_BW[w.type] : WARMUPS[w.type];
     let choice = w.warmup;
@@ -2829,6 +2880,7 @@ function rerollSection(section){
       const result = computeSuggestedLoad(w.skillLiftKey);
       w.suggestedLoad = result.load; w.deload = result.deload;
     } else { w.suggestedLoad = null; w.deload = false; }
+    w.skillSetWeights = buildSkillSetWeights(w.skillSetReps.length, w.suggestedLoad);
     w.rpe = null;
   } else if(section==='wod'){
     let movementPool = MOVEMENT_LIB[w.type];
@@ -2863,13 +2915,19 @@ function swapMovement(section, idx, newName){
   }
   render();
 }
+// swap candidates stay within the same day-type focus AND the same equipment category as the
+// movement being replaced (e.g. a bar movement only swaps for another bar movement) — a real
+// substitute, not just any random movement from the pool
 function relatedMovementsFor(section, idx){
   const w = state.currentWorkout;
   if(!w) return [];
   let pool = MOVEMENT_LIB[w.type];
   if(w.bw) pool = pool.filter(m=>m.equip==='none');
-  const current = section==='wod' ? w.wodMovements[idx].name : null;
-  return pool.filter(m=>m.name!==current);
+  const currentName = section==='wod' ? w.wodMovements[idx].name : null;
+  if(!currentName) return [];
+  const currentDef = MOVEMENT_LIB[w.type].find(m=>m.name===currentName);
+  const equip = currentDef ? currentDef.equip : null;
+  return pool.filter(m=>m.name!==currentName && (!equip || m.equip===equip));
 }
 
 // ---------- movement swap drawer (bottom sheet) ----------
@@ -2881,7 +2939,14 @@ function openMovementSwapDrawer(section, idx){
   document.getElementById('gw-swap-current').textContent = `${current.reps} reps · ${current.name}`;
   const list = document.getElementById('gw-swap-options');
   list.innerHTML = '';
-  relatedMovementsFor(section, idx).forEach(m=>{
+  const options = relatedMovementsFor(section, idx);
+  if(!options.length){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--muted); font-size:13px; padding:16px 4px; text-align:center;';
+    empty.textContent = 'No equivalent movements available for this focus today.';
+    list.appendChild(empty);
+  }
+  options.forEach(m=>{
     const row = document.createElement('div');
     row.className = 'gw-drawer-option';
     const left = document.createElement('div');
@@ -2909,10 +2974,13 @@ function adjustSets(section, delta){
   const w = state.currentWorkout;
   if(!w) return;
   if(section==='skill' && w.skillSetReps){
+    if(!w.skillSetWeights) w.skillSetWeights = buildSkillSetWeights(w.skillSetReps.length, w.suggestedLoad);
     if(delta>0 && w.skillSetReps.length<12){
       w.skillSetReps.push(w.skillSetReps[w.skillSetReps.length-1] ?? 5);
+      w.skillSetWeights.push(w.skillSetWeights[w.skillSetWeights.length-1] ?? w.suggestedLoad ?? 0);
     } else if(delta<0 && w.skillSetReps.length>1){
       w.skillSetReps.pop();
+      w.skillSetWeights.pop();
     }
     if(w.skillTimer) w.skillTimer.totalRounds = w.skillSetReps.length;
   }
