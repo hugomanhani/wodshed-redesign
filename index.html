@@ -484,7 +484,7 @@
   #gw-modal button{margin-top:16px; width:100%;}
 
   /* ---- Focus Mode ---- */
-  #gw-focus{display:flex; flex-direction:column; gap:18px; margin-top:-20px; padding-bottom:340px;}
+  #gw-focus{display:flex; flex-direction:column; gap:18px; margin-top:-20px; padding-bottom:40px;}
   #gw-focus-header{
     display:flex; justify-content:space-between; align-items:center;
     padding:calc(16px + env(safe-area-inset-top, 0px)) 20px 12px; background:var(--surface);
@@ -539,77 +539,97 @@
     display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; font-family:var(--font-mono);
   }
 
-  .gw-floatcard{
-    position:fixed; left:50%; transform:translateX(-50%);
-    bottom:calc(16px + env(safe-area-inset-bottom, 0px));
-    width:calc(100% - 40px); max-width:354px; z-index:96;
-    background:rgba(27,38,59,0.82); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-    border-radius:20px; padding:24px 20px;
-    display:flex; flex-direction:column; align-items:center; gap:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.45);
+  /* ---- Timer Stage: full-bleed dial, modeled on a classic gym-timer look ---- */
+  :root{
+    --t-amrap:#ff9f43; --t-emom:#a06bff; --t-fortime:#5b7cff; --t-tabata:#2ecf82; --t-rest:#d946ef; --t-util:var(--coral);
   }
-  .gw-floatcard-close{
-    position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%;
-    background:var(--surface-2); border:none; color:#fff; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; padding:0;
+  .gw-stage{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    background:#000; border-radius:24px; padding:28px 16px 22px;
+    margin-top:4px;
   }
-  .gw-floatcard-close svg{width:14px; height:14px;}
-  .gw-floatcard-label{font-family:var(--font-body); font-weight:700; font-size:13px; color:var(--muted); text-align:center;}
-  .gw-floatcard-clock{font-family:var(--font-mono); font-weight:700; font-size:56px; color:#fff; letter-spacing:-0.02em;}
-  .gw-floatcard-clock.warn{color:var(--danger);}
-  .gw-floatcard-clock.rest{color:var(--muted);}
-  .gw-floatcard-secondary{font-size:12px; color:var(--muted); font-weight:700; text-align:center; min-height:14px;}
-  .gw-floatcard-ringwrap{display:grid; place-items:center; width:72px; height:72px;}
-  .gw-floatcard-ringwrap svg{grid-row:1; grid-column:1; width:72px; height:72px;}
-  .gw-focus-ring-track{fill:none; stroke:var(--surface-2); stroke-width:4;}
-  .gw-focus-ring-fill{fill:none; stroke:var(--coral); stroke-width:4; stroke-linecap:round; transition:stroke-dashoffset 0.2s linear, stroke 0.3s ease;}
-  .gw-focus-ring-fill.rest{stroke:var(--muted);}
-  .gw-floatcard-playpause{
-    grid-row:1; grid-column:1;
-    width:48px; height:48px; border-radius:50%; background:var(--surface-2); border:none; color:var(--coral); cursor:pointer;
-    display:flex; align-items:center; justify-content:center; padding:0;
+  .gw-stage-kind{
+    font-family:var(--font-body); font-weight:800; font-size:13px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--stage-color, var(--coral));
   }
-  .gw-floatcard-playpause svg{width:24px; height:24px;}
-  .gw-floatcard-round{position:absolute; bottom:20px; right:16px;}
-  .gw-floatcard-round button{
-    display:flex; align-items:center; gap:8px; background:none; border:none; color:#fff; cursor:pointer;
-    font-family:var(--font-body); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.03em; padding:0;
-    -webkit-tap-highlight-color:transparent;
+  .gw-stage-headline{
+    font-family:var(--font-body); font-weight:800; font-size:20px; color:#fff; text-align:center; min-height:26px;
   }
-  .gw-floatcard-round button:disabled{opacity:0.5; cursor:default;}
-  .gw-floatcard-round .gw-round-target{color:var(--muted); font-size:11px;}
-  .gw-floatcard-round-badge{
-    width:20px; height:20px; border-radius:50%; background:var(--coral); color:var(--bg);
-    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; font-family:var(--font-mono);
+  .gw-dial-wrap{
+    position:relative; width:min(78vw, 300px); height:min(78vw, 300px); margin:14px 0 6px;
+    display:grid; place-items:center; cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
-  .gw-floatcard-round button.gw-tap-flash .gw-floatcard-round-badge{background:var(--coral-dark);}
-  .gw-floatcard-next{position:absolute; bottom:16px; right:16px; display:flex; flex-direction:column; align-items:flex-end; gap:4px;}
-  .gw-floatcard-next button{
-    display:flex; align-items:center; gap:4px; background:none; border:none; color:#fff; cursor:pointer;
-    font-family:var(--font-body); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.03em; padding:4px;
+  .gw-dial-wrap svg{grid-row:1; grid-column:1; width:100%; height:100%;}
+  .gw-dial-track{fill:none; stroke:rgba(255,255,255,0.16); stroke-width:2; stroke-linecap:round;}
+  .gw-dial-fill{fill:none; stroke:var(--stage-color, var(--coral)); stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset 0.2s linear, stroke 0.3s ease;}
+  .gw-dial-center{grid-row:1; grid-column:1; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center;}
+  .gw-dial-play{
+    width:64px; height:64px; border-radius:50%; background:none; border:none; padding:0; cursor:pointer;
+    color:var(--stage-color, var(--coral)); display:flex; align-items:center; justify-content:center;
   }
-  .gw-floatcard-next button svg{width:16px; height:16px;}
-  .gw-floatcard-nextpreview{font-size:12px; color:var(--muted); font-weight:700;}
+  .gw-dial-play svg{width:100%; height:100%;}
+  .gw-dial-hint{font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--muted); margin-top:2px;}
+  .gw-dial-clock{
+    font-family:var(--font-mono); font-weight:700; font-size:56px; letter-spacing:-0.01em;
+    color:var(--stage-color, var(--coral)); text-shadow:0 0 22px var(--stage-color, var(--coral));
+  }
+  .gw-dial-clock.warn{color:var(--danger); text-shadow:0 0 22px var(--danger);}
+  .gw-dial-secondary{font-family:var(--font-body); font-weight:700; font-size:12.5px; color:var(--muted); min-height:16px;}
+  .gw-dial-skiphint{font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--muted); margin-top:-4px;}
+  .gw-dial-smallctrl{
+    width:44px; height:44px; border-radius:50%; background:var(--surface); border:1px solid var(--line-strong);
+    color:var(--stage-color, var(--coral)); display:flex; align-items:center; justify-content:center; cursor:pointer;
+    padding:0; margin-top:2px;
+  }
+  .gw-dial-smallctrl svg{width:18px; height:18px;}
+  .gw-dial-finish{
+    display:none; width:72px; height:72px; border-radius:50%; align-items:center; justify-content:center;
+    background:var(--stage-color, var(--good)); color:#000;
+  }
+  .gw-dial-finish svg{width:34px; height:34px;}
+  .gw-dial-finish.show{display:flex;}
 
-  .gw-focus-phaseword{font-family:var(--font-display); font-weight:900; font-size:22px; text-transform:uppercase; color:var(--coral); min-height:26px; letter-spacing:0.02em;}
-  .gw-focus-phaseword.rest{color:var(--muted);}
+  .gw-stage-round{
+    display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer;
+    color:#fff; font-family:var(--font-body); font-weight:800; padding:8px; -webkit-tap-highlight-color:transparent;
+  }
+  .gw-stage-round:disabled{opacity:0.5; cursor:default;}
+  .gw-stage-round-badge{
+    width:38px; height:38px; border-radius:50%; border:2px solid var(--stage-color, var(--coral)); color:var(--stage-color, var(--coral));
+    display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:900; font-family:var(--font-mono);
+  }
+  .gw-stage-round.gw-tap-flash .gw-stage-round-badge{background:var(--stage-color, var(--coral)); color:#000;}
+  .gw-stage-round-label{font-size:11px; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);}
 
-  .gw-focus-swipezone{margin-top:4px;}
+  .gw-showworkout-toggle{
+    display:flex; align-items:center; gap:6px; justify-content:center; background:none; border:none;
+    color:var(--muted); font-family:var(--font-body); font-weight:700; font-size:13px; cursor:pointer; padding:10px;
+    margin:0 auto; -webkit-tap-highlight-color:transparent;
+  }
+  .gw-showworkout-toggle svg{width:14px; height:14px; transition:transform 0.2s ease;}
+  .gw-showworkout-toggle.open svg{transform:rotate(180deg);}
+  .gw-workout-detail-wrap{overflow:hidden; max-height:0; transition:max-height 0.25s ease;}
+  .gw-workout-detail-wrap.open{max-height:600px;}
+
+  .gw-focus-phaseword{font-family:var(--font-body); font-weight:800; font-size:15px; text-transform:uppercase; color:var(--stage-color, var(--coral)); min-height:0; letter-spacing:0.04em;}
+
+  .gw-focus-swipezone{margin-top:4px; width:100%;}
   .gw-focus-swipe-track{
-    position:relative; height:56px; border-radius:28px; background:var(--surface-2); border:1px solid var(--line-strong);
+    position:relative; height:56px; border-radius:28px; background:var(--surface); border:1px solid var(--line-strong);
     display:flex; align-items:center; justify-content:center; overflow:hidden; -webkit-tap-highlight-color:transparent;
   }
   .gw-focus-swipe-track span{position:relative; z-index:1; font-size:12px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:#fff; pointer-events:none;}
-  .gw-focus-swipe-fill{position:absolute; left:0; top:0; bottom:0; width:0; background:rgba(255,107,107,0.25); pointer-events:none;}
+  .gw-focus-swipe-fill{position:absolute; left:0; top:0; bottom:0; width:0; background:color-mix(in srgb, var(--stage-color, var(--coral)) 25%, transparent); pointer-events:none;}
   .gw-focus-swipe-thumb{
     position:absolute; left:6px; top:6px; width:44px; height:44px; border-radius:50%;
-    background:var(--coral); display:flex; align-items:center; justify-content:center; color:var(--bg);
+    background:var(--stage-color, var(--coral)); display:flex; align-items:center; justify-content:center; color:#000;
     cursor:grab; z-index:2; touch-action:none; box-shadow:0 2px 10px rgba(0,0,0,0.35);
   }
   .gw-focus-swipe-thumb svg{width:16px; height:16px; margin-left:2px;}
   .gw-focus-swipe-thumb:active{cursor:grabbing;}
   .gw-focus-swipezone.gw-swipe-locked .gw-focus-swipe-track{opacity:0.45; pointer-events:none;}
   .gw-focus-swipezone.gw-swipe-locked .gw-focus-swipe-track span::after{content:' — locked in';}
+
 
 
 
@@ -658,16 +678,12 @@
   .gw-buyin-text{flex:1;}
   .gw-buyin-label{font-size:10px; font-weight:900; letter-spacing:0.05em; text-transform:uppercase; color:var(--coral);}
   .gw-buyin-detail{font-size:13px; color:#fff; font-weight:600; margin-top:2px; white-space:pre-line;}
-  .gw-cycle-badge{
-    font-size:11px; font-weight:900; letter-spacing:0.03em; text-transform:uppercase; color:var(--coral);
-    background:var(--coral-wash); border-radius:999px; padding:5px 12px; display:inline-block; align-self:flex-start;
-  }
   .gw-alt-row{display:flex; gap:8px;}
   .gw-alt-chip{
     flex:1; text-align:center; padding:10px 8px; border-radius:12px; border:1px solid var(--line-strong);
     font-family:var(--font-body); font-weight:800; font-size:12.5px; color:var(--muted); background:var(--surface);
   }
-  .gw-alt-chip.gw-alt-active{border-color:var(--coral); color:var(--coral); background:var(--coral-wash);}
+  .gw-alt-chip.gw-alt-active{border-color:var(--stage-color, var(--coral)); color:var(--stage-color, var(--coral)); background:color-mix(in srgb, var(--stage-color, var(--coral)) 14%, transparent);}
   .gw-amreps-row{display:flex; align-items:center; gap:10px; justify-content:center; padding:6px 0;}
   .gw-amreps-btn{
     width:52px; height:52px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line-strong);
@@ -1867,7 +1883,6 @@ function render(){
     document.getElementById('gw-header').style.display = 'none';
     document.getElementById('gw-pagetabs').style.display = 'none';
     document.getElementById('gw-focus-header').style.display = '';
-    document.getElementById('gw-focus-gradientbg').style.display = '';
     renderSectionFocus();
     return;
   }
@@ -1922,35 +1937,20 @@ function openSectionFocus(key){
   state.focusSplits = [];
   render();
 }
-// The floating timer card overlays the bottom of the screen while a timer runs
-function openFloatCard(){
-  document.getElementById('gw-floatcard').style.display = '';
-  updateGradientHeight();
-}
 function cancelTimerAndClose(){
   document.getElementById('gw-timerstop-backdrop').classList.remove('show');
   focusStopTicking();
   focusReset();
-  document.getElementById('gw-floatcard').style.display = 'none';
-  const startBtn = document.getElementById('gw-starttimer-btn');
-  if(startBtn) startBtn.style.display = '';
-  updateGradientHeight();
+  focusUpdateDisplay();
+  focusUpdateButtonStates();
 }
 function requestCloseFloatCard(){
-  document.getElementById('gw-timerstop-backdrop').classList.add('show');
+  if(focusTimer && (focusTimer.running || focusTimer.elapsedBefore > 0) && !focusTimer.doneBeeped){
+    document.getElementById('gw-timerstop-backdrop').classList.add('show');
+  }
 }
 function cancelCloseFloatCard(){
   document.getElementById('gw-timerstop-backdrop').classList.remove('show');
-}
-// keeps the gradient's solid backdrop starting exactly 40px above the floating card, when it's open
-function updateGradientHeight(){
-  const grad = document.getElementById('gw-focus-gradientbg');
-  if(!grad || grad.style.display==='none') return;
-  const card = document.getElementById('gw-floatcard');
-  if(!card || card.style.display === 'none'){ grad.style.height = '0px'; return; }
-  const rect = card.getBoundingClientRect();
-  const height = Math.max(60, window.innerHeight - rect.top + 40);
-  grad.style.height = height + 'px';
 }
 function requestExitFocus(){
   if(focusTimer && (focusTimer.running || focusTimer.elapsedBefore > 0)){
@@ -2088,56 +2088,58 @@ function renderSectionFocus(){
   if(stepData.timerSpec){
     const kind = stepData.timerSpec.kind;
 
-    const startBtn = document.createElement('button');
-    startBtn.className = 'gw-starttimer-btn';
-    startBtn.id = 'gw-starttimer-btn';
-    startBtn.innerHTML = `${ICON_PLAY}<span>Start Timer</span>`;
-    startBtn.onclick = ()=>{
-      openFloatCard();
-      startBtn.style.display = 'none';
-      focusStartWithLeadIn();
-    };
-    container.appendChild(startBtn);
+    const stageColor = {AMRAP:'var(--t-amrap)', EMOM:'var(--t-emom)', TABATA:'var(--t-tabata)',
+      RFT:'var(--t-fortime)', LADDER:'var(--t-fortime)', FORTIME:'var(--t-fortime)', FORTIME_REPEATS:'var(--t-fortime)',
+      INTERVAL:'var(--t-util)', COUNTDOWN:'var(--t-util)'}[kind] || 'var(--t-util)';
+    const kindLabel = spec.label || kind;
 
     const card = document.createElement('div');
-    card.className = 'gw-floatcard';
+    card.className = 'gw-stage';
     card.id = 'gw-floatcard';
-    card.style.display = 'none';
+    card.style.setProperty('--stage-color', stageColor);
+    container.style.setProperty('--stage-color', stageColor);
     card.innerHTML = `
-      <button class="gw-floatcard-close" id="gw-floatcard-close" aria-label="Cancel timer">${ICON_X}</button>
-      <div class="gw-cycle-badge" id="gw-focus-cyclebadge" style="display:none;"></div>
+      <div class="gw-stage-kind" id="gw-stage-kind">${kindLabel}</div>
+      <div class="gw-stage-headline" id="gw-focus-sub"></div>
       <div class="gw-focus-phaseword" id="gw-focus-phase"></div>
-      <div class="gw-floatcard-label" id="gw-focus-sub"></div>
-      <div class="gw-floatcard-clock" id="gw-focus-number">00:00</div>
-      <div class="gw-floatcard-secondary" id="gw-focus-secondary"></div>
+      <div class="gw-dial-wrap" id="gw-dial-wrap">
+        <svg viewBox="0 0 200 200">
+          <circle class="gw-dial-track" cx="100" cy="100" r="90" stroke-dasharray="3.2 8.5" transform="rotate(-90 100 100)"/>
+          <circle class="gw-dial-fill" id="gw-focus-ring" cx="100" cy="100" r="90" stroke-dasharray="${2*Math.PI*90}" stroke-dashoffset="${2*Math.PI*90}" transform="rotate(-90 100 100)"/>
+        </svg>
+        <div class="gw-dial-center">
+          <button class="gw-dial-play" id="gw-dial-play" aria-label="Start">${ICON_PLAY}</button>
+          <div class="gw-dial-clock" id="gw-focus-number" style="display:none;">00:00</div>
+          <div class="gw-dial-finish" id="gw-dial-finish">${ICON_CHECK}</div>
+        </div>
+      </div>
+      <div class="gw-dial-hint" id="gw-dial-hint">tap to start</div>
+      <div class="gw-dial-secondary" id="gw-focus-secondary"></div>
+      <button class="gw-dial-skiphint" id="gw-dial-skiphint" type="button" style="display:none; background:none; border:none; cursor:pointer; text-decoration:underline;">Skip rest</button>
+      <button class="gw-dial-smallctrl" id="gw-floatcard-playpause" style="display:none;" aria-label="Pause or resume">${ICON_PAUSE}</button>
       <div class="gw-alt-row" id="gw-focus-altrow" style="display:none; width:100%;">
         <div class="gw-alt-chip" id="gw-focus-alt-a"></div>
         <div class="gw-alt-chip" id="gw-focus-alt-b"></div>
-      </div>
-      <div class="gw-floatcard-ringwrap">
-        <svg viewBox="0 0 80 80">
-          <circle class="gw-focus-ring-track" cx="40" cy="40" r="34" transform="rotate(-90 40 40)"/>
-          <circle class="gw-focus-ring-fill" id="gw-focus-ring" cx="40" cy="40" r="34" stroke-dasharray="${2*Math.PI*34}" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
-        </svg>
-        <button class="gw-floatcard-playpause" id="gw-floatcard-playpause" aria-label="Play or pause">${ICON_PLAY}</button>
       </div>
       <div class="gw-amreps-row" id="gw-floatcard-amreps" style="display:none;">
         <button class="gw-amreps-btn" id="gw-amreps-minus" type="button">−</button>
         <div class="gw-amreps-total" id="gw-amreps-total">0</div>
         <button class="gw-amreps-btn" id="gw-amreps-plus" type="button">+</button>
       </div>
-      <div class="gw-floatcard-round" id="gw-floatcard-round" style="display:none;">
-        <button id="gw-focus-plus">
-          <span id="gw-focus-plus-label">Round</span>
-          <span class="gw-floatcard-round-badge" id="gw-focus-roundsbadge">0</span>
-          <span class="gw-round-target" id="gw-focus-round-target"></span>
-        </button>
-      </div>
+      <button class="gw-stage-round" id="gw-focus-plus" style="display:none;">
+        <span class="gw-stage-round-badge" id="gw-focus-roundsbadge">0</span>
+        <span class="gw-stage-round-label"><span id="gw-focus-plus-label">Round</span> <span class="gw-round-target" id="gw-focus-round-target"></span></span>
+      </button>
       <div class="gw-floatcard-next" id="gw-floatcard-next" style="display:none;">
         <button id="gw-focus-skipnext"><span>Next</span>${ICON_PLAY}</button>
         <div class="gw-floatcard-nextpreview" id="gw-floatcard-nextpreview"></div>
-      </div>`;
+      </div>
+      <button class="gw-showworkout-toggle" id="gw-floatcard-close" type="button">Cancel timer</button>`;
     container.appendChild(card);
+    document.getElementById('gw-dial-play').onclick = ()=>{ focusStartWithLeadIn(); };
+    document.getElementById('gw-dial-wrap').onclick = ()=>{
+      if(focusTimer && !focusTimer.leadIn && (focusTimer.running || focusTimer.elapsedBefore>0) && !focusTimer.doneBeeped) focusToggleFromTap();
+    };
 
     if(spec.buyOut){
       const bo = document.createElement('div');
@@ -2153,7 +2155,7 @@ function renderSectionFocus(){
     const isAlternate = (kind==='EMOM' || kind==='TABATA') && spec.alternate;
 
     if((kind==='AMRAP' && !isAmreps) || kind==='RFT' || kind==='LADDER' || kind==='FORTIME_REPEATS'){
-      card.querySelector('#gw-floatcard-round').style.display = '';
+      card.querySelector('#gw-focus-plus').style.display = '';
     }
     if(kind==='INTERVAL'){
       card.querySelector('#gw-floatcard-next').style.display = '';
@@ -2201,6 +2203,7 @@ function renderSectionFocus(){
     document.getElementById('gw-focus-skipnext').onclick = focusSkipToNextRound;
     document.getElementById('gw-floatcard-playpause').onclick = focusToggleFromTap;
     document.getElementById('gw-floatcard-close').onclick = requestCloseFloatCard;
+    document.getElementById('gw-dial-skiphint').onclick = focusSkipTabataPhase;
     if(isAmreps){
       state.focusAmrepsTotal = 0;
       const bump = (delta)=>{
@@ -2312,8 +2315,22 @@ function focusManualFinish(stepKey){
   vibrate([80,40,80,40,160]);
   focusUpdateDisplay();
   focusUpdateButtonStates();
+  flashFinishCheck();
   state.focusStepDone[stepKey] = true;
   toast('✓ Finished — time locked in.');
+}
+
+// briefly swaps the countdown digits for a checkmark to mark the moment a timer finishes
+function flashFinishCheck(){
+  const numberEl = document.getElementById('gw-focus-number');
+  const finishEl = document.getElementById('gw-dial-finish');
+  if(!numberEl || !finishEl) return;
+  numberEl.style.display = 'none';
+  finishEl.classList.add('show');
+  setTimeout(()=>{
+    finishEl.classList.remove('show');
+    numberEl.style.display = '';
+  }, 1400);
 }
 
 // independent timer engine for Focus Mode (mirrors the modal's logic but keeps its own state,
@@ -2347,6 +2364,7 @@ function focusFinish(){
     beepTriple();
     vibrate([100,60,100,60,200]);
     focusUpdateButtonStates();
+    flashFinishCheck();
     if(focusTimer.sectionKey){
       state.focusStepDone[focusTimer.sectionKey] = true;
       if(focusTimer.sectionKey==='wod'){
@@ -2376,6 +2394,11 @@ function focusStartWithLeadIn(){
   if(!freshStart){ focusStart(); return; }
   focusTimer.leadIn = true;
   const numberEl = document.getElementById('gw-focus-number');
+  const dialPlay = document.getElementById('gw-dial-play');
+  const hint = document.getElementById('gw-dial-hint');
+  if(dialPlay) dialPlay.style.display = 'none';
+  if(hint) hint.style.display = 'none';
+  if(numberEl) numberEl.style.display = '';
   const seq = ['3','2','1','GO'];
   let i = 0;
   function step(){
@@ -2394,6 +2417,20 @@ function focusToggleFromTap(){
   if(focusTimer.running) focusPause();
   else if(focusTimer.elapsedBefore > 0) focusStart();
   // if never started, the tap-hint says "tap the time to pause" only once running — before that, use the play button
+}
+// jumps straight to the next TABATA phase boundary (work->rest or rest->work), tapped from the "Skip rest" link
+function focusSkipTabataPhase(){
+  if(!focusTimer || focusTimer.kind!=='TABATA') return;
+  const cycle = focusTimer.workSec + focusTimer.restSec;
+  const elapsed = focusCurrentElapsed();
+  const roundIdx = Math.floor(elapsed/cycle);
+  const withinCycle = elapsed - roundIdx*cycle;
+  const inWork = withinCycle < focusTimer.workSec;
+  const nextBoundary = inWork ? roundIdx*cycle + focusTimer.workSec : (roundIdx+1)*cycle;
+  focusTimer.elapsedBefore = nextBoundary;
+  focusTimer.startedAt = focusTimer.running ? performance.now() : null;
+  focusUpdateDisplay();
+  vibrate(20);
 }
 // lets the athlete manually skip ahead to the next rest interval instead of waiting for it to elapse naturally
 function focusSkipToNextRound(){
@@ -2436,10 +2473,19 @@ function focusReset(){
   focusUpdateButtonStates();
 }
 function focusUpdateButtonStates(){
-  if(!focusTimer) return;
+  if(!focusTimer || focusTimer.leadIn) return;
   const playPauseBtn = document.getElementById('gw-floatcard-playpause');
-  if(!playPauseBtn || focusTimer.leadIn) return;
-  playPauseBtn.innerHTML = focusTimer.running ? ICON_PAUSE : ICON_PLAY;
+  const dialPlay = document.getElementById('gw-dial-play');
+  const numberEl = document.getElementById('gw-focus-number');
+  const hint = document.getElementById('gw-dial-hint');
+  const started = focusTimer.running || focusTimer.elapsedBefore > 0;
+  if(dialPlay) dialPlay.style.display = started ? 'none' : '';
+  if(hint) hint.style.display = started ? 'none' : '';
+  if(numberEl) numberEl.style.display = started ? '' : 'none';
+  if(playPauseBtn){
+    playPauseBtn.style.display = (started && !focusTimer.doneBeeped) ? '' : 'none';
+    playPauseBtn.innerHTML = focusTimer.running ? ICON_PAUSE : ICON_PLAY;
+  }
 }
 function focusUpdateDisplay(){
   if(!focusTimer || focusTimer.leadIn) return;
@@ -2451,9 +2497,11 @@ function focusUpdateDisplay(){
   const secondaryEl = document.getElementById('gw-focus-secondary');
   if(!numberEl) return;
   const elapsed = focusCurrentElapsed();
-  const CIRC = 2*Math.PI*34;
+  const CIRC = 2*Math.PI*90;
   let displaySeconds = 0, warn = false, fraction = 1, isRest = false, phaseWordUsed = false, secondaryUsed = false;
-  function setRing(frac){ if(ring) ring.style.strokeDashoffset = String(CIRC * (1-Math.max(0,Math.min(1,frac)))); }
+  // frac = fraction of the current phase REMAINING (1 at phase start, 0 at phase end).
+  // The dial fills as time elapses (matches a class-clock look), so we draw the complement of frac.
+  function setRing(frac){ if(ring) ring.style.strokeDashoffset = String(CIRC * Math.max(0,Math.min(1,frac))); }
 
   if(focusTimer.kind==='AMRAP' && focusTimer.cycles){
     const workSec = focusTimer.minutes*60, restSec = (focusTimer.restMinutes||0)*60, cycleLen = workSec+restSec;
@@ -2470,15 +2518,12 @@ function focusUpdateDisplay(){
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
     phaseEl.textContent = isRest ? 'REST' : 'AMRAP';
     phaseWordUsed = true;
-    phaseEl.classList.toggle('rest', isRest);
-    const cb = document.getElementById('gw-focus-cyclebadge');
-    if(cb){ cb.style.display = ''; cb.textContent = `Interval ${cycleIdx+1} of ${focusTimer.cycles}`; }
-    subEl.textContent = isRest ? 'Rest — get ready to go again' : `${focusTimer.minutes} min AMRAP`;
+    subEl.textContent = `Interval ${cycleIdx+1} of ${focusTimer.cycles}` + (isRest ? ' — rest, get ready to go again' : '');
     if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
     else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0; }
     setRing(fraction);
-    if(ring) ring.classList.toggle('rest', isRest);
-    numberEl.classList.toggle('rest', isRest);
+    const stageEl2 = document.getElementById('gw-floatcard');
+    if(stageEl2) stageEl2.style.setProperty('--stage-color', isRest ? 'var(--t-rest)' : 'var(--t-amrap)');
 
   } else if(focusTimer.kind==='AMRAP' || focusTimer.kind==='COUNTDOWN'){
     const total = focusTimer.minutes*60;
@@ -2490,8 +2535,6 @@ function focusUpdateDisplay(){
     else { if(displaySeconds<=10) warn=true; focusMaybeTick(displaySeconds); fraction = total>0 ? displaySeconds/total : 0; }
     setRing(fraction);
     if(focusTimer.kind==='AMRAP'){
-      const cb = document.getElementById('gw-focus-cyclebadge');
-      if(cb && focusTimer.buyIn) cb.style.display = 'none';
       subEl.textContent = focusTimer.mode==='ascending'
         ? `Next round: ${focusTimer.startReps + state.focusTapCount*focusTimer.increment} reps`
         : focusTimer.mode==='reps' ? `${focusTimer.minutes} min — rack up total reps`
@@ -2582,9 +2625,10 @@ function focusUpdateDisplay(){
     if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
     else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0; }
     setRing(fraction);
-    if(stage) stage.classList.toggle('gw-focus-rest', isRest);
-    if(ring) ring.classList.toggle('rest', isRest);
-    numberEl.classList.toggle('rest', isRest);
+    const stageEl = document.getElementById('gw-floatcard');
+    if(stageEl) stageEl.style.setProperty('--stage-color', isRest ? 'var(--t-rest)' : 'var(--t-tabata)');
+    const skipHint = document.getElementById('gw-dial-skiphint');
+    if(skipHint) skipHint.style.display = (isRest && focusTimer.running) ? '' : 'none';
 
   } else if(focusTimer.kind==='LADDER'){
     displaySeconds = elapsed;
@@ -2614,8 +2658,9 @@ function focusUpdateDisplay(){
     if(focusTimer.kind==='FORTIME_REPEATS'){
       const resting = focusTimer.restUntil && elapsed < focusTimer.restUntil;
       phaseEl.textContent = resting ? 'REST' : 'GO';
-      phaseEl.classList.toggle('rest', resting);
       phaseWordUsed = true;
+      const stageEl3 = document.getElementById('gw-floatcard');
+      if(stageEl3) stageEl3.style.setProperty('--stage-color', resting ? 'var(--t-rest)' : 'var(--t-fortime)');
       if(resting && secondaryEl){ secondaryEl.textContent = `Next round in ${fmtClock(focusTimer.restUntil-elapsed)}`; secondaryUsed = true; }
       if(resting && focusTimer.running && Math.ceil(focusTimer.restUntil-elapsed)<=3) focusMaybeTick(focusTimer.restUntil-elapsed);
       subEl.textContent = `Round ${Math.min(state.focusTapCount+1, focusTimer.rounds)} of ${focusTimer.rounds} — for time`;
