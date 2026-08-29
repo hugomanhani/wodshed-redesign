@@ -597,19 +597,14 @@
   }
   .gw-focus-exit:hover{color:var(--coral);}
 
-  #gw-stopconfirm-backdrop{
-    display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:180;
-    align-items:center; justify-content:center; padding:20px;
-  }
-  #gw-stopconfirm-backdrop.show{display:flex;}
   #gw-timerstop-backdrop{
     display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:185;
     align-items:center; justify-content:center; padding:20px;
   }
   #gw-timerstop-backdrop.show{display:flex;}
-  #gw-stopconfirm, #gw-timerstop{background:var(--surface); border-radius:16px; max-width:340px; width:100%; padding:24px;}
-  #gw-stopconfirm h4, #gw-timerstop h4{margin:0 0 10px; color:#fff; font-size:20px; font-family:var(--font-display); font-weight:900; text-transform:uppercase;}
-  #gw-stopconfirm p, #gw-timerstop p{margin:0 0 18px; font-size:13.5px; line-height:1.55; color:var(--muted); font-family:var(--font-body);}
+  #gw-timerstop{background:var(--surface); border-radius:16px; max-width:340px; width:100%; padding:24px;}
+  #gw-timerstop h4{margin:0 0 10px; color:#fff; font-size:20px; font-family:var(--font-display); font-weight:900; text-transform:uppercase;}
+  #gw-timerstop p{margin:0 0 18px; font-size:13.5px; line-height:1.55; color:var(--muted); font-family:var(--font-body);}
   .gw-stopconfirm-row{display:flex; gap:10px;}
   .gw-stopconfirm-row .gw-btn{flex:1; padding:14px; font-size:13px;}
 
@@ -761,16 +756,6 @@
   </div>
 </div>
 <div id="gw-toast"></div>
-<div id="gw-stopconfirm-backdrop">
-  <div id="gw-stopconfirm">
-    <h4>Stop the workout?</h4>
-    <p>You'll leave Focus Mode. Nothing you've done so far is lost — you can pick up where you left off from the normal view.</p>
-    <div class="gw-stopconfirm-row">
-      <button class="gw-btn" id="gw-stopconfirm-cancel">Keep Going</button>
-      <button class="gw-btn gw-primary" id="gw-stopconfirm-ok">Stop</button>
-    </div>
-  </div>
-</div>
 <div id="gw-timerstop-backdrop">
   <div id="gw-timerstop">
     <h4>Cancel this timer?</h4>
@@ -1184,29 +1169,31 @@ function refreshStepCompletion(w, currentKey, stepData){
 
 // Appends a round to the live in-content log, computing the split (time since last round) and
 // the delta vs the previous split — matches the "Round 2  01:20  -10s" pattern from the design.
+function buildRoundLogRow(entry){
+  const row = document.createElement('div');
+  row.className = 'gw-roundlog-row';
+  let html = `<span>Round ${entry.round}</span>`;
+  if(entry.split!=null){
+    html += `<span><span class="gw-roundlog-time">${fmtClock(entry.split)}</span>`;
+    if(entry.delta!=null && entry.delta!==0){
+      const sign = entry.delta>0 ? '+' : '';
+      html += `<span class="gw-roundlog-delta ${entry.delta>0?'pos':'neg'}">${sign}${entry.delta}s</span>`;
+    }
+    html += `</span>`;
+  }
+  row.innerHTML = html;
+  return row;
+}
 function logRoundTap(elapsedSeconds){
   const log = document.getElementById('gw-roundlog');
-  if(!log) return;
   const roundNum = state.focusRoundLog.length + 1;
   const prevElapsed = state.focusRoundLog.length ? state.focusRoundLog[state.focusRoundLog.length-1].elapsedAtTap : 0;
   const splitSeconds = elapsedSeconds!=null ? Math.round(elapsedSeconds - prevElapsed) : null;
   const prevSplit = state.focusRoundLog.length ? state.focusRoundLog[state.focusRoundLog.length-1].split : null;
   const delta = (splitSeconds!=null && prevSplit!=null) ? splitSeconds - prevSplit : null;
-  state.focusRoundLog.push({round: roundNum, elapsedAtTap: elapsedSeconds, split: splitSeconds});
-
-  const row = document.createElement('div');
-  row.className = 'gw-roundlog-row';
-  let html = `<span>Round ${roundNum}</span>`;
-  if(splitSeconds!=null){
-    html += `<span><span class="gw-roundlog-time">${fmtClock(splitSeconds)}</span>`;
-    if(delta!=null && delta!==0){
-      const sign = delta>0 ? '+' : '';
-      html += `<span class="gw-roundlog-delta ${delta>0?'pos':'neg'}">${sign}${delta}s</span>`;
-    }
-    html += `</span>`;
-  }
-  row.innerHTML = html;
-  log.appendChild(row);
+  const entry = {round: roundNum, elapsedAtTap: elapsedSeconds, split: splitSeconds, delta};
+  state.focusRoundLog.push(entry);
+  if(log) log.appendChild(buildRoundLogRow(entry));
 }
 
 function timerExplainer(spec){
@@ -1751,6 +1738,13 @@ function addStartSectionButton(node, key){
     doneBtn.disabled = true;
     doneBtn.innerHTML = `${ICON_CHECK}<span>Completed</span>`;
     node.bodyEl.appendChild(doneBtn);
+  } else if(focusTimer && focusTimer.sectionKey===key && !focusTimer.doneBeeped){
+    // minimized but still running in the background — reopen it as-is, no fresh start
+    const btn = document.createElement('button');
+    btn.className = 'gw-section-start-btn';
+    btn.innerHTML = `${ICON_PLAY}<span>${sectionStartLabel(key, w).replace('Start ', 'Resume ')}</span>`;
+    btn.onclick = ()=>resumeSectionFocus(key);
+    node.bodyEl.appendChild(btn);
   } else if(stepData.timerSpec){
     const btn = document.createElement('button');
     btn.className = 'gw-section-start-btn';
@@ -1977,6 +1971,12 @@ function getSectionFocusData(w, key){
 }
 function openSectionFocus(key){
   if(!state.currentWorkout) return;
+  // a different section's timer minimized in the background gets abandoned when starting a fresh one —
+  // only one timer session can run at a time
+  if(focusTimer && focusTimer.sectionKey!==key){
+    focusStopTicking();
+    focusTimer = null;
+  }
   state.focusMode = true;
   state.focusSectionKey = key;
   state.focusTapCount = 0;
@@ -2007,19 +2007,33 @@ function requestCloseFloatCard(){
 function cancelCloseFloatCard(){
   document.getElementById('gw-timerstop-backdrop').classList.remove('show');
 }
+// the X (and tapping the backdrop) never asks to confirm anymore — a timer that's still going
+// just minimizes so the athlete can glance at the workout, while a finished one has nothing left
+// to resume, so it closes outright
 function requestExitFocus(){
-  if(focusTimer && !focusTimer.doneBeeped && (focusTimer.running || focusTimer.elapsedBefore > 0)){
-    focusStopTicking();
-    document.getElementById('gw-stopconfirm-backdrop').classList.add('show');
+  if(focusTimer && !focusTimer.doneBeeped){
+    minimizeTimerDrawer();
   } else {
     confirmExitFocus();
   }
 }
-function cancelExitFocus(){
-  document.getElementById('gw-stopconfirm-backdrop').classList.remove('show');
+// hides the drawer but leaves focusTimer running in the background — its own tick loop keeps
+// going (and will still auto-finish the section) even while the drawer isn't on screen
+function minimizeTimerDrawer(){
+  document.getElementById('gw-timer-drawer-backdrop').classList.remove('show');
+  state.focusMode = false;
+  render();
+}
+// re-opens the drawer on the timer that's already running in the background, without touching
+// focusTimer or any of its accumulated progress (see the isResume guard in renderSectionFocus)
+function resumeSectionFocus(key){
+  if(!state.currentWorkout) return;
+  state.focusMode = true;
+  state.focusSectionKey = key;
+  document.getElementById('gw-timer-drawer-backdrop').classList.add('show');
+  renderSectionFocus();
 }
 function confirmExitFocus(){
-  document.getElementById('gw-stopconfirm-backdrop').classList.remove('show');
   const key = state.focusSectionKey;
   const w = state.currentWorkout;
   closeTimerDrawer();
@@ -2035,9 +2049,13 @@ function renderSectionFocus(){
 
   document.getElementById('gw-focus-header-name').textContent = stepData.label;
 
+  // resuming a minimized-but-still-running timer for this same section reopens the existing
+  // focusTimer as-is — a fresh open would otherwise wipe out its progress
+  const isResume = !!(focusTimer && focusTimer.sectionKey===key && !focusTimer.doneBeeped);
+
   const container = document.getElementById('gw-focus');
   container.innerHTML = '';
-  state.focusRoundLog = [];
+  if(!isResume) state.focusRoundLog = [];
 
   // section headline/detail/buy-in/buy-out/set-by-set breakdown already live on the homepage card —
   // the drawer stays a focused, timer-only view. Weight (for lift-based skill work) is the one thing
@@ -2050,6 +2068,7 @@ function renderSectionFocus(){
     roundLog.className = 'gw-roundlog';
     roundLog.id = 'gw-roundlog';
     container.appendChild(roundLog);
+    if(isResume) state.focusRoundLog.forEach(entry=>roundLog.appendChild(buildRoundLogRow(entry)));
   }
 
   if(stepData.timerSpec){
@@ -2134,6 +2153,10 @@ function renderSectionFocus(){
 
     const roundCap = (kind==='RFT') ? spec.rounds : (kind==='LADDER' ? spec.rungs.length : (kind==='FORTIME_REPEATS' ? spec.rounds : null));
     if(roundCap) document.getElementById('gw-focus-round-target').textContent = `/ ${roundCap}`;
+    if(isResume){
+      document.getElementById('gw-focus-roundsbadge').textContent = isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount;
+      if(roundCap && state.focusTapCount >= roundCap) document.getElementById('gw-focus-plus').disabled = true;
+    }
 
     document.getElementById('gw-focus-plus').onclick = ()=>{
       if(roundCap && state.focusTapCount >= roundCap) return;
@@ -2164,7 +2187,8 @@ function renderSectionFocus(){
     document.getElementById('gw-floatcard-playpause').onclick = focusToggleFromTap;
     document.getElementById('gw-floatcard-close').onclick = requestCloseFloatCard;
     if(isAmreps){
-      state.focusAmrepsTotal = 0;
+      if(!isResume) state.focusAmrepsTotal = 0;
+      document.getElementById('gw-amreps-total').textContent = state.focusAmrepsTotal || 0;
       const bump = (delta)=>{
         state.focusAmrepsTotal = Math.max(0, (state.focusAmrepsTotal||0) + delta);
         document.getElementById('gw-amreps-total').textContent = state.focusAmrepsTotal;
@@ -2189,7 +2213,12 @@ function renderSectionFocus(){
       wireSwipeToFinish(swipeZone, key);
     }
 
-    focusOpenTimer(spec, key);
+    if(isResume){
+      focusUpdateDisplay();
+      focusUpdateButtonStates();
+    } else {
+      focusOpenTimer(spec, key);
+    }
   } else {
     // the only way to reach the drawer is via a Start button gated on stepData.timerSpec — this shouldn't happen
     state.focusMode = false;
@@ -2240,6 +2269,18 @@ function wireSwipeToFinish(zone, stepKey){
   window.addEventListener('mouseup', onUp);
 }
 
+// a finished timer has nothing left to resume, so it closes itself — deferred a beat so the
+// "Completed" state/toast is visible for a moment first, and deferred (not synchronous) because
+// focusFinish() calls this from inside focusUpdateDisplay(), which still touches focusTimer's
+// fields after the fact — nulling it out mid-call would throw
+function focusAutoCloseAndRate(key){
+  setTimeout(()=>{
+    const w = state.currentWorkout;
+    closeTimerDrawer();
+    render();
+    maybePromptRating(w, key);
+  }, 700);
+}
 function focusManualFinish(stepKey){
   if(!focusTimer) return;
   focusTimer.elapsedBefore = focusCurrentElapsed();
@@ -2258,6 +2299,7 @@ function focusManualFinish(stepKey){
   focusUpdateButtonStates();
   state.focusStepDone[stepKey] = true;
   toast('✓ Finished — time locked in.');
+  focusAutoCloseAndRate(stepKey);
 }
 
 // independent timer engine for Focus Mode (mirrors the modal's logic but keeps its own state,
@@ -2303,6 +2345,7 @@ function focusFinish(){
       }
     }
     toast('✓ Completed!');
+    focusAutoCloseAndRate(focusTimer.sectionKey);
   }
 }
 function focusTick(){
@@ -3493,8 +3536,6 @@ function fmtClock(totalSeconds){
   return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
 }
 
-document.getElementById('gw-stopconfirm-cancel').onclick = cancelExitFocus;
-document.getElementById('gw-stopconfirm-ok').onclick = confirmExitFocus;
 document.getElementById('gw-timerstop-cancel').onclick = cancelCloseFloatCard;
 document.getElementById('gw-timerstop-ok').onclick = cancelTimerAndClose;
 document.getElementById('gw-focus-close').innerHTML = ICON_X;
