@@ -1974,34 +1974,8 @@ function renderSectionFocus(){
   state.focusSetChecks = [];
   state.focusRoundLog = [];
 
-  const focusExplainerText = timerExplainer(stepData.timerSpec);
-  if(focusExplainerText){
-    const explainEl = document.createElement('div');
-    explainEl.className = 'gw-format-explainer';
-    explainEl.textContent = focusExplainerText;
-    container.appendChild(explainEl);
-  }
-
-  const detail = document.createElement('div');
-  detail.className = 'gw-focus-detail';
-  detail.textContent = stepData.text;
-  container.appendChild(detail);
-
+  // section headline/detail/buy-in/buy-out already live on the homepage card — the drawer stays timer-only
   const spec = stepData.timerSpec;
-  if(spec && spec.buyIn){
-    const bi = document.createElement('div');
-    bi.className = 'gw-buyin-card';
-    bi.id = 'gw-buyin-card';
-    bi.innerHTML = `<div class="gw-buyin-check">${ICON_CHECK}</div><div class="gw-buyin-text"><div class="gw-buyin-label">Buy-In — do this first</div><div class="gw-buyin-detail">${spec.buyIn.text}</div></div>`;
-    bi.onclick = ()=>{ bi.classList.toggle('done'); vibrate(15); };
-    container.appendChild(bi);
-  }
-  if(spec && spec.betweenMovement){
-    const bm = document.createElement('div');
-    bm.className = 'gw-format-explainer';
-    bm.textContent = `Between each round: ${spec.betweenMovement.text}`;
-    container.appendChild(bm);
-  }
 
   if(key==='skill' && w.skillLiftKey){
     const scheme = parseSetScheme(stepData.text, w.skillLiftKey);
@@ -2131,15 +2105,6 @@ function renderSectionFocus(){
     document.getElementById('gw-dial-wrap').onclick = ()=>{
       if(focusTimer && !focusTimer.leadIn && (focusTimer.running || focusTimer.elapsedBefore>0) && !focusTimer.doneBeeped) focusToggleFromTap();
     };
-
-    if(spec.buyOut){
-      const bo = document.createElement('div');
-      bo.className = 'gw-buyin-card';
-      bo.id = 'gw-buyout-card';
-      bo.innerHTML = `<div class="gw-buyin-check">${ICON_CHECK}</div><div class="gw-buyin-text"><div class="gw-buyin-label">Buy-Out — after your last round</div><div class="gw-buyin-detail">${spec.buyOut.text}</div></div>`;
-      bo.onclick = ()=>{ bo.classList.toggle('done'); vibrate(15); };
-      container.appendChild(bo);
-    }
 
     const isAmreps = kind==='AMRAP' && spec.mode==='reps';
     const isAscending = kind==='AMRAP' && spec.mode==='ascending';
