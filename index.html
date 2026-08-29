@@ -2319,17 +2319,18 @@ function focusStartWithLeadIn(){
   const freshStart = focusTimer.elapsedBefore===0 && !focusTimer.doneBeeped;
   if(!freshStart){ focusStart(); return; }
   focusTimer.leadIn = true;
+  const myTimer = focusTimer;
   const numberEl = document.getElementById('gw-focus-number');
   const seq = ['3','2','1','GO'];
   let i = 0;
   function step(){
-    if(!focusTimer) return;
+    if(focusTimer !== myTimer) return;
     if(numberEl) numberEl.textContent = seq[i];
     if(seq[i]==='GO') beepTriple(); else tickBeep();
     vibrate(seq[i]==='GO' ? [80,40,120] : 30);
     i++;
     if(i < seq.length){ setTimeout(step, 700); }
-    else { setTimeout(()=>{ focusTimer.leadIn = false; focusStart(); }, 500); }
+    else { setTimeout(()=>{ if(focusTimer===myTimer){ focusTimer.leadIn = false; focusStart(); } }, 500); }
   }
   step();
 }
@@ -2376,7 +2377,7 @@ function focusReset(){
   cancelAnimationFrame(focusTimer.raf);
   focusTimer.running = false; focusTimer.startedAt = null; focusTimer.elapsedBefore = 0;
   focusTimer.lastBeepUnit = -1; focusTimer.lastPhaseKey = null; focusTimer.lastTickSecond = null;
-  focusTimer.doneBeeped = false; focusTimer.halfwayBeeped = false;
+  focusTimer.doneBeeped = false; focusTimer.halfwayBeeped = false; focusTimer.leadIn = false;
   focusUpdateDisplay();
   focusUpdateButtonStates();
 }
@@ -2403,7 +2404,7 @@ function focusUpdateDisplay(){
   const secondaryEl = document.getElementById('gw-focus-secondary');
   if(!numberEl) return;
   const elapsed = focusCurrentElapsed();
-  const CIRC = 2*Math.PI*90;
+  const CIRC = 2*Math.PI*34;
   let displaySeconds = 0, warn = false, fraction = 1, isRest = false, phaseWordUsed = false, secondaryUsed = false;
   // frac = fraction of the current phase REMAINING (1 at phase start, 0 at phase end).
   // The dial fills as time elapses (matches a class-clock look), so we draw the complement of frac.
@@ -2421,7 +2422,6 @@ function focusUpdateDisplay(){
     const phaseElapsed = isRest ? withinCycle-workSec : withinCycle;
     displaySeconds = phaseSecTotal - phaseElapsed;
     fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0;
-    if(displaySeconds===phaseSecTotal) displaySeconds = 0;
     const phaseKey = cycleIdx+'-'+(isRest?'rest':'work');
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
     phaseEl.textContent = isRest ? 'REST' : 'AMRAP';
@@ -2457,7 +2457,6 @@ function focusUpdateDisplay(){
     const withinMinute = clamped - unit*60;
     displaySeconds = 60 - withinMinute;
     fraction = displaySeconds/60;
-    if(displaySeconds===60) displaySeconds=0;
     if(focusTimer.alternate){
       const which = unit % 2;
       subEl.textContent = `Minute ${unit+1}${total!=null?` of ${focusTimer.minutes}`:''} — ${which===0?'ODD':'EVEN'}: ${focusTimer.alternate[which]}`;
@@ -2486,7 +2485,6 @@ function focusUpdateDisplay(){
       const withinUnit = clamped - unit*cycle;
       displaySeconds = cycle - withinUnit;
       fraction = displaySeconds/cycle;
-      if(displaySeconds===cycle) displaySeconds=0;
       subEl.textContent = `Rest after set ${Math.min(unit+1, focusTimer.totalRounds)} of ${focusTimer.totalRounds}`;
       if(nextPreviewEl) nextPreviewEl.textContent = unit+1 < focusTimer.totalRounds ? `Set ${unit+2}` : 'Finish';
       if(unit > focusTimer.lastBeepUnit && unit < focusTimer.totalRounds && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
@@ -2498,7 +2496,6 @@ function focusUpdateDisplay(){
       const withinUnit = elapsed - unit*cycle;
       displaySeconds = cycle - withinUnit;
       fraction = displaySeconds/cycle;
-      if(displaySeconds===cycle) displaySeconds=0;
       subEl.textContent = `Round ${unit+1} — beeps each time it resets`;
       if(nextPreviewEl) nextPreviewEl.textContent = `Round ${unit+2}`;
       if(unit > focusTimer.lastBeepUnit && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
@@ -2518,7 +2515,6 @@ function focusUpdateDisplay(){
     const phaseElapsed = isRest ? withinCycle - focusTimer.workSec : withinCycle;
     displaySeconds = phaseSecTotal - phaseElapsed;
     fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0;
-    if(displaySeconds===phaseSecTotal) displaySeconds = 0;
     const phaseKey = roundIdx+'-'+(isRest?'rest':'work');
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
     phaseEl.textContent = isRest ? 'REST' : (focusTimer.alternate ? focusTimer.alternate[roundIdx % 2] : 'WORK');
