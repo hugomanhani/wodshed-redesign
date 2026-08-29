@@ -289,15 +289,6 @@
   .gw-headline-row .gw-tag{flex-shrink:0;}
   .gw-section-detail{font-family:var(--font-body); font-weight:500; font-size:13.5px; color:var(--text); line-height:1.7; white-space:pre-line;}
   .gw-format-explainer{font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--muted); line-height:1.4;}
-  .gw-checklist{display:flex; flex-direction:column; gap:20px; width:100%;}
-  .gw-checklist-row{display:flex; gap:8px; align-items:flex-start;}
-  .gw-checklist-num{
-    flex:none; width:40px; font-family:var(--font-body); font-weight:900; font-size:12px; color:var(--coral);
-    letter-spacing:0.03em; text-transform:uppercase; padding-top:11px; background:none; border:none; text-align:left;
-    cursor:pointer; -webkit-tap-highlight-color:transparent;
-  }
-  .gw-checklist-num svg{width:16px; height:16px; margin-top:2px;}
-  .gw-checklist-num-done{color:var(--coral);}
   .gw-roundlog{display:flex; flex-direction:column; gap:2px; width:100%;}
   .gw-roundlog:empty{display:none;}
   .gw-roundlog-row{
@@ -309,26 +300,6 @@
   .gw-roundlog-delta.pos{color:var(--danger);}
   .gw-roundlog-delta.neg{color:#fff;}
   .gw-roundlog-done{font-family:var(--font-display); font-weight:900; font-size:12px; letter-spacing:0.04em; color:var(--coral); text-transform:uppercase; padding-top:8px;}
-  .gw-checklist-reps{
-    flex:none; width:70px; font-family:var(--font-body); font-weight:900; font-size:12px; color:#fff;
-    letter-spacing:0.03em; text-transform:uppercase; padding-top:11px;
-  }
-  .gw-checklist-inputwrap{flex:1; display:flex; flex-direction:column; gap:8px; min-width:0;}
-  .gw-checklist-inputbox{
-    position:relative; height:44px; background:var(--surface-2); border:1px solid var(--line-strong); border-radius:8px;
-    display:flex; align-items:center;
-  }
-  .gw-checklist-inputbox input{
-    flex:1; background:none; border:none; color:#fff; font-family:var(--font-body); font-weight:900; font-size:18px;
-    padding-left:15px; min-width:0; width:100%;
-  }
-  .gw-checklist-units{display:flex; gap:0; padding-right:6px; flex:none;}
-  .gw-unit{
-    background:none; border:none; color:#fff; font-family:var(--font-body); font-weight:900; font-size:14px;
-    padding:0 8px; cursor:pointer; opacity:0.3;
-  }
-  .gw-unit.active{opacity:1; text-decoration:underline;}
-  .gw-checklist-plates{font-family:var(--font-body); font-weight:700; font-size:12px; color:var(--muted);}
   .gw-movement-list{display:flex; flex-direction:column; gap:2px;}
   .gw-movement-row{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -598,6 +569,16 @@
     background:var(--stage-color, var(--good)); color:#000;
   }
   .gw-dial-finish svg{width:34px; height:34px;}
+  .gw-stage-weight{display:flex; align-items:center; gap:16px; margin:2px 0;}
+  .gw-stage-weight button{
+    width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--line-strong);
+    color:var(--stage-color, var(--coral)); font-size:16px; font-weight:900; cursor:pointer; font-family:var(--font-body);
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .gw-stage-weight-mid{display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .gw-stage-weight-val{font-family:var(--font-mono); font-weight:700; font-size:24px; color:#fff; min-width:80px; text-align:center;}
+  .gw-stage-weight-val span{font-family:var(--font-body); font-weight:700; font-size:11px; color:var(--muted); margin-left:4px;}
+  .gw-stage-weight-plates{font-family:var(--font-body); font-weight:600; font-size:11px; color:var(--muted);}
   .gw-dial-finish.show{display:flex;}
 
   .gw-stage-round{
@@ -611,6 +592,13 @@
   }
   .gw-stage-round.gw-tap-flash .gw-stage-round-badge{background:var(--stage-color, var(--coral)); color:#000;}
   .gw-stage-round-label{font-size:11px; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);}
+  .gw-floatcard-next{display:flex; flex-direction:column; align-items:center; gap:4px;}
+  .gw-floatcard-next button{
+    display:flex; align-items:center; gap:8px; background:var(--stage-color, var(--coral)); color:#000; border:none;
+    border-radius:999px; padding:10px 18px; cursor:pointer; font-family:var(--font-body); font-weight:800; font-size:13px;
+  }
+  .gw-floatcard-next button svg{width:15px; height:15px;}
+  .gw-floatcard-nextpreview{font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:0.03em;}
 
   .gw-showworkout-toggle{
     display:flex; align-items:center; gap:6px; justify-content:center; background:none; border:none;
@@ -1223,10 +1211,7 @@ function parseRoundTarget(text){
 
 function refreshStepCompletion(w, currentKey, stepData){
   let done = false;
-  if(currentKey==='skill' && w.skillLiftKey){
-    const scheme = parseSetScheme(stepData.text, w.skillLiftKey);
-    if(scheme) done = state.focusSetChecks.length===scheme.length && state.focusSetChecks.every(Boolean);
-  } else if(stepData.timerSpec){
+  if(stepData.timerSpec){
     done = !!(focusTimer && focusTimer.doneBeeped);
   } else {
     done = state.focusTapCount >= parseRoundTarget(stepData.text);
@@ -1268,19 +1253,6 @@ function logRoundTap(elapsedSeconds){
   }
   row.innerHTML = html;
   log.appendChild(row);
-}
-
-function parseSetScheme(text, liftKey){
-  if(!liftKey || !text) return null;
-  const lines = text.split('\n');
-  for(const line of lines){
-    const trimmed = line.trim();
-    const dashMatch = trimmed.match(/^(\d+(?:-\d+){1,})$/);
-    if(dashMatch) return trimmed.split('-').map(Number);
-    const xMatch = trimmed.match(/^(\d+)\s*x\s*(\d+)$/i);
-    if(xMatch) return Array(Number(xMatch[1])).fill(Number(xMatch[2]));
-  }
-  return null;
 }
 
 function timerExplainer(spec){
@@ -1482,7 +1454,6 @@ let state = {
   focusSectionKey: null,
   focusTapCount: 0,
   focusStepDone: {},
-  focusSetChecks: [],
   focusRoundLog: [],
   loaded: false
 };
@@ -1971,76 +1942,12 @@ function renderSectionFocus(){
 
   const container = document.getElementById('gw-focus');
   container.innerHTML = '';
-  state.focusSetChecks = [];
   state.focusRoundLog = [];
 
-  // section headline/detail/buy-in/buy-out already live on the homepage card — the drawer stays timer-only
+  // section headline/detail/buy-in/buy-out/set-by-set breakdown already live on the homepage card —
+  // the drawer stays a focused, timer-only view. Weight (for lift-based skill work) is the one thing
+  // worth adjusting mid-session, so it gets a compact stepper on the stage itself (see below).
   const spec = stepData.timerSpec;
-
-  if(key==='skill' && w.skillLiftKey){
-    const scheme = parseSetScheme(stepData.text, w.skillLiftKey);
-    if(scheme){
-      state.focusSetChecks = new Array(scheme.length).fill(false);
-      const checklist = document.createElement('div');
-      checklist.className = 'gw-checklist';
-      scheme.forEach((reps, idx)=>{
-        const row = document.createElement('div');
-        row.className = 'gw-checklist-row';
-        const num = document.createElement('button');
-        num.type = 'button';
-        num.className = 'gw-checklist-num';
-        num.textContent = String(idx+1).padStart(2,'0') + '.';
-        num.onclick = ()=>{
-          state.focusSetChecks[idx] = !state.focusSetChecks[idx];
-          num.innerHTML = state.focusSetChecks[idx] ? ICON_CHECK : (String(idx+1).padStart(2,'0') + '.');
-          num.classList.toggle('gw-checklist-num-done', state.focusSetChecks[idx]);
-          vibrate(15);
-          refreshStepCompletion(w, key, stepData);
-        };
-        row.appendChild(num);
-        const repsLabel = document.createElement('span');
-        repsLabel.className = 'gw-checklist-reps';
-        repsLabel.textContent = `${reps} reps`;
-        row.appendChild(repsLabel);
-
-        const inputWrap = document.createElement('div');
-        inputWrap.className = 'gw-checklist-inputwrap';
-        const inputBox = document.createElement('div');
-        inputBox.className = 'gw-checklist-inputbox';
-        const input = document.createElement('input');
-        input.type = 'number'; input.step = '5'; input.value = w.suggestedLoad;
-        const plates = document.createElement('div');
-        plates.className = 'gw-checklist-plates';
-        plates.textContent = plateBreakdown(w.suggestedLoad);
-        const unitRow = document.createElement('div');
-        unitRow.className = 'gw-checklist-units';
-        const lbBtn = document.createElement('button');
-        lbBtn.type = 'button'; lbBtn.className = 'gw-unit active'; lbBtn.textContent = 'lb';
-        const kgBtn = document.createElement('button');
-        kgBtn.type = 'button'; kgBtn.className = 'gw-unit'; kgBtn.textContent = 'kg';
-        let unit = 'lb';
-        input.oninput = ()=>{
-          const val = Number(input.value)||0;
-          w.suggestedLoad = unit==='kg' ? Math.round(val/0.453592/5)*5 : val;
-          plates.textContent = plateBreakdown(w.suggestedLoad);
-        };
-        lbBtn.onclick = ()=>{
-          unit = 'lb'; lbBtn.classList.add('active'); kgBtn.classList.remove('active');
-          input.value = w.suggestedLoad;
-        };
-        kgBtn.onclick = ()=>{
-          unit = 'kg'; kgBtn.classList.add('active'); lbBtn.classList.remove('active');
-          input.value = Math.round(w.suggestedLoad*0.453592*10)/10;
-        };
-        unitRow.appendChild(lbBtn); unitRow.appendChild(kgBtn);
-        inputBox.appendChild(input); inputBox.appendChild(unitRow);
-        inputWrap.appendChild(inputBox); inputWrap.appendChild(plates);
-        row.appendChild(inputWrap);
-        checklist.appendChild(row);
-      });
-      container.appendChild(checklist);
-    }
-  }
 
   // live round-by-round log — built as rounds are logged, for AMRAP/RFT and non-timer round-based steps
   if(key==='wod' || !stepData.timerSpec){
@@ -2082,6 +1989,14 @@ function renderSectionFocus(){
       <div class="gw-dial-secondary" id="gw-focus-secondary"></div>
       <button class="gw-dial-skiphint" id="gw-dial-skiphint" type="button" style="display:none; background:none; border:none; cursor:pointer; text-decoration:underline;">Skip rest</button>
       <button class="gw-dial-smallctrl" id="gw-floatcard-playpause" style="display:none;" aria-label="Pause or resume">${ICON_PAUSE}</button>
+      <div class="gw-stage-weight" id="gw-stage-weight" style="display:none;">
+        <button type="button" id="gw-weight-minus" aria-label="Decrease weight">−</button>
+        <div class="gw-stage-weight-mid">
+          <div class="gw-stage-weight-val"><span id="gw-weight-value">0</span><span>lb</span></div>
+          <div class="gw-stage-weight-plates" id="gw-weight-plates"></div>
+        </div>
+        <button type="button" id="gw-weight-plus" aria-label="Increase weight">+</button>
+      </div>
       <div class="gw-alt-row" id="gw-focus-altrow" style="display:none; width:100%;">
         <div class="gw-alt-chip" id="gw-focus-alt-a"></div>
         <div class="gw-alt-chip" id="gw-focus-alt-b"></div>
@@ -2105,6 +2020,17 @@ function renderSectionFocus(){
     document.getElementById('gw-dial-wrap').onclick = ()=>{
       if(focusTimer && !focusTimer.leadIn && (focusTimer.running || focusTimer.elapsedBefore>0) && !focusTimer.doneBeeped) focusToggleFromTap();
     };
+
+    if(key==='skill' && w.skillLiftKey){
+      const weightRow = document.getElementById('gw-stage-weight');
+      weightRow.style.display = '';
+      const valueEl = document.getElementById('gw-weight-value');
+      const platesEl = document.getElementById('gw-weight-plates');
+      const paint = ()=>{ valueEl.textContent = w.suggestedLoad; platesEl.textContent = plateBreakdown(w.suggestedLoad); };
+      paint();
+      document.getElementById('gw-weight-minus').onclick = ()=>{ w.suggestedLoad = Math.max(0, w.suggestedLoad-5); paint(); vibrate(10); };
+      document.getElementById('gw-weight-plus').onclick = ()=>{ w.suggestedLoad += 5; paint(); vibrate(10); };
+    }
 
     const isAmreps = kind==='AMRAP' && spec.mode==='reps';
     const isAscending = kind==='AMRAP' && spec.mode==='ascending';
@@ -2469,6 +2395,7 @@ function focusUpdateDisplay(){
     const phaseSecTotal = isRest ? restSec : workSec;
     const phaseElapsed = isRest ? withinCycle-workSec : withinCycle;
     displaySeconds = phaseSecTotal - phaseElapsed;
+    fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0;
     if(displaySeconds===phaseSecTotal) displaySeconds = 0;
     const phaseKey = cycleIdx+'-'+(isRest?'rest':'work');
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
@@ -2476,7 +2403,8 @@ function focusUpdateDisplay(){
     phaseWordUsed = true;
     subEl.textContent = `Interval ${cycleIdx+1} of ${focusTimer.cycles}` + (isRest ? ' — rest, get ready to go again' : '');
     if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
-    else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0; }
+    else if(displaySeconds<=3) warn=true;
+    focusMaybeTick(displaySeconds);
     setRing(fraction);
     const stageEl2 = document.getElementById('gw-floatcard');
     if(stageEl2) stageEl2.style.setProperty('--stage-color', isRest ? 'var(--t-rest)' : 'var(--t-amrap)');
@@ -2505,6 +2433,7 @@ function focusUpdateDisplay(){
     const unit = Math.floor(clamped/60);
     const withinMinute = clamped - unit*60;
     displaySeconds = 60 - withinMinute;
+    fraction = displaySeconds/60;
     if(displaySeconds===60) displaySeconds=0;
     if(focusTimer.alternate){
       const which = unit % 2;
@@ -2521,7 +2450,7 @@ function focusUpdateDisplay(){
     const unitCap = total!=null ? focusTimer.minutes : Infinity;
     if(unit > focusTimer.lastBeepUnit && unit < unitCap && focusTimer.running){ switchBeep(); vibrate([60,40,60]); focusTimer.lastBeepUnit = unit; }
     if(total!=null && elapsed >= total){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
-    else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = displaySeconds/60; }
+    else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); }
     setRing(fraction);
 
   } else if(focusTimer.kind==='INTERVAL'){
@@ -2533,23 +2462,25 @@ function focusUpdateDisplay(){
       const unit = Math.floor(clamped/cycle);
       const withinUnit = clamped - unit*cycle;
       displaySeconds = cycle - withinUnit;
+      fraction = displaySeconds/cycle;
       if(displaySeconds===cycle) displaySeconds=0;
       subEl.textContent = `Rest after set ${Math.min(unit+1, focusTimer.totalRounds)} of ${focusTimer.totalRounds}`;
       if(nextPreviewEl) nextPreviewEl.textContent = unit+1 < focusTimer.totalRounds ? `Set ${unit+2}` : 'Finish';
       if(unit > focusTimer.lastBeepUnit && unit < focusTimer.totalRounds && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
       if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
-      else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = displaySeconds/cycle; }
+      else if(displaySeconds<=3) warn=true;
+      focusMaybeTick(displaySeconds);
     } else {
       const unit = Math.floor(elapsed/cycle);
       const withinUnit = elapsed - unit*cycle;
       displaySeconds = cycle - withinUnit;
+      fraction = displaySeconds/cycle;
       if(displaySeconds===cycle) displaySeconds=0;
       subEl.textContent = `Round ${unit+1} — beeps each time it resets`;
       if(nextPreviewEl) nextPreviewEl.textContent = `Round ${unit+2}`;
       if(unit > focusTimer.lastBeepUnit && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
       if(displaySeconds<=3) warn=true;
       focusMaybeTick(displaySeconds);
-      fraction = displaySeconds/cycle;
     }
     setRing(fraction);
 
@@ -2563,6 +2494,7 @@ function focusUpdateDisplay(){
     const phaseSecTotal = isRest ? focusTimer.restSec : focusTimer.workSec;
     const phaseElapsed = isRest ? withinCycle - focusTimer.workSec : withinCycle;
     displaySeconds = phaseSecTotal - phaseElapsed;
+    fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0;
     if(displaySeconds===phaseSecTotal) displaySeconds = 0;
     const phaseKey = roundIdx+'-'+(isRest?'rest':'work');
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
@@ -2579,7 +2511,8 @@ function focusUpdateDisplay(){
       }
     }
     if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
-    else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0; }
+    else if(displaySeconds<=3) warn=true;
+    focusMaybeTick(displaySeconds);
     setRing(fraction);
     const stageEl = document.getElementById('gw-floatcard');
     if(stageEl) stageEl.style.setProperty('--stage-color', isRest ? 'var(--t-rest)' : 'var(--t-tabata)');
