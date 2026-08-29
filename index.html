@@ -309,20 +309,6 @@
   .gw-movement-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .gw-movement-reps{color:var(--muted); font-size:12px; font-weight:600;}
 
-  /* ---- sets stepper ---- */
-  .gw-stepper{
-    display:flex; align-items:center; gap:0; border:1px solid var(--line-strong); border-radius:999px;
-    overflow:hidden; flex:none;
-  }
-  .gw-stepper button{
-    width:26px; height:26px; background:none; border:none; color:var(--coral); font-size:14px; font-weight:900;
-    cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; font-family:var(--font-body);
-  }
-  .gw-stepper button:hover{background:var(--surface-raised);}
-  .gw-stepper button:disabled{opacity:0.3; cursor:default;}
-  .gw-stepper-val{min-width:20px; text-align:center; font-size:12px; font-weight:800; color:#fff; font-family:var(--font-body);}
-  .gw-sets-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:2px 0 4px;}
-  .gw-sets-row-label{font-size:11px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:var(--muted);}
   .gw-setlist{display:flex; flex-direction:column; width:100%;}
   .gw-setlist-row{
     display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);
@@ -911,7 +897,7 @@ const SKILLS_BW = {
 // range: [low, high] reps, step: rounding increment, equip: 'kb'|'barbell'|'bar'|'rings'|'rope'|'none'
 const MOVEMENT_LIB = {
   strength: [
-    {name:'KB Swings (23kg)', range:[12,20], step:2, equip:'kb'},
+    {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
     {name:'Pull-Ups', range:[5,10], step:1, equip:'bar'},
     {name:'Ring Push-Ups', range:[8,15], step:1, equip:'rings'},
     {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
@@ -931,10 +917,10 @@ const MOVEMENT_LIB = {
     {name:'Inchworms', range:[6,10], step:2, equip:'none'}
   ],
   weightlifting: [
-    {name:'Thrusters (light barbell)', range:[8,15], step:1, equip:'barbell'},
+    {name:'Thrusters', range:[8,15], step:1, equip:'barbell'},
     {name:'Pull-Ups', range:[5,10], step:1, equip:'bar'},
     {name:'Burpees', range:[8,15], step:1, equip:'none'},
-    {name:'Deadlift (moderate)', range:[5,10], step:1, equip:'barbell'},
+    {name:'Deadlift', range:[5,10], step:1, equip:'barbell'},
     {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
     {name:'Broad Jumps', range:[8,12], step:2, equip:'none'},
     {name:'Jump Squats', range:[10,20], step:5, equip:'none'},
@@ -946,7 +932,7 @@ const MOVEMENT_LIB = {
     {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
     {name:'Ring Rows', range:[8,15], step:1, equip:'rings'},
     {name:'Push-Ups', range:[10,20], step:2, equip:'none'},
-    {name:'Barbell Floor Press (light)', range:[8,15], step:1, equip:'barbell'},
+    {name:'Barbell Floor Press', range:[8,15], step:1, equip:'barbell'},
     {name:'Air Squats', range:[15,25], step:5, equip:'none'},
     {name:'Diamond Push-Ups', range:[6,12], step:2, equip:'none'},
     {name:'Bicycle Crunches', range:[16,24], step:4, equip:'none'}
@@ -971,6 +957,19 @@ const CROSSFIT_REP_SCHEMES = {
 const LOAD_PRESETS = { // lb, Rx (male) reference — Scaled/Rx+ are ±20% off Rx, rounded to 5
   backSquat:95, frontSquat:75, deadlift:135, floorPress:65, powerClean:65, powerSnatch:45
 };
+// standard CrossFit Rx loads (lb) for barbell/KB movements that show up in the WOD — always
+// fixed, not user-adjustable, and shown as "women/men" (e.g. "Thrusters 65/95")
+const WOD_LOAD_STANDARDS = {
+  'Thrusters': {w:65, m:95},
+  'Deadlift': {w:155, m:225},
+  'Barbell Floor Press': {w:65, m:95},
+  'KB Swings': {w:35, m:53},
+  'KB Goblet Squats': {w:35, m:53}
+};
+function wodMovementDisplayName(name){
+  const std = WOD_LOAD_STANDARDS[name];
+  return std ? `${name} ${std.w}/${std.m}` : name;
+}
 function loadPresetFor(liftKey, tier){
   const rx = LOAD_PRESETS[liftKey] || 45;
   if(tier==='scaled') return Math.round(rx*0.8/5)*5;
@@ -1083,9 +1082,9 @@ const BENCHMARKS = [
   {name:'Annie', format:"FOR TIME", scoreType:'time', equip:'rope',
    movements:[{name:'Double Unders', reps:'50-40-30-20-10'},{name:'Sit-Ups', reps:'50-40-30-20-10'}]},
   {name:'Fran', format:"FOR TIME", scoreType:'time', equip:'barbell',
-   movements:[{name:'Thrusters (barbell)', reps:'21-15-9'},{name:'Pull-Ups', reps:'21-15-9'}]},
+   movements:[{name:'Thrusters', reps:'21-15-9'},{name:'Pull-Ups', reps:'21-15-9'}]},
   {name:'Donny', format:"FOR TIME", scoreType:'time', equip:'barbell',
-   movements:[{name:'Deadlift (moderate)', reps:'21-15-9-9-15-21'},{name:'Burpees', reps:'21-15-9-9-15-21'}]}
+   movements:[{name:'Deadlift', reps:'21-15-9-9-15-21'},{name:'Burpees', reps:'21-15-9-9-15-21'}]}
 ];
 const BENCHMARK_RETEST_DAYS = 21;
 
@@ -2279,7 +2278,7 @@ function focusAutoCloseAndRate(key){
     closeTimerDrawer();
     render();
     maybePromptRating(w, key);
-  }, 700);
+  }, 1000);
 }
 function focusManualFinish(stepKey){
   if(!focusTimer) return;
@@ -2298,7 +2297,6 @@ function focusManualFinish(stepKey){
   focusUpdateDisplay();
   focusUpdateButtonStates();
   state.focusStepDone[stepKey] = true;
-  toast('✓ Finished — time locked in.');
   focusAutoCloseAndRate(stepKey);
 }
 
@@ -2344,7 +2342,6 @@ function focusFinish(){
         }
       }
     }
-    toast('✓ Completed!');
     focusAutoCloseAndRate(focusTimer.sectionKey);
   }
 }
@@ -2625,6 +2622,16 @@ function focusUpdateDisplay(){
   if(plusBtn) plusBtn.disabled = focusTimer.doneBeeped;
   const swipeZone = document.getElementById('gw-focus-swipezone');
   if(swipeZone) swipeZone.classList.toggle('gw-swipe-locked', focusTimer.doneBeeped);
+
+  // the finish message lives in the drawer itself — it holds here for a beat (see
+  // focusAutoCloseAndRate) before the drawer closes on its own to reveal the completed section
+  if(focusTimer.doneBeeped){
+    phaseEl.textContent = 'COMPLETED';
+    phaseEl.classList.remove('rest');
+    subEl.textContent = '';
+    if(secondaryEl) secondaryEl.textContent = '';
+    numberEl.classList.remove('warn');
+  }
 }
 
 function splitHeadline(body){
@@ -2866,7 +2873,7 @@ function renderWodSection(w){
     main.className = 'gw-movement-main';
     const nameEl = document.createElement('span');
     nameEl.className = 'gw-movement-name';
-    nameEl.textContent = m.name;
+    nameEl.textContent = wodMovementDisplayName(m.name);
     const repsEl = document.createElement('span');
     repsEl.className = 'gw-movement-reps';
     repsEl.textContent = `${m.reps} reps`;
@@ -2875,24 +2882,6 @@ function renderWodSection(w){
     listEl.appendChild(row);
   });
   bodyEl.appendChild(listEl);
-
-  if(!w.isBenchmark && wodTimerSpec && wodTimerSpec.kind==='RFT'){
-    const setsRow = document.createElement('div');
-    setsRow.className = 'gw-sets-row';
-    const lbl = document.createElement('span');
-    lbl.className = 'gw-sets-row-label';
-    lbl.textContent = 'Rounds';
-    const stepper = document.createElement('div');
-    stepper.className = 'gw-stepper';
-    const minus = document.createElement('button'); minus.type='button'; minus.textContent='−';
-    minus.onclick = ()=>adjustSets('wod', -1);
-    const val = document.createElement('span'); val.className='gw-stepper-val'; val.textContent = wodTimerSpec.rounds;
-    const plus = document.createElement('button'); plus.type='button'; plus.textContent='+';
-    plus.onclick = ()=>adjustSets('wod', 1);
-    stepper.appendChild(minus); stepper.appendChild(val); stepper.appendChild(plus);
-    setsRow.appendChild(lbl); setsRow.appendChild(stepper);
-    bodyEl.appendChild(setsRow);
-  }
 
   wrap.appendChild(head); wrap.appendChild(bodyEl);
   wrap.bodyEl = bodyEl;
@@ -2965,9 +2954,6 @@ function adjustSets(section, delta){
     if(w.skillTimer) w.skillTimer.totalRounds = w.skillSetReps.length;
     w.skillTplText = updateSkillSchemeText(w.skillTplText, w.skillSetReps);
     w.suggestedLoad = w.skillSetWeights[w.skillSetWeights.length-1];
-  }
-  if(section==='wod' && w.wodTimerSpec && w.wodTimerSpec.kind==='RFT'){
-    w.wodTimerSpec.rounds = clamp(w.wodTimerSpec.rounds + delta, 1, 12);
   }
   render();
 }
