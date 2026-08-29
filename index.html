@@ -2008,7 +2008,7 @@ function cancelCloseFloatCard(){
   document.getElementById('gw-timerstop-backdrop').classList.remove('show');
 }
 function requestExitFocus(){
-  if(focusTimer && (focusTimer.running || focusTimer.elapsedBefore > 0)){
+  if(focusTimer && !focusTimer.doneBeeped && (focusTimer.running || focusTimer.elapsedBefore > 0)){
     focusStopTicking();
     document.getElementById('gw-stopconfirm-backdrop').classList.add('show');
   } else {
