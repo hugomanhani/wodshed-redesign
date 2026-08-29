@@ -326,6 +326,21 @@
   .gw-stepper-val{min-width:20px; text-align:center; font-size:12px; font-weight:800; color:#fff; font-family:var(--font-body);}
   .gw-sets-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:2px 0 4px;}
   .gw-sets-row-label{font-size:11px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:var(--muted);}
+  .gw-setlist{display:flex; flex-direction:column; width:100%;}
+  .gw-setlist-row{
+    display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line);
+    font-family:var(--font-body); font-size:13.5px;
+  }
+  .gw-setlist-row:last-child{border-bottom:none;}
+  .gw-setlist-num{color:var(--muted); font-weight:700;}
+  .gw-setlist-reps{color:#fff; font-weight:800;}
+  .gw-setlist-controls{display:flex; gap:8px; margin-top:4px;}
+  .gw-setlist-controls button{
+    flex:1; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px;
+    padding:10px; font-family:var(--font-body); font-weight:700; font-size:12.5px; cursor:pointer;
+  }
+  .gw-setlist-controls button:hover{border-color:var(--coral); color:var(--coral);}
+  .gw-setlist-controls button:disabled{opacity:0.4; cursor:default;}
 
   /* ---- movement swap drawer (bottom sheet) ---- */
   #gw-swap-drawer-backdrop{
@@ -521,11 +536,10 @@
     display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; font-family:var(--font-mono);
   }
 
-  /* ---- Timer card: simple ring + digits, coral accent throughout ---- */
+  /* ---- Timer: simple ring + digits, coral accent throughout — no extra card, it lives directly in the drawer ---- */
   .gw-stage{
     display:flex; flex-direction:column; align-items:center; gap:12px;
-    background:var(--surface-2); border-radius:20px; padding:24px 20px;
-    margin-top:4px;
+    padding:8px 4px 4px;
   }
   .gw-stage-headline{font-family:var(--font-body); font-weight:700; font-size:13px; color:var(--muted); text-align:center;}
   .gw-dial-wrap{position:relative; width:72px; height:72px; display:grid; place-items:center;}
@@ -1514,6 +1528,26 @@ function computeSuggestedLoad(liftKey){
   return {load: Math.round((prevLoad+adj)/5)*5, deload:false};
 }
 
+// pulls a per-set rep scheme out of a skill's prescription text, e.g. "5-5-3-3-2-2" or "5 x 5"
+function parseSetScheme(text){
+  if(!text) return null;
+  const lines = text.split('\n');
+  for(const line of lines){
+    const trimmed = line.trim();
+    const dashMatch = trimmed.match(/^(\d+(?:-\d+){1,})$/);
+    if(dashMatch) return trimmed.split('-').map(Number);
+    const xMatch = trimmed.match(/^(\d+)\s*x\s*(\d+)$/i);
+    if(xMatch) return Array(Number(xMatch[1])).fill(Number(xMatch[2]));
+  }
+  return null;
+}
+function buildSkillSetReps(skillTplText, skillTimer){
+  const scheme = parseSetScheme(skillTplText);
+  if(scheme) return scheme;
+  const n = (skillTimer && skillTimer.totalRounds) || 3;
+  return Array(n).fill(5);
+}
+
 function generateWorkout(type){
   state.currentType = type;
   const bw = state.bodyweightOnly;
@@ -1597,8 +1631,9 @@ function generateWorkout(type){
   }
 
   state.currentWorkout = {
-    type, warmup, skillTplText, skillLiftKey, suggestedLoad, deload, skillTimer, skillSetsDelta:0,
-    formatId, format, wodMovements, movements: wodMovements.map(m=>m.name), wodTimerSpec, wodRoundsDelta:0,
+    type, warmup, skillTplText, skillLiftKey, suggestedLoad, deload, skillTimer,
+    skillSetReps: buildSkillSetReps(skillTplText, skillTimer),
+    formatId, format, wodMovements, movements: wodMovements.map(m=>m.name), wodTimerSpec,
     core, coreTimer, rpe: null, wodRpe: null, bw,
     volumeUsed: effectiveVolume, coachNotes, isBenchmark, benchmarkName,
     sectionsDone: {warmup:false, skill:false, wod:false, core:false}, wodPerformance: {}
@@ -1659,10 +1694,21 @@ function buildSkillLoadRow(w){
 
 // builds the DOM node for one section (warmup/skill/wod/core); returns null if that section isn't part of today's workout
 const SECTION_START_LABELS = {warmup:'Start Warmup', skill:'Start Skill', wod:'Start WOD', core:'Start Core'};
+const TIMER_KIND_NAMES = {AMRAP:'AMRAP', EMOM:'EMOM', TABATA:'Tabata', RFT:'Rounds for Time', LADDER:'For Time',
+  FORTIME:'For Time', FORTIME_REPEATS:'For Time Repeats', INTERVAL:'Interval', COUNTDOWN:'Countdown'};
+// the CTA names whichever timer will actually open — not a generic "focus mode" label
+function sectionStartLabel(key, w){
+  if(!w) return SECTION_START_LABELS[key];
+  const data = getSectionFocusData(w, key);
+  const spec = data && data.timerSpec;
+  if(spec && spec.label) return `Start ${spec.label}`;
+  if(spec && TIMER_KIND_NAMES[spec.kind]) return `Start ${TIMER_KIND_NAMES[spec.kind]}`;
+  return SECTION_START_LABELS[key];
+}
 function addStartSectionButton(node, key){
   const btn = document.createElement('button');
   btn.className = 'gw-section-start-btn';
-  btn.innerHTML = `${ICON_PLAY}<span>${SECTION_START_LABELS[key]}</span>`;
+  btn.innerHTML = `${ICON_PLAY}<span>${sectionStartLabel(key, state.currentWorkout)}</span>`;
   btn.onclick = ()=>openSectionFocus(key);
   node.bodyEl.appendChild(btn);
 }
@@ -1682,11 +1728,12 @@ function renderSectionNode(key, w, opts){
   }
   if(key==='skill'){
     if(!w.skillTplText) return null;
-    const node = sectionWithChips('Skill', w.skillTplText, w.deload ? 'DELOAD' : (w.bw ? 'TRAVEL' : (w.skillTimer && w.skillTimer.label) || ''), {
+    const node = sectionWithChips('Skill', w.skillTplText, w.deload ? 'DELOAD' : (w.bw ? 'TRAVEL' : ''), {
       onReroll: opts.simple ? null : ()=>rerollSection('skill'),
       onDone: opts.simple ? null : ()=>{ w.sectionsDone.skill = !w.sectionsDone.skill; render(); },
       isDone: !!w.sectionsDone.skill,
       timerSpec: w.skillTimer,
+      setsList: w.skillSetReps,
       onSetsDelta: opts.simple ? null : (d)=>adjustSets('skill', d)
     });
     const loadRow = buildSkillLoadRow(w);
@@ -1931,9 +1978,7 @@ function renderSectionFocus(){
     const card = document.createElement('div');
     card.className = 'gw-stage';
     card.id = 'gw-floatcard';
-    card.style.position = 'relative';
     card.innerHTML = `
-      <button class="gw-showworkout-toggle" id="gw-floatcard-close" type="button" style="position:absolute; top:0; right:0; width:24px; height:24px; padding:0; margin:0; color:var(--muted);" aria-label="Cancel timer">${ICON_X}</button>
       <div class="gw-cycle-badge" id="gw-focus-cyclebadge" style="display:none;"></div>
       <div class="gw-focus-phaseword" id="gw-focus-phase"></div>
       <div class="gw-stage-headline" id="gw-focus-sub"></div>
@@ -1970,7 +2015,8 @@ function renderSectionFocus(){
       <div class="gw-floatcard-next" id="gw-floatcard-next" style="display:none;">
         <button id="gw-focus-skipnext"><span>Next</span>${ICON_PLAY}</button>
         <div class="gw-floatcard-nextpreview" id="gw-floatcard-nextpreview"></div>
-      </div>`;
+      </div>
+      <button class="gw-showworkout-toggle" id="gw-floatcard-close" type="button">Cancel timer</button>`;
     container.appendChild(card);
 
     if(key==='skill' && w.skillLiftKey){
@@ -2574,24 +2620,34 @@ function sectionWithChips(title, body, tag, opts){
     detailEl.textContent = detail;
     bodyEl.appendChild(detailEl);
   }
-  if(opts.onSetsDelta){
-    const totalRounds = timerSpecForExplainer && timerSpecForExplainer.totalRounds;
-    if(totalRounds){
-      const setsRow = document.createElement('div');
-      setsRow.className = 'gw-sets-row';
-      const lbl = document.createElement('span');
-      lbl.className = 'gw-sets-row-label';
-      lbl.textContent = 'Sets';
-      const stepper = document.createElement('div');
-      stepper.className = 'gw-stepper';
-      const minus = document.createElement('button'); minus.type='button'; minus.textContent='−';
-      minus.onclick = ()=>opts.onSetsDelta(-1);
-      const val = document.createElement('span'); val.className='gw-stepper-val'; val.textContent = totalRounds;
-      const plus = document.createElement('button'); plus.type='button'; plus.textContent='+';
-      plus.onclick = ()=>opts.onSetsDelta(1);
-      stepper.appendChild(minus); stepper.appendChild(val); stepper.appendChild(plus);
-      setsRow.appendChild(lbl); setsRow.appendChild(stepper);
-      bodyEl.appendChild(setsRow);
+  if(opts.setsList && opts.setsList.length){
+    const listWrap = document.createElement('div');
+    listWrap.className = 'gw-setlist';
+    opts.setsList.forEach((reps, idx)=>{
+      const row = document.createElement('div');
+      row.className = 'gw-setlist-row';
+      const num = document.createElement('span');
+      num.className = 'gw-setlist-num';
+      num.textContent = `Set ${idx+1}`;
+      const repsEl = document.createElement('span');
+      repsEl.className = 'gw-setlist-reps';
+      repsEl.textContent = `${reps} reps`;
+      row.appendChild(num); row.appendChild(repsEl);
+      listWrap.appendChild(row);
+    });
+    bodyEl.appendChild(listWrap);
+    if(opts.onSetsDelta){
+      const ctrlRow = document.createElement('div');
+      ctrlRow.className = 'gw-setlist-controls';
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button'; removeBtn.textContent = '− Remove Set';
+      removeBtn.disabled = opts.setsList.length<=1;
+      removeBtn.onclick = ()=>opts.onSetsDelta(-1);
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button'; addBtn.textContent = '+ Add Set';
+      addBtn.onclick = ()=>opts.onSetsDelta(1);
+      ctrlRow.appendChild(removeBtn); ctrlRow.appendChild(addBtn);
+      bodyEl.appendChild(ctrlRow);
     }
   }
 
@@ -2739,7 +2795,7 @@ function rerollSection(section){
     if(skillPool.length>1){ do{ choiceTpl = skillPool[Math.floor(Math.random()*skillPool.length)]; } while(choiceTpl.text===w.skillTplText); }
     w.skillTplText = choiceTpl.text;
     w.skillTimer = choiceTpl.timer || null;
-    w.skillSetsDelta = 0;
+    w.skillSetReps = buildSkillSetReps(w.skillTplText, w.skillTimer);
     w.skillLiftKey = (!bw && choiceTpl.liftKey) ? choiceTpl.liftKey : null;
     if(w.skillLiftKey){
       const result = computeSuggestedLoad(w.skillLiftKey);
@@ -2757,7 +2813,6 @@ function rerollSection(section){
     w.format = built.formatDisplay;
     w.wodMovements = built.movements;
     w.wodTimerSpec = built.timerSpec;
-    w.wodRoundsDelta = 0;
     w.movements = w.wodMovements.map(m=>m.name);
     w.wodRpe = null;
     w.wodPerformance = {};
@@ -2825,8 +2880,13 @@ document.getElementById('gw-swap-drawer-backdrop').onclick = (e)=>{ if(e.target.
 function adjustSets(section, delta){
   const w = state.currentWorkout;
   if(!w) return;
-  if(section==='skill' && w.skillTimer && w.skillTimer.totalRounds){
-    w.skillTimer.totalRounds = clamp(w.skillTimer.totalRounds + delta, 1, 12);
+  if(section==='skill' && w.skillSetReps){
+    if(delta>0 && w.skillSetReps.length<12){
+      w.skillSetReps.push(w.skillSetReps[w.skillSetReps.length-1] ?? 5);
+    } else if(delta<0 && w.skillSetReps.length>1){
+      w.skillSetReps.pop();
+    }
+    if(w.skillTimer) w.skillTimer.totalRounds = w.skillSetReps.length;
   }
   if(section==='wod' && w.wodTimerSpec && w.wodTimerSpec.kind==='RFT'){
     w.wodTimerSpec.rounds = clamp(w.wodTimerSpec.rounds + delta, 1, 12);
