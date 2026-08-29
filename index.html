@@ -347,11 +347,6 @@
   }
   .gw-setlist-controls button:hover{border-color:var(--coral); color:var(--coral);}
   .gw-setlist-controls button:disabled{opacity:0.4; cursor:default;}
-  .gw-apply-all-btn{
-    flex:none; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px;
-    padding:0 12px; font-family:var(--font-body); font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap;
-  }
-  .gw-apply-all-btn:hover{border-color:var(--coral); color:var(--coral);}
 
   /* ---- movement swap drawer (bottom sheet) ---- */
   #gw-swap-drawer-backdrop{
@@ -562,6 +557,7 @@
     color:var(--coral); cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;
   }
   .gw-dial-play svg{width:22px; height:22px;}
+  .gw-dial-play:disabled{opacity:0.4; cursor:default;}
   .gw-dial-clock{font-family:var(--font-mono); font-weight:700; font-size:56px; color:#fff; letter-spacing:-0.02em;}
   .gw-dial-clock.warn{color:var(--danger);}
   .gw-dial-secondary{font-family:var(--font-body); font-weight:700; font-size:12px; color:var(--muted); text-align:center; min-height:14px;}
@@ -1691,24 +1687,13 @@ function buildSkillLoadRow(w){
   const row = document.createElement('div');
   row.className = 'gw-load-row';
   row.innerHTML = `<label>${LIFT_LABELS[w.skillLiftKey]} logged weight (lb)</label>`;
-  const inputRow = document.createElement('div');
-  inputRow.style.cssText = 'display:flex; gap:8px; align-items:center;';
   const input = document.createElement('input');
   input.type = 'number'; input.step = '5'; input.value = w.suggestedLoad;
-  input.style.flex = '1';
   input.oninput = ()=>{
     w.suggestedLoad = Number(input.value)||0;
     plates.textContent = plateBreakdown(w.suggestedLoad);
   };
-  const applyBtn = document.createElement('button');
-  applyBtn.type = 'button'; applyBtn.textContent = 'Apply to all sets';
-  applyBtn.className = 'gw-apply-all-btn';
-  applyBtn.onclick = ()=>{
-    if(w.skillSetWeights) w.skillSetWeights = w.skillSetWeights.map(()=>w.suggestedLoad);
-    render();
-  };
-  inputRow.appendChild(input); inputRow.appendChild(applyBtn);
-  row.appendChild(inputRow);
+  row.appendChild(input);
   const plates = document.createElement('div');
   plates.className = 'gw-plates';
   plates.textContent = plateBreakdown(w.suggestedLoad);
@@ -1748,6 +1733,15 @@ function sectionStartLabel(key, w){
   const name = spec.label || TIMER_KIND_NAMES[spec.kind] || SECTION_START_LABELS[key].replace('Start ', '');
   const detail = timerSpecShortDetail(spec);
   return detail ? `Start ${name} · ${detail}` : `Start ${name}`;
+}
+// the checkmark is a real toggle — marking a section undone also resets its inline round counter
+// (if it has one) so the round button becomes tappable again instead of staying stuck on "Completed"
+function toggleSectionDone(w, key){
+  w.sectionsDone[key] = !w.sectionsDone[key];
+  if(!w.sectionsDone[key] && w.roundCounts && w.roundCounts[key] != null){
+    w.roundCounts[key] = 0;
+  }
+  render();
 }
 // drawers are for real timers only — a section with no timer (e.g. warmup) gets a plain round
 // counter right on the card instead of opening one just to tap through rounds
@@ -1795,7 +1789,7 @@ function renderSectionNode(key, w, opts){
     if(!w.warmup) return null;
     const node = sectionWithChips('Warm-Up', w.warmup, DAY_TYPES.find(d=>d.key===w.type).label, {
       onReroll: opts.simple ? null : ()=>rerollSection('warmup'),
-      onDone: opts.simple ? null : ()=>{ w.sectionsDone.warmup = !w.sectionsDone.warmup; render(); },
+      onDone: opts.simple ? null : ()=>toggleSectionDone(w, 'warmup'),
       isDone: !!w.sectionsDone.warmup
     });
     node.finalize();
@@ -1806,12 +1800,14 @@ function renderSectionNode(key, w, opts){
     if(!w.skillTplText) return null;
     const node = sectionWithChips('Skill', w.skillTplText, w.deload ? 'DELOAD' : (w.bw ? 'TRAVEL' : ''), {
       onReroll: opts.simple ? null : ()=>rerollSection('skill'),
-      onDone: opts.simple ? null : ()=>{ w.sectionsDone.skill = !w.sectionsDone.skill; render(); },
+      onDone: opts.simple ? null : ()=>toggleSectionDone(w, 'skill'),
       isDone: !!w.sectionsDone.skill,
       timerSpec: w.skillTimer,
       setsList: w.skillSetReps,
       setsWeights: w.skillLiftKey ? w.skillSetWeights : null,
-      onWeightChange: opts.simple ? null : (idx, val)=>{ w.skillSetWeights[idx] = val; },
+      onWeightChange: opts.simple ? null : (idx, val)=>{
+        for(let i=idx; i<w.skillSetWeights.length; i++) w.skillSetWeights[i] = val;
+      },
       onSetsDelta: opts.simple ? null : (d)=>adjustSets('skill', d)
     });
     const loadRow = buildSkillLoadRow(w);
@@ -1827,7 +1823,7 @@ function renderSectionNode(key, w, opts){
     if(!w.core) return null;
     const node = sectionWithChips('Extra Core', w.core, '', {
       onReroll: opts.simple ? null : ()=>rerollSection('core'),
-      onDone: opts.simple ? null : ()=>{ w.sectionsDone.core = !w.sectionsDone.core; render(); },
+      onDone: opts.simple ? null : ()=>toggleSectionDone(w, 'core'),
       isDone: !!w.sectionsDone.core,
       timerSpec: w.coreTimer
     });
@@ -2301,6 +2297,7 @@ function focusFinish(){
         }
       }
     }
+    toast('✓ Completed!');
   }
 }
 function focusTick(){
@@ -2383,6 +2380,13 @@ function focusUpdateButtonStates(){
   const playPauseBtn = document.getElementById('gw-floatcard-playpause');
   if(!playPauseBtn || focusTimer.leadIn) return;
   playPauseBtn.innerHTML = focusTimer.running ? ICON_PAUSE : ICON_PLAY;
+  // once the timer is done there's nothing left to play/pause — say so, plainly, wherever the round button is
+  playPauseBtn.disabled = focusTimer.doneBeeped;
+  const roundBtn = document.getElementById('gw-focus-plus');
+  if(roundBtn && focusTimer.doneBeeped){
+    roundBtn.disabled = true;
+    roundBtn.innerHTML = `${ICON_CHECK}<span>Completed</span>`;
+  }
 }
 function focusUpdateDisplay(){
   if(!focusTimer || focusTimer.leadIn) return;
@@ -2688,6 +2692,7 @@ function sectionWithChips(title, body, tag, opts){
   if(opts.setsList && opts.setsList.length){
     const listWrap = document.createElement('div');
     listWrap.className = 'gw-setlist';
+    const weightInputs = [];
     opts.setsList.forEach((reps, idx)=>{
       const row = document.createElement('div');
       row.className = 'gw-setlist-row';
@@ -2703,7 +2708,14 @@ function sectionWithChips(title, body, tag, opts){
         weightWrap.className = 'gw-setlist-weight';
         const input = document.createElement('input');
         input.type = 'number'; input.step = '5'; input.value = opts.setsWeights[idx] ?? 0;
-        input.oninput = ()=>opts.onWeightChange && opts.onWeightChange(idx, Number(input.value)||0);
+        weightInputs.push(input);
+        // editing a set's weight fills forward into every later set (not the ones before it) —
+        // a natural "ramp to this weight and hold" workflow you can still override set by set
+        input.onchange = ()=>{
+          const val = Number(input.value)||0;
+          for(let i=idx; i<weightInputs.length; i++) weightInputs[i].value = val;
+          opts.onWeightChange && opts.onWeightChange(idx, val);
+        };
         weightWrap.appendChild(input);
         const unit = document.createElement('span');
         unit.textContent = 'lb';
@@ -2764,7 +2776,7 @@ function renderWodSection(w){
     rBtn.onclick = ()=>rerollSection('wod');
     rightWrap.appendChild(rBtn);
   }
-  rightWrap.appendChild(markDoneBtn(isDone, ()=>{ w.sectionsDone.wod = !w.sectionsDone.wod; render(); }));
+  rightWrap.appendChild(markDoneBtn(isDone, ()=>toggleSectionDone(w, 'wod')));
   head.appendChild(rightWrap);
 
   const bodyEl = document.createElement('div');
