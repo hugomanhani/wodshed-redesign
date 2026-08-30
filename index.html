@@ -120,10 +120,8 @@
     border-radius:999px; padding:9px 14px; font-family:var(--font-body); font-weight:700; font-size:13px; color:#fff;
     cursor:pointer;
   }
-  .gw-pill svg{width:13px; height:13px; stroke:var(--muted); fill:none; stroke-width:2.4;}
   .gw-pill.gw-pill-on{background:var(--coral-wash); border-color:var(--coral); color:var(--coral);}
   #gw-controls.gw-travel-on .gw-pill-travel{background:var(--coral); color:var(--bg); border-color:var(--coral);}
-  #gw-controls.gw-travel-on .gw-pill-travel svg{stroke:var(--bg);}
   .gw-switch-row{display:none;}
   .gw-switch{position:relative; width:40px; height:22px; flex:none;}
   .gw-switch input{opacity:0; width:0; height:0;}
@@ -643,7 +641,6 @@
     </div>
     <div id="gw-controls">
       <label class="gw-pill gw-pill-travel" id="gw-travel-pill">
-        <svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M3 12h18M3 12l4-4M3 12l4 4"/></svg>
         <span>Bodyweight</span>
         <label class="gw-switch" style="margin-left:2px;">
           <input type="checkbox" id="gw-bw-toggle">
@@ -651,14 +648,11 @@
         </label>
       </label>
       <label class="gw-pill gw-time">
-        <svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
         <select id="gw-time-select">
           <option value="">No limit</option>
-          <option value="15">~15 min</option>
-          <option value="30">~30 min</option>
-          <option value="45">~45 min</option>
-          <option value="60">~1h</option>
-          <option value="90">~1h 30</option>
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
         </select>
       </label>
     </div>
@@ -1692,10 +1686,10 @@ function fmtMinutesShort(minutes){
 }
 // the CTA names whichever timer will actually open — not a generic "focus mode" label
 function sectionStartLabel(key, w){
-  if(!w) return SECTION_START_LABELS[key];
+  if(!w) return `Start ${SECTION_START_LABELS[key]}`;
   const data = getSectionFocusData(w, key);
   const spec = data && data.timerSpec;
-  if(!spec) return SECTION_START_LABELS[key];
+  if(!spec) return `Start ${SECTION_START_LABELS[key]}`;
   // "For X Cycles" / "X Rest Between Sets" don't say anything concrete on their own — naming the
   // actual interval length is far more useful on a CTA than the generic scheme name
   if(spec.kind==='INTERVAL' && spec.totalRounds){
@@ -1703,7 +1697,7 @@ function sectionStartLabel(key, w){
   }
   const name = spec.label || TIMER_KIND_NAMES[spec.kind] || SECTION_START_LABELS[key];
   const detail = timerSpecShortDetail(spec);
-  return detail ? `${name} · ${detail}` : name;
+  return `Start ${detail ? `${name} · ${detail}` : name}`;
 }
 // the checkmark is a real toggle — marking a section undone also resets its inline round counter
 // (if it has one) so the round button becomes tappable again instead of staying stuck on "Completed"
@@ -1758,8 +1752,7 @@ function addStartSectionButton(node, key){
     // minimized but still running in the background — reopen it as-is, no fresh start
     const btn = document.createElement('button');
     btn.className = 'gw-section-start-btn';
-    const startLabel = sectionStartLabel(key, w);
-    btn.innerHTML = `${ICON_PLAY}<span>${startLabel.startsWith('Start ') ? startLabel.replace(/^Start /, 'Resume ') : `Resume ${startLabel}`}</span>`;
+    btn.innerHTML = `${ICON_PLAY}<span>${sectionStartLabel(key, w).replace(/^Start /, 'Resume ')}</span>`;
     btn.onclick = ()=>resumeSectionFocus(key);
     node.bodyEl.appendChild(btn);
   } else if(stepData.timerSpec){
@@ -3087,6 +3080,21 @@ document.getElementById('gw-bw-toggle').onchange = async (e)=>{
   if(state.currentType) generateWorkout(state.currentType);
   toast(state.bodyweightOnly ? '✓ Bodyweight mode ON — workout refreshed for zero equipment.' : '✓ Bodyweight mode OFF — workout refreshed.');
 };
+// each preset shows what time you'd actually be done by, not just its length — recomputed right
+// before the dropdown opens (rather than kept live-ticking) so it's accurate whenever it's seen
+function updateTimeOptionsETA(){
+  const sel = document.getElementById('gw-time-select');
+  if(!sel) return;
+  const now = Date.now();
+  [...sel.options].forEach(opt=>{
+    const mins = Number(opt.value);
+    if(!mins) return;
+    const eta = new Date(now + mins*60000);
+    const etaStr = eta.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+    opt.textContent = `${mins} min — done ~${etaStr}`;
+  });
+}
+document.getElementById('gw-time-select').addEventListener('focus', updateTimeOptionsETA);
 async function applyTimeChange(newValue){
   state.timeAvailable = newValue;
   document.getElementById('gw-time-select').value = newValue || '';
@@ -3097,6 +3105,7 @@ async function applyTimeChange(newValue){
 document.getElementById('gw-time-select').onchange = (e)=>{
   applyTimeChange(Number(e.target.value) || null);
 };
+updateTimeOptionsETA();
 
 let state_page = 'wod';
 const PAGE_HEADERS = {
