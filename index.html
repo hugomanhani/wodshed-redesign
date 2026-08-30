@@ -3086,15 +3086,17 @@ document.getElementById('gw-bw-toggle').onchange = async (e)=>{
   if(state.currentType) generateWorkout(state.currentType);
   toast(state.bodyweightOnly ? '✓ Bodyweight mode ON — workout refreshed for zero equipment.' : '✓ Bodyweight mode OFF — workout refreshed.');
 };
-// options are qualitative (no number to pick blind from) — only the currently selected one swaps
-// to a real approximation of today's workout, once there's something to estimate
+// options are qualitative (no number to pick blind from) — only the currently selected one also
+// shows a real approximation of today's workout, alongside its label rather than instead of it, so
+// switching between Shorter/Longer never hides which one (No limit included) you'd tap to go back to
 const TIME_OPTION_LABELS = {'':'No limit', '15':'Shorter', '45':'Longer'};
 function updateTimeOptionLabels(){
   const sel = document.getElementById('gw-time-select');
   if(!sel) return;
   const est = estimateWorkoutMinutes(state.currentWorkout);
   [...sel.options].forEach(opt=>{
-    opt.textContent = (opt.value===sel.value && est) ? `~${est} min` : TIME_OPTION_LABELS[opt.value];
+    const label = TIME_OPTION_LABELS[opt.value];
+    opt.textContent = (opt.value===sel.value && est) ? `${label} · ~${est} min` : label;
   });
 }
 async function applyTimeChange(newValue){
