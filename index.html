@@ -64,16 +64,6 @@
     display:flex; align-items:center; gap:10px;
     padding:calc(16px + env(safe-area-inset-top, 0px)) 20px 6px;
   }
-  .gw-avatar{
-    width:30px; height:30px; border-radius:50%; background:var(--coral); color:var(--bg);
-    display:flex; align-items:center; justify-content:center; flex:none;
-    font-family:var(--font-body); font-weight:800; font-size:12px;
-  }
-  #gw-header .gw-crumb{
-    display:flex; align-items:center; gap:6px; font-family:var(--font-body);
-    font-weight:700; font-size:15px; color:#fff; cursor:pointer;
-  }
-  #gw-header .gw-crumb svg{width:14px; height:14px; stroke:var(--muted); fill:none; stroke-width:2.2; margin-top:1px;}
   #gw-header h1, #gw-header .gw-sub{display:none;}
 
   .gw-btn{
@@ -612,11 +602,6 @@
 
 <div id="gw-root">
   <div id="gw-header">
-    <div class="gw-avatar" id="gw-avatar">–</div>
-    <div class="gw-crumb" id="gw-crumb-profile">
-      <span>My Gym</span>
-      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-    </div>
     <h1 class="gw-display">GARAGE <span>WOD</span></h1>
     <div class="gw-sub">RACK · RINGS · ONE BELL · ONE BAR · A ROPE</div>
   </div>
@@ -1365,6 +1350,31 @@ function allocateTime(total){
   const wod = Math.max(6, total - warmup - skill - core);
   return {warmup, skill, core, wod, skipSkill: skill===0, skipCore: core===0};
 }
+// rough per-section minutes for whichever timer a section actually has — used to show a real total
+// even when no time budget was chosen (allocateTime has nothing to go on in that case)
+function estimateTimerMinutes(spec){
+  if(!spec) return 5;
+  switch(spec.kind){
+    case 'AMRAP': return spec.cycles ? spec.cycles*(spec.minutes+(spec.restMinutes||0)) : spec.minutes;
+    case 'EMOM': return spec.minutes || 10;
+    case 'TABATA': return Math.ceil(spec.rounds*(spec.workSec+spec.restSec)/60);
+    case 'RFT': return spec.cap || spec.rounds*3;
+    case 'LADDER': return spec.cap || 12;
+    case 'FORTIME': return spec.cap || 10;
+    case 'FORTIME_REPEATS': return spec.cap || Math.ceil(spec.rounds*(spec.restSeconds/60+3));
+    case 'INTERVAL': return spec.totalRounds ? spec.totalRounds*spec.minutes : spec.minutes;
+    case 'COUNTDOWN': return spec.minutes;
+    default: return 5;
+  }
+}
+function estimateWorkoutMinutes(w){
+  if(!w) return null;
+  let total = 4; // warm-up has no formal timer to read — flat rough guess
+  if(w.skillTplText) total += estimateTimerMinutes(w.skillTimer);
+  total += estimateTimerMinutes(w.wodTimerSpec || parseTimerFromText(w.format));
+  if(w.core) total += estimateTimerMinutes(w.coreTimer);
+  return Math.round(total);
+}
 
 // ---------- state ----------
 let state = {
@@ -1916,30 +1926,20 @@ document.getElementById('gw-refresh-btn').onclick = ()=>{
   const w = state.currentWorkout;
   if(w){ generateWorkout(w.type); toast('Workout refreshed.'); }
 };
-document.getElementById('gw-crumb-profile').onclick = ()=>switchPage('profile');
-
 function renderHero(w){
   const rec = recommendedFocus();
   const title = document.getElementById('gw-hero-title-text');
   const meta = document.getElementById('gw-hero-meta');
-  const avatar = document.getElementById('gw-avatar');
-  const name = (state.profile && state.profile.name || '').trim();
-  avatar.textContent = name ? name.slice(0,2).toUpperCase() : 'GW';
   if(!w){ title.textContent = 'Workout'; meta.textContent = ''; return; }
   title.textContent = DAY_TYPES.find(d=>d.key===w.type).label;
-  const sectionCount = ['warmup','skill','wod','core'].filter(k=>{
-    if(k==='warmup') return !!w.warmup;
-    if(k==='skill') return !!w.skillTplText;
-    if(k==='wod') return true;
-    if(k==='core') return !!w.core;
-  }).length;
   const recNote = rec && rec.type===w.type ? 'Recommended today' : `Usually ${DAY_TYPES.find(d=>d.key===rec.type).label}`;
-  meta.textContent = `${sectionCount} section${sectionCount===1?'':'s'} · ${w.wodMovements.length} WOD movement${w.wodMovements.length===1?'':'s'} · ${recNote}`;
+  meta.textContent = `~${estimateWorkoutMinutes(w)} min total · ${recNote}`;
 }
 
 function render(){
   const w0 = state.currentWorkout;
   renderHero(w0);
+  updateNoLimitOptionLabel();
   const board = document.getElementById('gw-board');
   const actions = document.getElementById('gw-actions');
   const w = state.currentWorkout;
@@ -3080,21 +3080,14 @@ document.getElementById('gw-bw-toggle').onchange = async (e)=>{
   if(state.currentType) generateWorkout(state.currentType);
   toast(state.bodyweightOnly ? '✓ Bodyweight mode ON — workout refreshed for zero equipment.' : '✓ Bodyweight mode OFF — workout refreshed.');
 };
-// each preset shows what time you'd actually be done by, not just its length — recomputed right
-// before the dropdown opens (rather than kept live-ticking) so it's accurate whenever it's seen
-function updateTimeOptionsETA(){
-  const sel = document.getElementById('gw-time-select');
-  if(!sel) return;
-  const now = Date.now();
-  [...sel.options].forEach(opt=>{
-    const mins = Number(opt.value);
-    if(!mins) return;
-    const eta = new Date(now + mins*60000);
-    const etaStr = eta.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
-    opt.textContent = `${mins} min — done ~${etaStr}`;
-  });
+// the "No limit" option shows a real approximation of today's workout instead of the bare words —
+// the other presets stay plain durations once the dropdown is open, no per-option clock time
+function updateNoLimitOptionLabel(){
+  const opt = document.querySelector('#gw-time-select option[value=""]');
+  if(!opt) return;
+  const est = estimateWorkoutMinutes(state.currentWorkout);
+  opt.textContent = est ? `~${est} min` : 'No limit';
 }
-document.getElementById('gw-time-select').addEventListener('focus', updateTimeOptionsETA);
 async function applyTimeChange(newValue){
   state.timeAvailable = newValue;
   document.getElementById('gw-time-select').value = newValue || '';
@@ -3105,7 +3098,6 @@ async function applyTimeChange(newValue){
 document.getElementById('gw-time-select').onchange = (e)=>{
   applyTimeChange(Number(e.target.value) || null);
 };
-updateTimeOptionsETA();
 
 let state_page = 'wod';
 const PAGE_HEADERS = {
