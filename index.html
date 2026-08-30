@@ -297,13 +297,15 @@
   }
   .gw-setlist-row:last-child{border-bottom:none;}
   .gw-setlist-num{color:var(--muted); font-weight:700; flex:none; width:52px;}
-  .gw-setlist-reps{color:#fff; font-weight:800; flex:1;}
+  .gw-setlist-reps{display:flex; align-items:center; gap:5px; flex:1;}
   .gw-setlist-weight{display:flex; align-items:center; gap:5px; flex:none;}
-  .gw-setlist-weight input{
-    width:64px; height:34px; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff;
+  .gw-setlist-reps input, .gw-setlist-weight input{
+    height:34px; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff;
     border-radius:7px; text-align:center; font-size:13px; font-weight:800; font-family:var(--font-body);
   }
-  .gw-setlist-weight span{font-size:11px; color:var(--muted); font-weight:700;}
+  .gw-setlist-reps input{width:52px;}
+  .gw-setlist-weight input{width:64px;}
+  .gw-setlist-reps span, .gw-setlist-weight span{font-size:11px; color:var(--muted); font-weight:700;}
   .gw-setlist-controls{display:flex; gap:8px; margin-top:4px;}
   .gw-setlist-controls button{
     flex:1; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px;
@@ -1468,6 +1470,9 @@ function computeSuggestedLoad(liftKey){
 }
 
 // pulls a per-set rep scheme out of a skill's prescription text, e.g. "5-5-3-3-2-2" or "5 x 5"
+// matches "5 x 5", "6 sets x 3", "5 sets x 8-10 (strict or banded)", "5 sets x 10 superman pulls" —
+// the "sets" word and any trailing qualifier/movement text are optional and ignored
+const SET_SCHEME_X_RE = /^(\d+)\s*(?:sets?)?\s*x\s*(\d+(?:-\d+)?)/i;
 function parseSetScheme(text){
   if(!text) return null;
   const lines = text.split('\n');
@@ -1475,8 +1480,11 @@ function parseSetScheme(text){
     const trimmed = line.trim();
     const dashMatch = trimmed.match(/^(\d+(?:-\d+){1,})$/);
     if(dashMatch) return trimmed.split('-').map(Number);
-    const xMatch = trimmed.match(/^(\d+)\s*x\s*(\d+)$/i);
-    if(xMatch) return Array(Number(xMatch[1])).fill(Number(xMatch[2]));
+    const xMatch = trimmed.match(SET_SCHEME_X_RE);
+    if(xMatch){
+      const reps = /^\d+$/.test(xMatch[2]) ? Number(xMatch[2]) : xMatch[2];
+      return Array(Number(xMatch[1])).fill(reps);
+    }
   }
   return null;
 }
@@ -1489,20 +1497,25 @@ function buildSkillSetReps(skillTplText, skillTimer){
 function buildSkillSetWeights(n, suggestedLoad){
   return Array(n).fill(suggestedLoad || 0);
 }
-// mirror image of parseSetScheme: turns a rep array back into "N x R" (constant) or "R-R-R" (varying) text
+// mirror image of parseSetScheme: turns a rep array back into "N x R" (constant), "R-R-R" (a plain
+// numeric ladder), or "R / R / R" (varying and at least one set is itself a range like "8-10" —
+// joining those with dashes too would run its range-boundary dashes into the set separators)
 function formatSetScheme(reps){
   const allSame = reps.every(r=>r===reps[0]);
-  return allSame ? `${reps.length} x ${reps[0]}` : reps.join('-');
+  if(allSame) return `${reps.length} x ${reps[0]}`;
+  const hasRange = reps.some(r=>typeof r==='string' && r.includes('-'));
+  return hasRange ? reps.join(' / ') : reps.join('-');
 }
 // rewrites just the scheme line inside the skill's prescription text so the description stays in
-// sync when sets are added or removed — everything else in the text (lift name, "Each 2 min") stays put
+// sync when sets are added, removed, or a rep value is edited — everything else in the text (lift
+// name, "Each 2 min") stays put
 function updateSkillSchemeText(text, newReps){
   if(!text) return text;
   const lines = text.split('\n');
   const newLine = formatSetScheme(newReps);
   for(let i=0;i<lines.length;i++){
     const trimmed = lines[i].trim();
-    if(/^\d+(?:-\d+){1,}$/.test(trimmed) || /^\d+\s*x\s*\d+$/i.test(trimmed)){
+    if(/^\d+(?:-\d+){1,}$/.test(trimmed) || SET_SCHEME_X_RE.test(trimmed) || trimmed.includes(' / ')){
       lines[i] = newLine;
       return lines.join('\n');
     }
@@ -1659,12 +1672,24 @@ function timerSpecShortDetail(spec){
   if(spec.kind==='COUNTDOWN') return `${spec.minutes} min`;
   return '';
 }
+// "1:30" for a fractional interval, "2 min" for a whole one — matches how the prescription
+// text itself already phrases "Each 1:30" / "Each 2 min"
+function fmtMinutesShort(minutes){
+  const whole = Math.floor(minutes);
+  const sec = Math.round((minutes - whole) * 60);
+  return sec ? `${whole}:${String(sec).padStart(2,'0')}` : `${whole} min`;
+}
 // the CTA names whichever timer will actually open — not a generic "focus mode" label
 function sectionStartLabel(key, w){
   if(!w) return SECTION_START_LABELS[key];
   const data = getSectionFocusData(w, key);
   const spec = data && data.timerSpec;
   if(!spec) return SECTION_START_LABELS[key];
+  // "For X Cycles" / "X Rest Between Sets" don't say anything concrete on their own — naming the
+  // actual interval length is far more useful on a CTA than the generic scheme name
+  if(spec.kind==='INTERVAL' && spec.totalRounds){
+    return `Start ${fmtMinutesShort(spec.minutes)} Timer · ${spec.totalRounds} sets`;
+  }
   const name = spec.label || TIMER_KIND_NAMES[spec.kind] || SECTION_START_LABELS[key];
   const detail = timerSpecShortDetail(spec);
   return detail ? `${name} · ${detail}` : name;
@@ -1722,7 +1747,8 @@ function addStartSectionButton(node, key){
     // minimized but still running in the background — reopen it as-is, no fresh start
     const btn = document.createElement('button');
     btn.className = 'gw-section-start-btn';
-    btn.innerHTML = `${ICON_PLAY}<span>Resume ${sectionStartLabel(key, w)}</span>`;
+    const startLabel = sectionStartLabel(key, w);
+    btn.innerHTML = `${ICON_PLAY}<span>${startLabel.startsWith('Start ') ? startLabel.replace(/^Start /, 'Resume ') : `Resume ${startLabel}`}</span>`;
     btn.onclick = ()=>resumeSectionFocus(key);
     node.bodyEl.appendChild(btn);
   } else if(stepData.timerSpec){
@@ -1761,6 +1787,13 @@ function renderSectionNode(key, w, opts){
       onWeightChange: opts.simple ? null : (idx, val)=>{
         for(let i=idx; i<w.skillSetWeights.length; i++) w.skillSetWeights[i] = val;
         w.suggestedLoad = w.skillSetWeights[w.skillSetWeights.length-1]; // logged/progression value tracks the last set
+      },
+      // reps don't cascade like weight does — a prescribed range (e.g. "8-10") or a ladder is
+      // often intentionally different set to set, so editing one set only touches that set
+      onRepsChange: opts.simple ? null : (idx, val)=>{
+        w.skillSetReps[idx] = val;
+        w.skillTplText = updateSkillSchemeText(w.skillTplText, w.skillSetReps);
+        render();
       },
       onSetsDelta: opts.simple ? null : (d)=>adjustSets('skill', d)
     });
@@ -2731,10 +2764,22 @@ function sectionWithChips(title, body, tag, opts){
       const num = document.createElement('span');
       num.className = 'gw-setlist-num';
       num.textContent = `Set ${idx+1}`;
-      const repsEl = document.createElement('span');
-      repsEl.className = 'gw-setlist-reps';
-      repsEl.textContent = `${reps} reps`;
-      row.appendChild(num); row.appendChild(repsEl);
+      const repsWrap = document.createElement('span');
+      repsWrap.className = 'gw-setlist-reps';
+      const repsInput = document.createElement('input');
+      repsInput.type = 'text'; repsInput.inputMode = 'numeric'; repsInput.value = reps;
+      // reps can be a range like "8-10" straight from the prescription — editing just narrows/overrides
+      // that one set, it never cascades the way weight does
+      repsInput.onchange = ()=>{
+        const val = repsInput.value.trim() || reps;
+        repsInput.value = val;
+        opts.onRepsChange && opts.onRepsChange(idx, val);
+      };
+      repsWrap.appendChild(repsInput);
+      const repsUnit = document.createElement('span');
+      repsUnit.textContent = 'reps';
+      repsWrap.appendChild(repsUnit);
+      row.appendChild(num); row.appendChild(repsWrap);
       if(opts.setsWeights){
         const weightWrap = document.createElement('span');
         weightWrap.className = 'gw-setlist-weight';
