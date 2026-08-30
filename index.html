@@ -986,7 +986,16 @@ const WOD_FORMAT_DEFS = {
       timerSpec:{kind:'AMRAP', minutes, mode:'reps', label:'AMReps'} };
   },
   amrapMulti(ctx){
-    const minutes = pickOne([4,5]), cycles = pickOne([3,4]), restMinutes = pickOne([1,2]);
+    // total time = cycles*minutes + (cycles-1)*restMinutes — sized to land near the time budget
+    // when one's set, instead of picking cycles/minutes/rest with no regard for it at all
+    let minutes, cycles, restMinutes;
+    if(ctx.wodMinutes){
+      cycles = ctx.wodMinutes >= 20 ? pickOne([3,4]) : pickOne([2,3]);
+      restMinutes = ctx.wodMinutes <= 15 ? 1 : pickOne([1,2]);
+      minutes = Math.max(2, Math.round((ctx.wodMinutes - (cycles-1)*restMinutes) / cycles));
+    } else {
+      minutes = pickOne([4,5]); cycles = pickOne([3,4]); restMinutes = pickOne([1,2]);
+    }
     return { formatDisplay:`${cycles} x AMRAP ${minutes}' (rest ${restMinutes}')`, movements: movementsFor(ctx.pool, ctx.type, 3, ctx.volume),
       timerSpec:{kind:'AMRAP', minutes, mode:'rounds', cycles, restMinutes, label:'Multiple AMRAP Intervals'} };
   },
@@ -1032,21 +1041,22 @@ const WOD_FORMAT_DEFS = {
   },
   forTimeRepeats(ctx){
     const rounds = pickOne([3,4,5]), restSeconds = pickOne([60,90,120]);
-    return { formatDisplay:`${rounds} x FOR TIME (rest ${restSeconds}s)`, movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
-      timerSpec:{kind:'FORTIME_REPEATS', rounds, restSeconds, label:'For Time Repeats'} };
+    const cap = ctx.wodMinutes || null;
+    return { formatDisplay:`${rounds} x FOR TIME (rest ${restSeconds}s)` + (cap?` - cap ${cap}'`:''), movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
+      timerSpec:{kind:'FORTIME_REPEATS', rounds, restSeconds, cap, label:'For Time Repeats'} };
   },
   rftBookends(ctx){
-    const rounds = pickOne([3,4,5]);
+    const rounds = pickOne([3,4,5]), cap = ctx.wodMinutes || null;
     const buyIn = singleMovementTask(ctx.pool, pickOne([20,30]));
     const buyOut = singleMovementTask(ctx.pool, pickOne([20,30]));
-    return { formatDisplay:`Buy-In + ${rounds} RFT + Buy-Out`, movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
-      timerSpec:{kind:'RFT', rounds, cap:null, buyIn:{text:buyIn.text}, buyOut:{text:buyOut.text}, label:'RFT with Bookends'} };
+    return { formatDisplay:`Buy-In + ${rounds} RFT + Buy-Out` + (cap?` - cap ${cap}'`:''), movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
+      timerSpec:{kind:'RFT', rounds, cap, buyIn:{text:buyIn.text}, buyOut:{text:buyOut.text}, label:'RFT with Bookends'} };
   },
   forTimeBetween(ctx){
-    const rounds = pickOne([3,4]);
+    const rounds = pickOne([3,4]), cap = ctx.wodMinutes || null;
     const between = singleMovementTask(ctx.pool, pickOne([10,15,20]));
-    return { formatDisplay:`${rounds} RFT + ${between.text} between rounds`, movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
-      timerSpec:{kind:'RFT', rounds, cap:null, betweenMovement:{text:between.text}, label:'For Time with Movement In Between'} };
+    return { formatDisplay:`${rounds} RFT + ${between.text} between rounds` + (cap?` - cap ${cap}'`:''), movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
+      timerSpec:{kind:'RFT', rounds, cap, betweenMovement:{text:between.text}, label:'For Time with Movement In Between'} };
   }
 };
 const WOD_FORMAT_CATALOG = {
@@ -1212,7 +1222,8 @@ function timerExplainer(spec){
     return `For Time — one round through, finish as fast as you can${capPart}.`;
   }
   if(spec.kind==='FORTIME_REPEATS'){
-    return `${spec.rounds} efforts, each for time — rest ${spec.restSeconds}s between. Every round is scored.`;
+    const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
+    return `${spec.rounds} efforts, each for time — rest ${spec.restSeconds}s between${capPart}. Every round is scored.`;
   }
   if(spec.kind==='INTERVAL') return spec.totalRounds ? `Rest between sets — ${spec.totalRounds} sets total.` : `Rest between rounds — repeat as prescribed.`;
   if(spec.kind==='COUNTDOWN') return `Go until the clock hits zero.`;
