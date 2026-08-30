@@ -151,13 +151,13 @@
     flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
     cursor:pointer; color:var(--muted);
   }
-  .gw-pagetab svg{width:21px; height:21px; stroke:var(--muted); fill:none; stroke-width:1.8;}
+  .gw-pagetab svg{width:21px; height:21px; fill:var(--muted);}
   .gw-pagetab .gw-navlabel{
     font-family:var(--font-body); font-weight:700; font-size:10.5px; letter-spacing:0.01em;
   }
   .gw-pagetab .gw-navdot{display:none;}
   .gw-pagetab.active{color:var(--coral);}
-  .gw-pagetab.active svg{stroke:var(--coral);}
+  .gw-pagetab.active svg{fill:var(--coral);}
   .gw-page{padding:8px 20px 20px; min-height:70vh; min-height:70dvh; box-sizing:border-box;}
 
   /* ---- LOG day strip ---- */
@@ -635,9 +635,8 @@
       <label class="gw-pill gw-time">
         <select id="gw-time-select">
           <option value="">No limit</option>
-          <option value="15">15 min</option>
-          <option value="30">30 min</option>
-          <option value="45">45 min</option>
+          <option value="15">Shorter</option>
+          <option value="45">Longer</option>
         </select>
       </label>
     </div>
@@ -688,17 +687,17 @@
 
   <div id="gw-pagetabs">
     <div class="gw-pagetab active" data-page="wod">
-      <svg viewBox="0 0 24 24"><rect x="10" y="9" width="4" height="6" rx="1"/><rect x="2" y="10.5" width="3" height="3"/><rect x="19" y="10.5" width="3" height="3"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      <span class="gw-navlabel">WOD</span>
+      <svg viewBox="0 0 256 256"><path d="M248,120h-8V88a16,16,0,0,0-16-16H208V64a16,16,0,0,0-16-16H168a16,16,0,0,0-16,16v56H104V64A16,16,0,0,0,88,48H64A16,16,0,0,0,48,64v8H32A16,16,0,0,0,16,88v32H8a8,8,0,0,0,0,16h8v32a16,16,0,0,0,16,16H48v8a16,16,0,0,0,16,16H88a16,16,0,0,0,16-16V136h48v56a16,16,0,0,0,16,16h24a16,16,0,0,0,16-16v-8h16a16,16,0,0,0,16-16V136h8a8,8,0,0,0,0-16ZM32,168V88H48v80Zm56,24H64V64H88V192Zm104,0H168V64h24V175.82c0,.06,0,.12,0,.18s0,.12,0,.18V192Zm32-24H208V88h16Z"/></svg>
+      <span class="gw-navlabel">Train</span>
       <span class="gw-navdot"></span>
     </div>
     <div class="gw-pagetab" data-page="log">
-      <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+      <svg viewBox="0 0 256 256"><path d="M168,152a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,152Zm-8-40H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16Zm56-64V216a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V48A16,16,0,0,1,56,32H92.26a47.92,47.92,0,0,1,71.48,0H200A16,16,0,0,1,216,48ZM96,64h64a32,32,0,0,0-64,0ZM200,48H173.25A47.93,47.93,0,0,1,176,64v8a8,8,0,0,1-8,8H88a8,8,0,0,1-8-8V64a47.93,47.93,0,0,1,2.75-16H56V216H200Z"/></svg>
       <span class="gw-navlabel">LOG</span>
       <span class="gw-navdot"></span>
     </div>
     <div class="gw-pagetab" data-page="profile">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg>
+      <svg viewBox="0 0 256 256"><path d="M240,192h-8V130.57l1.49,2.08a8,8,0,1,0,13-9.3l-40-56a8,8,0,0,0-2-1.94L137,18.77l-.1-.07a16,16,0,0,0-17.76,0l-.1.07L51.45,65.42a8,8,0,0,0-2,1.94l-40,56a8,8,0,1,0,13,9.3L24,130.57V192H16a8,8,0,0,0,0,16H240a8,8,0,0,0,0-16ZM40,108.17,61.7,77.79,128,32l66.3,45.78L216,108.17V192H192V120a8,8,0,0,0-8-8H72a8,8,0,0,0-8,8v72H40Zm88,42L97,128H159Zm48-14.62v48.91L141.76,160ZM114.24,160,80,184.46V135.55ZM128,169.83,159,192H97ZM104,88a8,8,0,0,1,8-8h32a8,8,0,1,1,0,16H112A8,8,0,0,1,104,88Z"/></svg>
       <span class="gw-navlabel">PROFILE</span>
       <span class="gw-navdot"></span>
     </div>
@@ -1375,6 +1374,14 @@ function estimateWorkoutMinutes(w){
   if(w.core) total += estimateTimerMinutes(w.coreTimer);
   return Math.round(total);
 }
+// counts distinct known movements across the whole day (warm-up through core), not just the WOD —
+// answers "how many exercises am I actually doing today"
+function countWorkoutExercises(w){
+  if(!w) return 0;
+  const wodText = buildWodText(w.format, w.wodMovements);
+  const parts = [w.warmup, w.skillTplText, wodText, w.core].filter(Boolean);
+  return findKnownMovements(parts.join('\n')).length;
+}
 
 // ---------- state ----------
 let state = {
@@ -1927,19 +1934,18 @@ document.getElementById('gw-refresh-btn').onclick = ()=>{
   if(w){ generateWorkout(w.type); toast('Workout refreshed.'); }
 };
 function renderHero(w){
-  const rec = recommendedFocus();
   const title = document.getElementById('gw-hero-title-text');
   const meta = document.getElementById('gw-hero-meta');
   if(!w){ title.textContent = 'Workout'; meta.textContent = ''; return; }
   title.textContent = DAY_TYPES.find(d=>d.key===w.type).label;
-  const recNote = rec && rec.type===w.type ? 'Recommended today' : `Usually ${DAY_TYPES.find(d=>d.key===rec.type).label}`;
-  meta.textContent = `~${estimateWorkoutMinutes(w)} min total · ${recNote}`;
+  const count = countWorkoutExercises(w);
+  meta.textContent = `~${estimateWorkoutMinutes(w)} min · ${count} exercise${count===1?'':'s'}`;
 }
 
 function render(){
   const w0 = state.currentWorkout;
   renderHero(w0);
-  updateNoLimitOptionLabel();
+  updateTimeOptionLabels();
   const board = document.getElementById('gw-board');
   const actions = document.getElementById('gw-actions');
   const w = state.currentWorkout;
@@ -3080,13 +3086,16 @@ document.getElementById('gw-bw-toggle').onchange = async (e)=>{
   if(state.currentType) generateWorkout(state.currentType);
   toast(state.bodyweightOnly ? '✓ Bodyweight mode ON — workout refreshed for zero equipment.' : '✓ Bodyweight mode OFF — workout refreshed.');
 };
-// the "No limit" option shows a real approximation of today's workout instead of the bare words —
-// the other presets stay plain durations once the dropdown is open, no per-option clock time
-function updateNoLimitOptionLabel(){
-  const opt = document.querySelector('#gw-time-select option[value=""]');
-  if(!opt) return;
+// options are qualitative (no number to pick blind from) — only the currently selected one swaps
+// to a real approximation of today's workout, once there's something to estimate
+const TIME_OPTION_LABELS = {'':'No limit', '15':'Shorter', '45':'Longer'};
+function updateTimeOptionLabels(){
+  const sel = document.getElementById('gw-time-select');
+  if(!sel) return;
   const est = estimateWorkoutMinutes(state.currentWorkout);
-  opt.textContent = est ? `~${est} min` : 'No limit';
+  [...sel.options].forEach(opt=>{
+    opt.textContent = (opt.value===sel.value && est) ? `~${est} min` : TIME_OPTION_LABELS[opt.value];
+  });
 }
 async function applyTimeChange(newValue){
   state.timeAvailable = newValue;
