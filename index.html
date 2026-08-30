@@ -634,7 +634,7 @@
       </label>
       <label class="gw-pill gw-time">
         <select id="gw-time-select">
-          <option value="">No limit</option>
+          <option value="">Default</option>
           <option value="15">Shorter</option>
           <option value="45">Longer</option>
         </select>
@@ -3086,17 +3086,16 @@ document.getElementById('gw-bw-toggle').onchange = async (e)=>{
   if(state.currentType) generateWorkout(state.currentType);
   toast(state.bodyweightOnly ? '✓ Bodyweight mode ON — workout refreshed for zero equipment.' : '✓ Bodyweight mode OFF — workout refreshed.');
 };
-// options are qualitative (no number to pick blind from) — only the currently selected one also
-// shows a real approximation of today's workout, alongside its label rather than instead of it, so
-// switching between Shorter/Longer never hides which one (No limit included) you'd tap to go back to
-const TIME_OPTION_LABELS = {'':'No limit', '15':'Shorter', '45':'Longer'};
+// the dropdown options are just Default/Shorter/Longer, no numbers to pick blind from — the closed
+// pill instead shows the real approximation of today's workout for whichever is currently selected
+const TIME_OPTION_LABELS = {'':'Default', '15':'Shorter', '45':'Longer'};
 function updateTimeOptionLabels(){
   const sel = document.getElementById('gw-time-select');
   if(!sel) return;
   const est = estimateWorkoutMinutes(state.currentWorkout);
   [...sel.options].forEach(opt=>{
     const label = TIME_OPTION_LABELS[opt.value];
-    opt.textContent = (opt.value===sel.value && est) ? `${label} · ~${est} min` : label;
+    opt.textContent = (opt.value===sel.value && est) ? `~${est} min` : label;
   });
 }
 async function applyTimeChange(newValue){
