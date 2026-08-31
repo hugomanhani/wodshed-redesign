@@ -38,6 +38,9 @@
     --font-mono:'JetBrains Mono', 'SF Mono', Consolas, monospace;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  /* no button label ever wraps to a second line — long dynamic text (timer names, movement+load
+     strings) truncates with an ellipsis instead via the specific overflow rules below */
+  button{white-space:nowrap;}
   html, body{
     font-family:var(--font-body);
     background:var(--bg);
@@ -215,13 +218,6 @@
     color:var(--coral); font-size:10px; font-weight:900; letter-spacing:0.04em;
     background:var(--coral-wash); padding:4px 10px; border-radius:999px; text-transform:uppercase;
   }
-  .gw-reroll-btn{
-    display:flex; align-items:center; gap:8px; border:1px solid var(--coral); background:none;
-    color:var(--bg); border-radius:999px; padding:8px 12px; cursor:pointer;
-    font-family:var(--font-body); font-weight:900; font-size:11px; letter-spacing:0.02em;
-  }
-  .gw-reroll-btn:hover{background:rgba(255,107,107,0.1);}
-  .gw-reroll-btn .gw-arrows{font-weight:700; font-size:12px;}
   .gw-timer-inline-btn{
     background:none; color:var(--bg); border:1px solid var(--coral); border-radius:999px;
     font-size:11px; font-weight:900; letter-spacing:0.02em; padding:8px 14px; cursor:pointer;
@@ -241,7 +237,8 @@
     text-transform:none; letter-spacing:0; cursor:pointer;
   }
   .gw-section-start-btn:hover{background:var(--coral-dark);}
-  .gw-section-start-btn svg{width:16px; height:16px;}
+  .gw-section-start-btn svg{width:16px; height:16px; flex:none;}
+  .gw-section-start-btn span{overflow:hidden; text-overflow:ellipsis; min-width:0;}
   .gw-icon-btn{
     background:none; color:var(--muted); border:1px solid var(--line-strong); border-radius:50%;
     font-size:13px; width:34px; height:34px; line-height:1; cursor:pointer; padding:0; flex:none;
@@ -491,6 +488,7 @@
     text-transform:none; letter-spacing:0; cursor:pointer;
   }
   .gw-section-round-btn:hover{background:var(--coral-dark);}
+  .gw-section-round-btn span:not(.gw-round-target):not(.gw-navmid-badge){overflow:hidden; text-overflow:ellipsis; min-width:0;}
   .gw-round-target{opacity:0.7; font-size:13px;}
   .gw-section-round-btn:disabled{background:var(--surface); color:var(--coral); cursor:default;}
   .gw-section-round-btn:disabled svg{width:18px; height:18px;}
@@ -776,8 +774,8 @@ if(!window.storage){
   };
 }
 
-// Phosphor Icons "arrows-clockwise" (regular weight) — used for every reroll/refresh action
-const ICON_REFRESH = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27a96,96,0,0,1,135,.79L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"/></svg>';
+// Phosphor Icons "shuffle-angular" (regular weight) — used for every reroll/refresh action
+const ICON_REFRESH = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M237.66,178.34a8,8,0,0,1,0,11.32l-24,24a8,8,0,0,1-11.32-11.32L212.69,192H168a8,8,0,0,1-6.51-3.35L83.88,80H32a8,8,0,0,1,0-16H88a8,8,0,0,1,6.51,3.35L172.12,176h40.57l-10.35-10.34a8,8,0,0,1,11.32-11.32ZM143,107a8,8,0,0,0,11.16-1.86l18-25.12h40.57L202.34,90.34a8,8,0,0,0,11.32,11.32l24-24a8,8,0,0,0,0-11.32l-24-24a8,8,0,0,0-11.32,11.32L212.69,64H168a8,8,0,0,0-6.51,3.35L141.15,95.82A8,8,0,0,0,143,107Zm-30,42a8,8,0,0,0-11.16,1.86L83.88,176H32a8,8,0,0,0,0,16H88a8,8,0,0,0,6.51-3.35l20.34-28.47A8,8,0,0,0,113,149Z"/></svg>';
 const ICON_PLAY = '<svg viewBox="0 0 256 256" fill="currentColor" width="18" height="18"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg>';
 const ICON_PAUSE = '<svg viewBox="0 0 256 256" fill="currentColor" width="18" height="18"><path d="M110,40H50A14,14,0,0,0,36,54V202a14,14,0,0,0,14,14h60a14,14,0,0,0,14-14V54A14,14,0,0,0,110,40Zm-2,160H52V56h56ZM206,40H146a14,14,0,0,0-14,14V202a14,14,0,0,0,14,14h60a14,14,0,0,0,14-14V54A14,14,0,0,0,206,40Zm-2,160H148V56h56Z"/></svg>';
 const ICON_X = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/></svg>';
