@@ -780,23 +780,38 @@ function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
 // ---------- WARM-UPS ----------
 const WARMUPS = {
   strength: ["2X:\n30\" high knees\n10 PVC pass-throughs (2nd bar)\n10 air squats\n10 hollow rocks",
-             "2X:\n15 walking lunges\n10 good mornings (2nd bar)\n10 hollow rocks"],
+             "2X:\n15 walking lunges\n10 good mornings (2nd bar)\n10 hollow rocks",
+             "2X:\n10 box step-ups\n10 glute bridges\n10 hollow rocks",
+             "2X:\n20\" high knees\n10 walking lunges\n10 PVC pass-throughs (2nd bar)"],
   gymnastics: ["2X:\n10 scap pull-ups\n10 hollow rocks\n10 superman\n30 single unders",
-               "2X:\n60 single unders\n10 scap pull-ups\n10 superman"],
+               "2X:\n60 single unders\n10 scap pull-ups\n10 superman",
+               "2X:\n10 inchworms\n10 plank shoulder taps\n20\" high knees",
+               "2X:\n10 dislocates (W-bar)\n10 scap pull-ups\n10 superman"],
   weightlifting: ["2X (empty 2nd bar):\n10 OHS\n10 good mornings\n10 strict press",
-                  "2X (empty 2nd bar):\n10 muscle snatch\n10 OHS\n10 snatch grip good mornings"],
+                  "2X (empty 2nd bar):\n10 muscle snatch\n10 OHS\n10 snatch grip good mornings",
+                  "2X (empty 2nd bar):\n10 hang power snatch\n10 OHS\n10 good mornings",
+                  "2X:\n10 KB swings\n10 air squats\n10 arm circles each way"],
   accessory: ["2X:\n10 KB deadlifts\n10 push-ups\n10 walking lunges",
-              "2X:\n10 push-ups\n10 walking lunges\n10 dislocates (W-bar)"],
+              "2X:\n10 push-ups\n10 walking lunges\n10 dislocates (W-bar)",
+              "2X:\n10 KB swings\n10 ring rows\n10 hollow rocks",
+              "2X:\n10 reverse lunges\n10 push-ups\n10 hollow rocks"],
   conditioning: ["2X:\n30\" jump rope\n10 half burpees\n10 hollow rocks",
-                 "2X:\n40 single unders\n10 burpees\n10 air squats"]
+                 "2X:\n40 single unders\n10 burpees\n10 air squats",
+                 "2X:\n20\" high knees\n10 mountain climbers\n10 air squats",
+                 "2X:\n30\" jump rope\n10 jumping jacks\n10 hollow rocks"]
 };
 // bodyweight-only alternates for the two day types whose default warm-ups touch the barbell
 const WARMUPS_BW = {
-  strength: ["2X:\n30\" high knees\n10 air squats\n10 walking lunges\n10 hollow rocks"],
-  gymnastics: ["2X:\n10 hollow rocks\n10 superman\n30\" high knees\n10 plank shoulder taps"],
-  weightlifting: ["2X:\n10 broad jumps\n10 jump squats\n10 hollow rocks"],
-  accessory: ["2X:\n10 good mornings (bodyweight)\n10 push-ups\n10 walking lunges"],
-  conditioning: ["2X:\n30\" high knees\n10 half burpees\n10 hollow rocks"]
+  strength: ["2X:\n30\" high knees\n10 air squats\n10 walking lunges\n10 hollow rocks",
+             "2X:\n10 box step-ups\n10 glute bridges\n10 hollow rocks"],
+  gymnastics: ["2X:\n10 hollow rocks\n10 superman\n30\" high knees\n10 plank shoulder taps",
+               "2X:\n10 inchworms\n10 scap pull-ups\n10 superman"],
+  weightlifting: ["2X:\n10 broad jumps\n10 jump squats\n10 hollow rocks",
+                  "2X:\n20\" high knees\n10 jump squats\n10 mountain climbers"],
+  accessory: ["2X:\n10 good mornings (bodyweight)\n10 push-ups\n10 walking lunges",
+              "2X:\n10 reverse lunges\n10 push-ups\n10 hollow rocks"],
+  conditioning: ["2X:\n30\" high knees\n10 half burpees\n10 hollow rocks",
+                 "2X:\n20\" high knees\n10 mountain climbers\n10 air squats"]
 };
 
 // ---------- SKILLS ----------
@@ -804,30 +819,40 @@ const SKILLS = {
   strength: [
     {text:"STRENGTH\nBACK SQUAT (rack)\n5 x 5\nEach 2 min", liftKey:'backSquat', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
     {text:"STRENGTH\nFRONT SQUAT (rack)\n5-5-3-3-2-2\nEach 2 min", liftKey:'frontSquat', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
-    {text:"STRENGTH\nDEADLIFT\n4 x 6\nEach 2 min", liftKey:'deadlift', timer:{kind:'INTERVAL', minutes:2, totalRounds:4, label:'X Rest Between Sets'}}
+    {text:"STRENGTH\nDEADLIFT\n4 x 6\nEach 2 min", liftKey:'deadlift', timer:{kind:'INTERVAL', minutes:2, totalRounds:4, label:'X Rest Between Sets'}},
+    {text:"STRENGTH\nBACK SQUAT (rack)\n8 x 3\nEach 1:30", liftKey:'backSquat', timer:{kind:'INTERVAL', minutes:1.5, totalRounds:8, label:'For X Cycles'}},
+    {text:"STRENGTH (KB)\n5 sets:\n8 KB goblet squats\n8 glute bridges\nEach 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'X Rest Between Sets'}}
   ],
   gymnastics: [
     {text:"GYMNASTIC\nEMOM 10'\nOdd: 8-10 Toes to Bar\nEven: 20\" L-sit (bar or rings)", timer:{kind:'EMOM', minutes:10, alternate:['Toes to Bar','L-sit'], label:'Alternate Movements per Interval'}},
     {text:"GYMNASTIC - PULL-UPS\n5 sets x 8-10 (strict or banded)\nEach 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}},
     {text:"GYMNASTIC\nEMOM 12'\n6-10 Toes to Bar", timer:{kind:'EMOM', minutes:12, label:'Multiple Movements per Interval'}},
-    {text:"GYMNASTIC\nEMOM — AMRAP each minute until you can't hit the rep target\nMax Pull-Ups every minute", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}}
+    {text:"GYMNASTIC\nEMOM — AMRAP each minute until you can't hit the rep target\nMax Pull-Ups every minute", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}},
+    {text:"GYMNASTIC - RING DIPS\n5 sets x 5-8 (banded as needed)\nEach 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}},
+    {text:"GYMNASTIC\nEMOM 10'\nOdd: 3-5 Handstand Push-Ups (or hold)\nEven: 3 Wall Walks", timer:{kind:'EMOM', minutes:10, alternate:['Handstand Push-Ups','Wall Walks'], label:'Alternate Movements per Interval'}}
   ],
   weightlifting: [
     {text:"OLYMPIC LIFTING - COMPLEX (main bar)\n5 sets, each 2 min:\n1 Power Clean + 1 Front Squat + 1 Push Jerk", liftKey:'powerClean', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
     {text:"OLYMPIC LIFTING - SNATCH\n5 sets: 1 Snatch Deadlift + 1 Hang Power Snatch\nEach 2 min", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
-    {text:"OLYMPIC LIFTING - SNATCH\n6 sets x 3\nEach 2 min, progressive load", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}}
+    {text:"OLYMPIC LIFTING - SNATCH\n6 sets x 3\nEach 2 min, progressive load", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - CLEAN\n6 sets x 3\nEach 2 min, progressive load", liftKey:'powerClean', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - COMPLEX (main bar)\n5 sets, each 2 min:\n1 Power Snatch + 1 Overhead Squat", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}}
   ],
   accessory: [
     {text:"ACCESSORY (W-bar + KB)\n4 sets:\n10 W-bar curls\n10 W-bar skull crushers\n10/10 single arm KB row\nRest 1'", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
     {text:"ACCESSORY (KB)\n4 sets:\n10 single arm KB row each side\n10 KB Romanian deadlift\n20 bicycle crunches\nRest 1'", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
     {text:"ACCESSORY\nBARBELL FLOOR PRESS\n4 x 8\nEach 2 min", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:2, totalRounds:4, label:'For X Cycles'}},
-    {text:"ACCESSORY SUPERSET x4:\n10 barbell floor press\n10 single arm KB row\nRest 1'", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}}
+    {text:"ACCESSORY SUPERSET x4:\n10 barbell floor press\n10 single arm KB row\nRest 1'", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
+    {text:"ACCESSORY (KB)\n4 sets:\n8 renegade rows each side\n10 reverse lunges each leg\nRest 1'", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
+    {text:"ACCESSORY\nBARBELL FLOOR PRESS\n5-5-3-3-2-2\nEach 2 min", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}}
   ],
   conditioning: [
     {text:"ENDURANCE\nEMOM 8'\nOdd: 10 KB swings\nEven: 8 burpees", timer:{kind:'EMOM', minutes:8, alternate:['KB Swings','Burpees'], label:'Alternate Movements per Interval'}},
     {text:"ENDURANCE\n4 sets: 100 single unders + max effort burpees\nRest 1' between sets", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
     {text:"ENDURANCE\nEMOM 10'\nOdd: 12 KB swings\nEven: 10 jumping lunges", timer:{kind:'EMOM', minutes:10, alternate:['KB Swings','Jumping Lunges'], label:'Alternate Movements per Interval'}},
-    {text:"ENDURANCE\nEMOM — go until you can't hold the pace\nEach minute: 15 Burpees", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}}
+    {text:"ENDURANCE\nEMOM — go until you can't hold the pace\nEach minute: 15 Burpees", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}},
+    {text:"ENDURANCE\nEMOM 12'\nOdd: 12 KB swings\nEven: 10 box jumps", timer:{kind:'EMOM', minutes:12, alternate:['KB Swings','Box Jumps'], label:'Alternate Movements per Interval'}},
+    {text:"ENDURANCE\n4 sets: 30 bear crawl steps + max effort mountain climbers\nRest 1' between sets", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}}
   ]
 };
 // travel-mode alternates — true zero equipment: no barbell, no KB, no pull-up bar, no rings, no jump rope
@@ -835,23 +860,28 @@ const SKILLS = {
 const SKILLS_BW = {
   strength: [
     {text:"STRENGTH (bodyweight)\nWALKING LUNGES + PISTOL SQUAT PROGRESSION\n5 x 10 lunges each leg\n5 x 5 pistol progressions each leg\nEach 2 min"},
-    {text:"STRENGTH (bodyweight)\nPISTOL SQUAT PROGRESSION\n5 x 5 each leg (assisted as needed)\nEach 2 min"}
+    {text:"STRENGTH (bodyweight)\nPISTOL SQUAT PROGRESSION\n5 x 5 each leg (assisted as needed)\nEach 2 min"},
+    {text:"STRENGTH (bodyweight)\n5 sets:\n10 box step-ups each leg\n10 glute bridges\nEach 1:30"}
   ],
   gymnastics: [
     {text:"GYMNASTIC (bodyweight)\nEMOM 10'\nOdd: 10 hollow rocks\nEven: 5-10 handstand hold (against wall)"},
-    {text:"GYMNASTIC (bodyweight)\n5 sets x 10 superman pulls\nEach 1:30"}
+    {text:"GYMNASTIC (bodyweight)\n5 sets x 10 superman pulls\nEach 1:30"},
+    {text:"GYMNASTIC (bodyweight)\nEMOM 10'\nOdd: 3 Wall Walks\nEven: 10 hollow rocks"}
   ],
   weightlifting: [
     {text:"EXPLOSIVE POWER (bodyweight)\nEMOM 10'\nOdd: 5 broad jumps\nEven: 5 jump squats"},
-    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets: 5 jump squats + 5 burpees\nEach 2 min"}
+    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets: 5 jump squats + 5 burpees\nEach 2 min"},
+    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets x 5 box jumps\nEach 1:30"}
   ],
   accessory: [
-    {text:"ACCESSORY (bodyweight)\n4 sets:\n12 push-ups\n12 superman pulls\n20 air squats\nRest 1'"}
+    {text:"ACCESSORY (bodyweight)\n4 sets:\n12 push-ups\n12 superman pulls\n20 air squats\nRest 1'"},
+    {text:"ACCESSORY (bodyweight)\n4 sets:\n10 reverse lunges each leg\n10 diamond push-ups\nRest 1'"}
   ],
   conditioning: [
     {text:"ENDURANCE (bodyweight)\nEMOM 8'\nOdd: 10 jump squats\nEven: 8 burpees"},
     {text:"ENDURANCE (bodyweight)\n4 sets: 30 high knees + max effort burpees\nRest 1' between sets"},
-    {text:"ENDURANCE (bodyweight)\nEMOM 10'\nOdd: 12 mountain climbers\nEven: 10 jumping lunges"}
+    {text:"ENDURANCE (bodyweight)\nEMOM 10'\nOdd: 12 mountain climbers\nEven: 10 jumping lunges"},
+    {text:"ENDURANCE (bodyweight)\n4 sets: 30 bear crawl steps + max effort mountain climbers\nRest 1' between sets"}
   ]
 };
 
@@ -866,7 +896,11 @@ const MOVEMENT_LIB = {
     {name:'Air Squats', range:[15,25], step:5, equip:'none'},
     {name:'Push-Ups', range:[10,20], step:2, equip:'none'},
     {name:'Walking Lunges', range:[16,24], step:4, equip:'none'},
-    {name:'Glute Bridges', range:[15,25], step:5, equip:'none'}
+    {name:'Glute Bridges', range:[15,25], step:5, equip:'none'},
+    {name:'Box Step-Ups', range:[16,24], step:4, equip:'none'},
+    {name:'Hollow Rocks', range:[15,25], step:5, equip:'none'},
+    {name:'Ring Dips', range:[5,12], step:1, equip:'rings'},
+    {name:'Box Jumps', range:[8,15], step:1, equip:'none'}
   ],
   gymnastics: [
     {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
@@ -876,7 +910,11 @@ const MOVEMENT_LIB = {
     {name:'Toes to Bar', range:[5,10], step:1, equip:'bar'},
     {name:'Lying Leg Raises', range:[10,15], step:5, equip:'none'},
     {name:'Plank Shoulder Taps', range:[16,24], step:4, equip:'none'},
-    {name:'Inchworms', range:[6,10], step:2, equip:'none'}
+    {name:'Inchworms', range:[6,10], step:2, equip:'none'},
+    {name:'Ring Dips', range:[5,12], step:1, equip:'rings'},
+    {name:'Handstand Push-Ups', range:[3,8], step:1, equip:'none'},
+    {name:'Wall Walks', range:[3,6], step:1, equip:'none'},
+    {name:'Hollow Rocks', range:[15,25], step:5, equip:'none'}
   ],
   weightlifting: [
     {name:'Thrusters', range:[8,15], step:1, equip:'barbell'},
@@ -887,7 +925,11 @@ const MOVEMENT_LIB = {
     {name:'Broad Jumps', range:[8,12], step:2, equip:'none'},
     {name:'Jump Squats', range:[10,20], step:5, equip:'none'},
     {name:'Star Jumps', range:[15,25], step:5, equip:'none'},
-    {name:'Mountain Climbers', range:[20,30], step:5, equip:'none'}
+    {name:'Mountain Climbers', range:[20,30], step:5, equip:'none'},
+    {name:'KB Snatch', range:[8,12], step:1, equip:'kb'},
+    {name:'KB Clean & Press', range:[6,10], step:1, equip:'kb'},
+    {name:'Sumo Deadlift High Pulls', range:[10,15], step:5, equip:'kb'},
+    {name:'Box Jumps', range:[8,15], step:1, equip:'none'}
   ],
   accessory: [
     {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
@@ -897,7 +939,11 @@ const MOVEMENT_LIB = {
     {name:'Barbell Floor Press', range:[8,15], step:1, equip:'barbell'},
     {name:'Air Squats', range:[15,25], step:5, equip:'none'},
     {name:'Diamond Push-Ups', range:[6,12], step:2, equip:'none'},
-    {name:'Bicycle Crunches', range:[16,24], step:4, equip:'none'}
+    {name:'Bicycle Crunches', range:[16,24], step:4, equip:'none'},
+    {name:'Renegade Rows', range:[8,14], step:2, equip:'kb'},
+    {name:'Reverse Lunges', range:[16,24], step:4, equip:'none'},
+    {name:'KB Farmer Carry', range:[40,60], step:10, equip:'kb'},
+    {name:'V-ups', range:[10,20], step:2, equip:'none'}
   ],
   conditioning: [
     {name:'Double Unders', range:[20,40], step:10, equip:'rope'},
@@ -907,7 +953,11 @@ const MOVEMENT_LIB = {
     {name:'Jumping Lunges', range:[10,20], step:5, equip:'none'},
     {name:'Mountain Climbers', range:[20,30], step:5, equip:'none'},
     {name:'High Knees', range:[30,50], step:10, equip:'none'},
-    {name:'Jumping Jacks', range:[20,40], step:10, equip:'none'}
+    {name:'Jumping Jacks', range:[20,40], step:10, equip:'none'},
+    {name:'Box Jumps', range:[8,15], step:1, equip:'none'},
+    {name:'Bear Crawl', range:[20,30], step:5, equip:'none'},
+    {name:'Russian Twists', range:[20,30], step:5, equip:'none'},
+    {name:'Box Step-Ups', range:[16,24], step:4, equip:'none'}
   ]
 };
 
@@ -923,20 +973,15 @@ const MOVEMENT_PATTERNS = {
   'Deadlift':'hinge', 'Broad Jumps':'jump', 'Jump Squats':'jump', 'Star Jumps':'jump',
   'Mountain Climbers':'monostructural', 'Barbell Floor Press':'push', 'Diamond Push-Ups':'push',
   'Bicycle Crunches':'core', 'Double Unders':'monostructural', 'Sit-Ups':'core',
-  'Jumping Lunges':'lunge', 'High Knees':'monostructural', 'Jumping Jacks':'monostructural'
+  'Jumping Lunges':'lunge', 'High Knees':'monostructural', 'Jumping Jacks':'monostructural',
+  'Box Step-Ups':'lunge', 'Hollow Rocks':'core', 'V-ups':'core', 'Russian Twists':'core',
+  'Ring Dips':'push', 'Box Jumps':'jump', 'KB Snatch':'hinge', 'KB Clean & Press':'push',
+  'Wall Walks':'push', 'Reverse Lunges':'lunge', 'KB Farmer Carry':'carry',
+  'Handstand Push-Ups':'push', 'Sumo Deadlift High Pulls':'hinge', 'Renegade Rows':'pull',
+  'Bear Crawl':'monostructural'
 };
 // same idea for the barbell lifts used in Skill work
 const LIFT_PATTERNS = {backSquat:'squat', frontSquat:'squat', deadlift:'hinge', floorPress:'push', powerClean:'hinge', powerSnatch:'hinge'};
-// sprint/short/moderate/longer/extended bands (CrossFit programming convention) — used to name the
-// WOD's time domain in the coach note rather than just a bare minute count
-function timeDomainFor(minutes){
-  if(!minutes) return null;
-  if(minutes<=8) return 'sprint';
-  if(minutes<=12) return 'short';
-  if(minutes<=20) return 'moderate';
-  if(minutes<=35) return 'longer conditioning';
-  return 'extended aerobic';
-}
 // tallies how often each pattern showed up in this focus's last few logged sessions — the basis for
 // steering movement selection away from whatever's already been hammered
 function recentPatternTally(type, sessions){
@@ -964,7 +1009,12 @@ const WOD_LOAD_STANDARDS = {
   'Deadlift': {w:155, m:225},
   'Barbell Floor Press': {w:65, m:95},
   'KB Swings': {w:35, m:53},
-  'KB Goblet Squats': {w:35, m:53}
+  'KB Goblet Squats': {w:35, m:53},
+  'KB Snatch': {w:35, m:53},
+  'KB Clean & Press': {w:35, m:53},
+  'Sumo Deadlift High Pulls': {w:35, m:53},
+  'Renegade Rows': {w:35, m:53},
+  'KB Farmer Carry': {w:35, m:53}
 };
 function wodMovementDisplayName(name){
   const std = WOD_LOAD_STANDARDS[name];
@@ -1076,11 +1126,11 @@ const WOD_FORMAT_DEFS = {
   }
 };
 const WOD_FORMAT_CATALOG = {
-  strength: ['amrap','amreps','rft','rftSameLadder','forTimeRepeats'],
-  gymnastics: ['rft','amrapBuyIn','rftSameLadder','rftMultiLadder','amrepsAscending'],
-  weightlifting: ['forTime','amrap','rft','rftSameLadder','rftBookends'],
-  accessory: ['amrap','rft','amreps','rftSameLadder'],
-  conditioning: ['forTime','amrap','rft','rftSameLadder','amrapMulti','forTimeBetween']
+  strength: ['amrap','amreps','rft','rftSameLadder','forTimeRepeats','forTime','amrapBuyIn'],
+  gymnastics: ['rft','amrapBuyIn','rftSameLadder','rftMultiLadder','amrepsAscending','forTimeRepeats','amrap'],
+  weightlifting: ['forTime','amrap','rft','rftSameLadder','rftBookends','amrapBuyIn','rftMultiLadder'],
+  accessory: ['amrap','rft','amreps','rftSameLadder','forTimeRepeats','amrapMulti'],
+  conditioning: ['forTime','amrap','rft','rftSameLadder','amrapMulti','forTimeBetween','rftBookends','amrapBuyIn']
 };
 
 // ---------- BENCHMARK WODS ----------
@@ -1143,7 +1193,11 @@ const CORE = [
   {text:"3 rds\n1' plank hold\n1' rest", timer:{kind:'COUNTDOWN', minutes:1}},
   {text:"2' accumulate plank hold", timer:{kind:'COUNTDOWN', minutes:2}},
   {text:"20 leg raises\n20 flutter kicks\n20 mountain climbers", timer:null},
-  {text:"3 rds\n30\" side plank each side\n10 superman", timer:{kind:'COUNTDOWN', minutes:0.5}}
+  {text:"3 rds\n30\" side plank each side\n10 superman", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"3 rds\n10 hollow rocks\n20\" side plank each side\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"Tabata 20\"/10\" x8\nMountain Climbers", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, label:'Standard Tabata'}},
+  {text:"3 rds\n15 bicycle crunches\n20\" hollow hold\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"2' accumulate hollow hold", timer:{kind:'COUNTDOWN', minutes:2}}
 ];
 
 // ---------- EXERCISE GLOSSARY ----------
@@ -1313,7 +1367,18 @@ const EXERCISE_INFO = {
   "Superman Pulls": {desc: "Lying face down like a Superman hold, pull your elbows back as if rowing while squeezing your shoulder blades together, then release forward — a no-equipment substitute for a pulling movement."},
   "Handstand Hold": {desc: "Kick up into a handstand against a wall for support, arms locked out and body as straight as you can hold, and hold the position.", url: "https://www.crossfit.com/essentials/the-freestanding-handstand"},
   "Pistol Squat Progression": {desc: "Working toward a single-leg squat — use a wall, a slow controlled descent, or partial range of motion on one leg at a time until you can do a full pistol.", url: "https://www.crossfit.com/essentials/the-single-leg-squat"},
-  "KB Romanian Deadlift": {desc: "Holding a kettlebell in front of your thighs, push your hips back and lower it down your legs keeping a flat back and slight knee bend, then squeeze your glutes to stand back up."}
+  "KB Romanian Deadlift": {desc: "Holding a kettlebell in front of your thighs, push your hips back and lower it down your legs keeping a flat back and slight knee bend, then squeeze your glutes to stand back up."},
+  "Box Step-Ups": {desc: "Step one foot fully onto a box or sturdy surface, drive through that heel to stand tall on top, then step back down under control. Alternate legs."},
+  "Box Jumps": {desc: "Jump both feet onto a box or sturdy platform, standing fully tall at the top, then step (don't jump) back down.", url: "https://www.crossfit.com/essentials/the-box-jump"},
+  "KB Snatch": {desc: "Hike the kettlebell back like a swing, then pull it explosively overhead in one motion, punching your hand through at the top so the bell rests on your forearm. Switch arms between sets.", url: "https://www.crossfit.com/essentials/the-kettlebell-snatch"},
+  "KB Clean & Press": {desc: "Hike the bell back, pull it up and rotate your hand through to catch it racked at your shoulder, then press it overhead. Switch arms between sets."},
+  "Wall Walks": {desc: "Start in a plank with feet against a wall, walk your feet up the wall while walking your hands in until your chest is close to the wall, then reverse back down."},
+  "Reverse Lunges": {desc: "Step backward into a lunge, back knee grazing the floor, then drive through your front heel back to standing. Easier on the knees than a walking lunge."},
+  "KB Farmer Carry": {desc: "Hold the kettlebell at your side (or one in each hand if you have two) and walk tall with a braced core, steady steps — count each step as a rep."},
+  "Handstand Push-Ups": {desc: "Kick up into a handstand against a wall, lower your head toward the floor under control, then press back up to full lockout. Scale with a pike push-up or partial range of motion.", url: "https://www.crossfit.com/essentials/the-handstand-push-up"},
+  "Sumo Deadlift High Pulls": {desc: "Wide stance, hike the kettlebell between your legs like a swing, then pull it up close to your body to chin height, elbows high and out.", url: "https://www.crossfit.com/essentials/the-sumo-deadlift-high-pull"},
+  "Renegade Rows": {desc: "In a plank with one hand on the kettlebell, row the bell to your ribs while bracing hard to keep your hips square, then lower and switch sides."},
+  "Bear Crawl": {desc: "Hands and feet on the floor, knees hovering just off the ground, crawl forward moving opposite hand and foot together — count each step as a rep."}
 };
 function findKnownMovements(text){
   const found = [];
@@ -1655,11 +1720,6 @@ function generateWorkout(type){
   let wodMovements = built.movements;
   let wodTimerSpec = built.timerSpec;
   let isBenchmark = false, benchmarkName = null;
-
-  const domain = timeDomainFor(wodMinutes);
-  let whyNote = `${DAY_TYPES.find(d=>d.key===type).label} focus` + (domain ? ` — ${domain} WOD (~${wodMinutes}′)` : '');
-  whyNote += avoidPatterns.size ? `, steering away from ${[...avoidPatterns].join(' and ')} work since that's been the recent emphasis.` : '.';
-  coachNotes.unshift(whyNote);
 
   if(type==='conditioning' && (!alloc || alloc.wod >= 15)){
     const benchmark = dueBenchmark();
