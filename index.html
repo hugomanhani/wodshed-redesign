@@ -900,7 +900,11 @@ const MOVEMENT_LIB = {
     {name:'Box Step-Ups', range:[16,24], step:4, equip:'none'},
     {name:'Hollow Rocks', range:[15,25], step:5, equip:'none'},
     {name:'Ring Dips', range:[5,12], step:1, equip:'rings'},
-    {name:'Box Jumps', range:[8,15], step:1, equip:'none'}
+    {name:'Box Jumps', range:[8,15], step:1, equip:'none'},
+    {name:'Overhead Squat', range:[8,15], step:1, equip:'barbell'},
+    {name:'Pistol Squats', range:[4,10], step:2, equip:'none'},
+    {name:'Good Mornings', range:[8,15], step:1, equip:'barbell'},
+    {name:'Bent-Over Rows', range:[8,15], step:1, equip:'barbell'}
   ],
   gymnastics: [
     {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
@@ -914,7 +918,10 @@ const MOVEMENT_LIB = {
     {name:'Ring Dips', range:[5,12], step:1, equip:'rings'},
     {name:'Handstand Push-Ups', range:[3,8], step:1, equip:'none'},
     {name:'Wall Walks', range:[3,6], step:1, equip:'none'},
-    {name:'Hollow Rocks', range:[15,25], step:5, equip:'none'}
+    {name:'Hollow Rocks', range:[15,25], step:5, equip:'none'},
+    {name:'Knees to Elbows', range:[6,12], step:2, equip:'bar'},
+    {name:'Chest-to-Bar Pull-Ups', range:[4,8], step:1, equip:'bar'},
+    {name:'Pistol Squats', range:[4,10], step:2, equip:'none'}
   ],
   weightlifting: [
     {name:'Thrusters', range:[8,15], step:1, equip:'barbell'},
@@ -929,7 +936,11 @@ const MOVEMENT_LIB = {
     {name:'KB Snatch', range:[8,12], step:1, equip:'kb'},
     {name:'KB Clean & Press', range:[6,10], step:1, equip:'kb'},
     {name:'Sumo Deadlift High Pulls', range:[10,15], step:5, equip:'kb'},
-    {name:'Box Jumps', range:[8,15], step:1, equip:'none'}
+    {name:'Box Jumps', range:[8,15], step:1, equip:'none'},
+    {name:'Push Press', range:[6,12], step:1, equip:'barbell'},
+    {name:'Push Jerk', range:[5,10], step:1, equip:'barbell'},
+    {name:'Hang Power Clean', range:[5,10], step:1, equip:'barbell'},
+    {name:'Hang Power Snatch', range:[5,10], step:1, equip:'barbell'}
   ],
   accessory: [
     {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
@@ -943,7 +954,11 @@ const MOVEMENT_LIB = {
     {name:'Renegade Rows', range:[8,14], step:2, equip:'kb'},
     {name:'Reverse Lunges', range:[16,24], step:4, equip:'none'},
     {name:'KB Farmer Carry', range:[40,60], step:10, equip:'kb'},
-    {name:'V-ups', range:[10,20], step:2, equip:'none'}
+    {name:'V-ups', range:[10,20], step:2, equip:'none'},
+    {name:'KB Deadlifts', range:[12,20], step:2, equip:'kb'},
+    {name:'KB Romanian Deadlift', range:[10,15], step:5, equip:'kb'},
+    {name:'Single-Arm KB Push Press', range:[6,12], step:2, equip:'kb'},
+    {name:'Bent-Over Rows', range:[8,15], step:1, equip:'barbell'}
   ],
   conditioning: [
     {name:'Double Unders', range:[20,40], step:10, equip:'rope'},
@@ -957,7 +972,11 @@ const MOVEMENT_LIB = {
     {name:'Box Jumps', range:[8,15], step:1, equip:'none'},
     {name:'Bear Crawl', range:[20,30], step:5, equip:'none'},
     {name:'Russian Twists', range:[20,30], step:5, equip:'none'},
-    {name:'Box Step-Ups', range:[16,24], step:4, equip:'none'}
+    {name:'Box Step-Ups', range:[16,24], step:4, equip:'none'},
+    {name:'Burpee Box Jump Overs', range:[6,12], step:2, equip:'none'},
+    {name:'KB Thrusters', range:[10,18], step:2, equip:'kb'},
+    {name:'Pistol Squats', range:[4,10], step:2, equip:'none'},
+    {name:'Broad Jumps', range:[8,12], step:2, equip:'none'}
   ]
 };
 
@@ -978,7 +997,12 @@ const MOVEMENT_PATTERNS = {
   'Ring Dips':'push', 'Box Jumps':'jump', 'KB Snatch':'hinge', 'KB Clean & Press':'push',
   'Wall Walks':'push', 'Reverse Lunges':'lunge', 'KB Farmer Carry':'carry',
   'Handstand Push-Ups':'push', 'Sumo Deadlift High Pulls':'hinge', 'Renegade Rows':'pull',
-  'Bear Crawl':'monostructural'
+  'Bear Crawl':'monostructural', 'Overhead Squat':'squat', 'Pistol Squats':'squat',
+  'Good Mornings':'hinge', 'Bent-Over Rows':'pull', 'Knees to Elbows':'core',
+  'Chest-to-Bar Pull-Ups':'pull', 'Push Press':'push', 'Push Jerk':'push',
+  'Hang Power Clean':'hinge', 'Hang Power Snatch':'hinge', 'KB Deadlifts':'hinge',
+  'KB Romanian Deadlift':'hinge', 'Single-Arm KB Push Press':'push',
+  'Burpee Box Jump Overs':'jump', 'KB Thrusters':'squat'
 };
 // same idea for the barbell lifts used in Skill work
 const LIFT_PATTERNS = {backSquat:'squat', frontSquat:'squat', deadlift:'hinge', floorPress:'push', powerClean:'hinge', powerSnatch:'hinge'};
@@ -1014,7 +1038,18 @@ const WOD_LOAD_STANDARDS = {
   'KB Clean & Press': {w:35, m:53},
   'Sumo Deadlift High Pulls': {w:35, m:53},
   'Renegade Rows': {w:35, m:53},
-  'KB Farmer Carry': {w:35, m:53}
+  'KB Farmer Carry': {w:35, m:53},
+  'Overhead Squat': {w:65, m:95},
+  'Good Mornings': {w:65, m:95},
+  'Bent-Over Rows': {w:65, m:95},
+  'Push Press': {w:75, m:115},
+  'Push Jerk': {w:95, m:135},
+  'Hang Power Clean': {w:95, m:135},
+  'Hang Power Snatch': {w:75, m:115},
+  'KB Deadlifts': {w:35, m:53},
+  'KB Romanian Deadlift': {w:35, m:53},
+  'Single-Arm KB Push Press': {w:35, m:53},
+  'KB Thrusters': {w:35, m:53}
 };
 function wodMovementDisplayName(name){
   const std = WOD_LOAD_STANDARDS[name];
@@ -1378,7 +1413,15 @@ const EXERCISE_INFO = {
   "Handstand Push-Ups": {desc: "Kick up into a handstand against a wall, lower your head toward the floor under control, then press back up to full lockout. Scale with a pike push-up or partial range of motion.", url: "https://www.crossfit.com/essentials/the-handstand-push-up"},
   "Sumo Deadlift High Pulls": {desc: "Wide stance, hike the kettlebell between your legs like a swing, then pull it up close to your body to chin height, elbows high and out.", url: "https://www.crossfit.com/essentials/the-sumo-deadlift-high-pull"},
   "Renegade Rows": {desc: "In a plank with one hand on the kettlebell, row the bell to your ribs while bracing hard to keep your hips square, then lower and switch sides."},
-  "Bear Crawl": {desc: "Hands and feet on the floor, knees hovering just off the ground, crawl forward moving opposite hand and foot together — count each step as a rep."}
+  "Bear Crawl": {desc: "Hands and feet on the floor, knees hovering just off the ground, crawl forward moving opposite hand and foot together — count each step as a rep."},
+  "Overhead Squat": {desc: "Squat down while holding the bar locked out overhead with a wide grip, keeping the bar balanced over your midfoot the whole way.", url: "https://www.crossfit.com/essentials/the-overhead-squat"},
+  "Bent-Over Row": {desc: "Hinge forward with a flat back, bar hanging at arm's length, then row it to your lower ribs by driving your elbows back, and lower under control."},
+  "Chest-to-Bar Pull-Ups": {desc: "Same as a pull-up, but pull high enough that your chest makes contact with the bar each rep — more range and more pulling power than a chin-over-bar pull-up.", url: "https://www.crossfit.com/essentials/the-kipping-pull-up"},
+  "Push Press": {desc: "Dip slightly at the knees and hips, then drive explosively through your legs to help press the bar overhead to lockout.", url: "https://www.crossfit.com/essentials/the-push-press"},
+  "Hang Power Clean": {desc: "Starting with the bar at the hang (around knee height, not the floor), pull explosively and drop under it to catch on your shoulders in a quarter-squat, then stand.", url: "https://www.crossfit.com/essentials/the-hang-power-clean"},
+  "Single-Arm KB Push Press": {desc: "Rack the kettlebell at your shoulder, dip slightly, then drive through your legs to press it overhead. Switch arms between sets."},
+  "Burpee Box Jump Overs": {desc: "Burpee on the floor, then jump onto the box and immediately step or jump off the other side — the box crossing replaces the standing jump of a normal burpee."},
+  "KB Thrusters": {desc: "Hold the kettlebell racked at your shoulder or in a goblet grip, squat down, then drive up and press it overhead in one motion as your legs finish extending."}
 };
 function findKnownMovements(text){
   const found = [];
