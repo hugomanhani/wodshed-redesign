@@ -126,11 +126,11 @@
   }
   #gw-time-select:focus{outline:none;}
   #gw-time-select option{background:var(--surface); color:#fff;}
-  #gw-daytabs-menu, #gw-rate-drawer-backdrop{
+  #gw-daytabs-menu, #gw-rate-drawer-backdrop, #gw-profile-drawer-backdrop{
     display:none; position:fixed; inset:0; background:rgba(12,20,32,0.7); z-index:120;
     align-items:flex-end; justify-content:center;
   }
-  #gw-daytabs-menu.show, #gw-rate-drawer-backdrop.show{display:flex;}
+  #gw-daytabs-menu.show, #gw-rate-drawer-backdrop.show, #gw-profile-drawer-backdrop.show{display:flex;}
   .gw-daytabs-sheet{
     width:100%; max-width:480px; background:var(--surface); border-radius:20px 20px 0 0;
     padding:10px 10px calc(20px + env(safe-area-inset-bottom, 0px)); max-height:70vh; overflow-y:auto;
@@ -366,6 +366,30 @@
   .gw-activity-select{
     background:var(--surface-2); border:1px solid var(--line); color:#fff; border-radius:8px; padding:12px 16px; font-size:16px; width:100%; font-family:var(--font-body);
   }
+  .gw-stats-row{display:flex; gap:10px; margin-top:16px;}
+  .gw-stat-tile{flex:1; min-width:0; background:var(--surface-2); border-radius:12px; padding:12px 8px; text-align:center;}
+  .gw-stat-num{font-family:var(--font-display); font-weight:900; font-size:17px; color:var(--coral); line-height:1.15; overflow-wrap:break-word;}
+  .gw-stat-label{font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-top:4px;}
+  .gw-profile-list{background:var(--surface); border-radius:16px; overflow:hidden; margin-bottom:20px;}
+  .gw-profile-list-row{
+    display:flex; align-items:center; justify-content:space-between; padding:16px 18px;
+    border-bottom:1px solid var(--line); cursor:pointer; font-weight:700; color:#fff; font-size:14px;
+    font-family:var(--font-body);
+  }
+  .gw-profile-list-row:last-child{border-bottom:none;}
+  .gw-profile-list-row:hover{background:var(--surface-raised);}
+  .gw-profile-list-row svg{width:16px; height:16px; stroke:var(--muted); fill:none; stroke-width:2.4; flex:none;}
+  .gw-skill-group-title{
+    font-size:11px; font-weight:900; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted);
+    padding:14px 4px 6px; font-family:var(--font-body);
+  }
+  .gw-skill-row{
+    display:flex; align-items:center; justify-content:space-between; padding:11px 4px;
+    border-bottom:1px solid var(--line); cursor:pointer;
+  }
+  .gw-skill-row:last-child{border-bottom:none;}
+  .gw-skill-row-label{font-size:13.5px; font-weight:600; color:#fff; font-family:var(--font-body);}
+  .gw-skill-row input[type=checkbox]{width:21px; height:21px; accent-color:var(--coral); flex:none;}
   .gw-activity-notes{
     width:100%; min-height:56px; background:var(--surface-2); border:1px solid var(--line); color:#fff;
     border-radius:8px; padding:12px 16px; font-size:16px; font-family:var(--font-body); resize:vertical;
@@ -674,6 +698,14 @@
     <div class="gw-daytabs-sheet">
       <div class="gw-drawer-handle"></div>
       <div id="gw-rate-drawer-content"></div>
+    </div>
+  </div>
+
+  <div id="gw-profile-drawer-backdrop">
+    <div class="gw-daytabs-sheet">
+      <div class="gw-drawer-handle"></div>
+      <div class="gw-daytabs-sheet-title" id="gw-profile-drawer-title"></div>
+      <div id="gw-profile-drawer-content"></div>
     </div>
   </div>
 
@@ -1041,6 +1073,27 @@ function recentPatternTally(type, sessions){
     if(p) tally[p] = (tally[p]||0)+1;
   }));
   return tally;
+}
+// every distinct movement name across every focus's pool — the full roster the Skills picker offers
+function allMovementNames(){
+  const set = new Set();
+  Object.values(MOVEMENT_LIB).forEach(pool=>pool.forEach(m=>set.add(m.name)));
+  return [...set].sort();
+}
+// the technical/high-skill end of the roster — surfaced as their own group in the Skills picker so
+// they're easy to find and uncheck, since these are the ones an athlete is actually likely to not
+// know yet (mechanics-before-intensity, per how the rest of the app already scales load/volume)
+const ADVANCED_MOVEMENTS = new Set([
+  'Bar Muscle-Ups', 'Ring Muscle-Ups', 'Handstand Push-Ups', 'Handstand Walk', 'Squat Clean',
+  'Squat Snatch', 'Split Jerk', 'Turkish Get-Ups', 'Pistol Squats', 'Toes to Bar',
+  'Chest-to-Bar Pull-Ups', 'Wall Walks'
+]);
+// drops any movement the athlete has unchecked in the Skills drawer — but never below 2 options,
+// since a fully-filtered pool would leave a format builder nothing to pick from
+function knownSkillFilter(pool){
+  if(!state.unknownSkills || !state.unknownSkills.length) return pool;
+  const filtered = pool.filter(m=>!state.unknownSkills.includes(m.name));
+  return filtered.length >= 2 ? filtered : pool;
 }
 
 // ---------- CROSSFIT PRESETS: rep schemes + load presets ----------
@@ -1592,6 +1645,7 @@ let state = {
   bodyweightOnly: false,
   timeAvailable: null,
   profile: {name:'', bodyweight:null},
+  unknownSkills: [], // movement names the athlete has unchecked as "don't know yet" — everything else is assumed known
   logFilterDate: null,
   showActivityForm: false,
   benchmarks: {},
@@ -1610,6 +1664,7 @@ async function loadState(){
   try{ const p = await window.storage.get('garage-wod-prefs'); if(p && p.value){ const prefs = JSON.parse(p.value); state.bodyweightOnly = !!prefs.bodyweightOnly; state.timeAvailable = prefs.timeAvailable || null; } }catch(e){}
   try{ const pr = await window.storage.get('garage-wod-profile'); if(pr && pr.value) state.profile = {...state.profile, ...JSON.parse(pr.value)}; }catch(e){}
   try{ const bm = await window.storage.get('garage-wod-benchmarks'); if(bm && bm.value) state.benchmarks = JSON.parse(bm.value); }catch(e){}
+  try{ const us = await window.storage.get('garage-wod-unknown-skills'); if(us && us.value) state.unknownSkills = JSON.parse(us.value); }catch(e){}
   state.loaded = true;
   document.getElementById('gw-bw-toggle').checked = state.bodyweightOnly;
   document.getElementById('gw-controls').classList.toggle('gw-travel-on', state.bodyweightOnly);
@@ -1623,6 +1678,7 @@ async function saveHistory(){ await window.storage.set('garage-wod-history', JSO
 async function savePrefs(){ await window.storage.set('garage-wod-prefs', JSON.stringify({bodyweightOnly: state.bodyweightOnly, timeAvailable: state.timeAvailable})); }
 async function saveProfile(){ await window.storage.set('garage-wod-profile', JSON.stringify(state.profile)); }
 async function saveBenchmarks(){ await window.storage.set('garage-wod-benchmarks', JSON.stringify(state.benchmarks)); }
+async function saveUnknownSkills(){ await window.storage.set('garage-wod-unknown-skills', JSON.stringify(state.unknownSkills)); }
 
 // ---------- logging activities done outside the app ----------
 const ACTIVITY_PRESETS = ['BJJ / Grappling', 'Running', 'Cycling', 'Swimming', 'Walking / Hiking', 'Yoga / Mobility', 'Other'];
@@ -1792,6 +1848,7 @@ function generateWorkout(type){
 
   let movementPool = MOVEMENT_LIB[type];
   if(bw) movementPool = movementPool.filter(m=>m.equip==='none');
+  movementPool = knownSkillFilter(movementPool);
   const wodMinutes = alloc ? alloc.wod : null;
   const formatId = pickLRU(WOD_FORMAT_CATALOG[type], type, h=>h.formatId);
   // steer WOD movement selection away from whatever pattern today's skill lift already hit, and
@@ -3163,6 +3220,7 @@ function rerollSection(section){
   } else if(section==='wod'){
     let movementPool = MOVEMENT_LIB[w.type];
     if(bw) movementPool = movementPool.filter(m=>m.equip==='none');
+    movementPool = knownSkillFilter(movementPool);
     const alloc = allocateTime(state.timeAvailable);
     const catalog = WOD_FORMAT_CATALOG[w.type];
     const formatId = catalog[Math.floor(Math.random()*catalog.length)];
@@ -3467,29 +3525,26 @@ function buildSparkline(values, w, h){
 
 // what workouts currently assume is in the gym — static for now; picking equipment per-gym is future work
 const MY_GYM_EQUIPMENT = ['Barbell & Rack', 'Pull-Up Bar', 'Rings', 'Kettlebell', 'Jump Rope'];
+function countWorkoutsTotal(){ return state.history.filter(h=>h.kind!=='external').length; }
+function countWorkoutsThisWeek(){
+  const start = weekStart(Date.now());
+  return state.history.filter(h=>h.kind!=='external' && h.date>=start).length;
+}
+function favoriteFocusLabel(){
+  const tally = {};
+  state.history.forEach(h=>{ if(h.kind!=='external') tally[h.type] = (tally[h.type]||0)+1; });
+  const keys = Object.keys(tally);
+  if(!keys.length) return '—';
+  const best = keys.sort((a,b)=>tally[b]-tally[a])[0];
+  const dt = DAY_TYPES.find(d=>d.key===best);
+  return dt ? dt.label : '—';
+}
 function renderProfilePage(){
   const panel = document.getElementById('gw-profile-content');
   panel.innerHTML = '';
 
-  const gymH3 = document.createElement('h3');
-  gymH3.textContent = 'My Gym';
-  panel.appendChild(gymH3);
-  const gymCard = document.createElement('div');
-  gymCard.className = 'gw-card';
-  MY_GYM_EQUIPMENT.forEach(name=>{
-    const row = document.createElement('div');
-    row.className = 'gw-weights-row';
-    row.innerHTML = `<span class="gw-weights-label">${name}</span><span style="color:var(--coral); display:flex;">${ICON_CHECK}</span>`;
-    gymCard.appendChild(row);
-  });
-  const gymNote = document.createElement('div');
-  gymNote.style.cssText = 'font-size:12px; color:var(--muted); padding-top:4px;';
-  gymNote.textContent = 'Choosing your own equipment is coming soon — for now every workout assumes this list.';
-  gymCard.appendChild(gymNote);
-  panel.appendChild(gymCard);
-
-  const personalCard = document.createElement('div');
-  personalCard.className = 'gw-card';
+  const aboutCard = document.createElement('div');
+  aboutCard.className = 'gw-card';
 
   const nameRow = document.createElement('div');
   nameRow.className = 'gw-setting-row';
@@ -3498,7 +3553,7 @@ function renderProfilePage(){
   nameInput.type = 'text'; nameInput.value = state.profile.name || ''; nameInput.placeholder = 'Your name';
   nameInput.onchange = async ()=>{ state.profile.name = nameInput.value; await saveProfile(); toast('Saved.'); };
   nameRow.appendChild(nameInput);
-  personalCard.appendChild(nameRow);
+  aboutCard.appendChild(nameRow);
 
   const bwRow = document.createElement('div');
   bwRow.className = 'gw-setting-row';
@@ -3508,15 +3563,91 @@ function renderProfilePage(){
   bwInput.type = 'number'; bwInput.step = '1'; bwInput.value = state.profile.bodyweight ?? '';
   bwInput.onchange = async ()=>{ state.profile.bodyweight = bwInput.value===''?null:Number(bwInput.value); await saveProfile(); toast('Saved.'); };
   bwRow.appendChild(bwInput);
-  personalCard.appendChild(bwRow);
-  panel.appendChild(personalCard);
+  aboutCard.appendChild(bwRow);
 
-  const h3 = document.createElement('h3');
-  h3.textContent = 'Current Working Weights (lb)';
-  panel.appendChild(h3);
+  const statsRow = document.createElement('div');
+  statsRow.className = 'gw-stats-row';
+  [
+    {num: countWorkoutsTotal(), label:'Total Workouts'},
+    {num: countWorkoutsThisWeek(), label:'This Week'},
+    {num: favoriteFocusLabel(), label:'Favorite Focus'}
+  ].forEach(s=>{
+    const tile = document.createElement('div');
+    tile.className = 'gw-stat-tile';
+    tile.innerHTML = `<div class="gw-stat-num">${s.num}</div><div class="gw-stat-label">${s.label}</div>`;
+    statsRow.appendChild(tile);
+  });
+  aboutCard.appendChild(statsRow);
+  panel.appendChild(aboutCard);
 
-  const weightsCard = document.createElement('div');
-  weightsCard.className = 'gw-card';
+  const list = document.createElement('div');
+  list.className = 'gw-profile-list';
+  [
+    {key:'equipment', label:'Equipment'},
+    {key:'skills', label:'Skills'},
+    {key:'weights', label:'Weights'}
+  ].forEach(item=>{
+    const row = document.createElement('div');
+    row.className = 'gw-profile-list-row';
+    row.innerHTML = `<span>${item.label}</span><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>`;
+    row.onclick = ()=>openProfileDrawer(item.key);
+    list.appendChild(row);
+  });
+  panel.appendChild(list);
+}
+function renderEquipmentDrawer(content){
+  MY_GYM_EQUIPMENT.forEach(name=>{
+    const row = document.createElement('div');
+    row.className = 'gw-weights-row';
+    row.innerHTML = `<span class="gw-weights-label">${name}</span><span style="color:var(--coral); display:flex;">${ICON_CHECK}</span>`;
+    content.appendChild(row);
+  });
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:12px; color:var(--muted); padding-top:12px;';
+  note.textContent = 'Choosing your own equipment is coming soon — for now every workout assumes this list.';
+  content.appendChild(note);
+}
+// starts fully checked (everything assumed known) — unchecking a movement here removes it from
+// the pool a WOD can draw from, same idea as bodyweight mode filtering by equipment
+function renderSkillsDrawer(content){
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:12px; color:var(--muted); padding-bottom:6px;';
+  note.textContent = "Everything starts checked. Uncheck anything you can't do yet — workouts won't use it until you check it back on.";
+  content.appendChild(note);
+
+  const names = allMovementNames();
+  const advanced = names.filter(n=>ADVANCED_MOVEMENTS.has(n));
+  const everyday = names.filter(n=>!ADVANCED_MOVEMENTS.has(n));
+
+  function buildGroup(title, list){
+    if(!list.length) return;
+    const h = document.createElement('div');
+    h.className = 'gw-skill-group-title';
+    h.textContent = title;
+    content.appendChild(h);
+    list.forEach(name=>{
+      const row = document.createElement('label');
+      row.className = 'gw-skill-row';
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'gw-skill-row-label';
+      labelSpan.textContent = name;
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !state.unknownSkills.includes(name);
+      cb.onchange = async ()=>{
+        state.unknownSkills = state.unknownSkills.filter(n=>n!==name);
+        if(!cb.checked) state.unknownSkills.push(name);
+        await saveUnknownSkills();
+      };
+      row.appendChild(labelSpan);
+      row.appendChild(cb);
+      content.appendChild(row);
+    });
+  }
+  buildGroup('Advanced', advanced);
+  buildGroup('Everyday', everyday);
+}
+function renderWeightsDrawer(content){
   Object.keys(LIFT_LABELS).forEach(key=>{
     const row = document.createElement('div');
     row.className = 'gw-weights-row';
@@ -3528,18 +3659,35 @@ function renderProfilePage(){
     input.type = 'number'; input.step = '5'; input.value = state.weights[key];
     input.onchange = async ()=>{ state.weights[key] = Number(input.value)||0; await saveWeights(); toast('Saved.'); };
     row.appendChild(input);
-    weightsCard.appendChild(row);
+    content.appendChild(row);
 
     const entries = state.history.filter(h=>h.liftKey===key && h.loggedLoad!=null).map(h=>h.loggedLoad);
     if(entries.length>=2){
       const chartWrap = document.createElement('div');
       chartWrap.style.cssText = 'width:100%; padding:0 0 12px;';
       chartWrap.innerHTML = buildSparkline(entries);
-      weightsCard.appendChild(chartWrap);
+      content.appendChild(chartWrap);
     }
   });
-  panel.appendChild(weightsCard);
 }
+const PROFILE_DRAWERS = {
+  equipment: {title:'Equipment', render:renderEquipmentDrawer},
+  skills: {title:'Skills', render:renderSkillsDrawer},
+  weights: {title:'Current Working Weights (lb)', render:renderWeightsDrawer}
+};
+function openProfileDrawer(key){
+  const def = PROFILE_DRAWERS[key];
+  if(!def) return;
+  document.getElementById('gw-profile-drawer-title').textContent = def.title;
+  const content = document.getElementById('gw-profile-drawer-content');
+  content.innerHTML = '';
+  def.render(content);
+  document.getElementById('gw-profile-drawer-backdrop').classList.add('show');
+}
+function closeProfileDrawer(){
+  document.getElementById('gw-profile-drawer-backdrop').classList.remove('show');
+}
+document.getElementById('gw-profile-drawer-backdrop').onclick = (e)=>{ if(e.target.id==='gw-profile-drawer-backdrop') closeProfileDrawer(); };
 
 function weekStart(ts){
   const d = new Date(ts);
