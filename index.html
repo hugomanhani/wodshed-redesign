@@ -911,6 +911,44 @@ const MOVEMENT_LIB = {
   ]
 };
 
+// ---------- MOVEMENT PATTERNS (workload-aware programming) ----------
+// Coarse primary-pattern tag per movement name, used to spot when a WOD is about to double down on
+// whatever pattern the skill lift already hit today, or on whatever's dominated recent sessions of
+// this same focus — not a full biomechanical taxonomy, just enough to steer variety.
+const MOVEMENT_PATTERNS = {
+  'KB Swings':'hinge', 'Pull-Ups':'pull', 'Ring Push-Ups':'push', 'Single Unders':'monostructural',
+  'Air Squats':'squat', 'Push-Ups':'push', 'Walking Lunges':'lunge', 'Glute Bridges':'hinge',
+  'Ring Rows':'pull', 'KB Goblet Squats':'squat', 'Toes to Bar':'core', 'Lying Leg Raises':'core',
+  'Plank Shoulder Taps':'core', 'Inchworms':'mobility', 'Thrusters':'squat', 'Burpees':'push',
+  'Deadlift':'hinge', 'Broad Jumps':'jump', 'Jump Squats':'jump', 'Star Jumps':'jump',
+  'Mountain Climbers':'monostructural', 'Barbell Floor Press':'push', 'Diamond Push-Ups':'push',
+  'Bicycle Crunches':'core', 'Double Unders':'monostructural', 'Sit-Ups':'core',
+  'Jumping Lunges':'lunge', 'High Knees':'monostructural', 'Jumping Jacks':'monostructural'
+};
+// same idea for the barbell lifts used in Skill work
+const LIFT_PATTERNS = {backSquat:'squat', frontSquat:'squat', deadlift:'hinge', floorPress:'push', powerClean:'hinge', powerSnatch:'hinge'};
+// sprint/short/moderate/longer/extended bands (CrossFit programming convention) — used to name the
+// WOD's time domain in the coach note rather than just a bare minute count
+function timeDomainFor(minutes){
+  if(!minutes) return null;
+  if(minutes<=8) return 'sprint';
+  if(minutes<=12) return 'short';
+  if(minutes<=20) return 'moderate';
+  if(minutes<=35) return 'longer conditioning';
+  return 'extended aerobic';
+}
+// tallies how often each pattern showed up in this focus's last few logged sessions — the basis for
+// steering movement selection away from whatever's already been hammered
+function recentPatternTally(type, sessions){
+  const typeHistory = state.history.filter(h=>h.type===type && h.movementNames);
+  const tally = {};
+  typeHistory.slice(-sessions).forEach(h=>h.movementNames.forEach(name=>{
+    const p = MOVEMENT_PATTERNS[name];
+    if(p) tally[p] = (tally[p]||0)+1;
+  }));
+  return tally;
+}
+
 // ---------- CROSSFIT PRESETS: rep schemes + load presets ----------
 const CROSSFIT_REP_SCHEMES = {
   ladderDesc: [[21,15,9],[15,12,9],[10,8,6],[5,4,3]],
@@ -1095,11 +1133,13 @@ function fmtBenchmarkScore(benchmark, score){
   return fmtClock(score);
 }
 
+// anti-extension/rotation/bracing work leads by default — spinal flexion (sit-ups, V-ups) stays in
+// the mix but at moderate, not high, rep counts
 const CORE = [
-  {text:"3 rds\n20 sit-ups\n20 flutter kicks\n30\" plank hold\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"3 rds\n12 sit-ups\n20 flutter kicks\n30\" plank hold\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
   {text:"Tabata 20\"/10\" x8\n1- Hollow hold\n2- Arch hold (alternate rounds)", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, alternate:['Hollow Hold','Arch Hold'], label:'Alternating Tabata'}},
   {text:"Tabata 20\"/10\" x8\nV-ups", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, label:'Standard Tabata'}},
-  {text:"3 rds\n15 V-ups\n15 Russian twists (add a plate if you have one)\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"3 rds\n10 V-ups\n15 Russian twists (add a plate if you have one)\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
   {text:"3 rds\n1' plank hold\n1' rest", timer:{kind:'COUNTDOWN', minutes:1}},
   {text:"2' accumulate plank hold", timer:{kind:'COUNTDOWN', minutes:2}},
   {text:"20 leg raises\n20 flutter kicks\n20 mountain climbers", timer:null},
@@ -1303,10 +1343,16 @@ function pickLRU(pool, type, fieldGetter){
   });
   return best[Math.floor(Math.random()*best.length)];
 }
+// set by generateWorkout right before it asks a WOD_FORMAT_DEFS builder for movements — patterns
+// that already dominated recent sessions or today's skill lift get deprioritized (not excluded;
+// the pools are small enough that ruling a pattern out entirely could leave nothing left to pick)
+let currentAvoidPatterns = null;
 function pickMovementsLRU(pool, type, n){
   const scored = pool.map(m=>{
     const score = sessionsAgoUsed(type, m.name, h=>h.movementNames||[]);
-    return {m, score: (score===Infinity ? 999 : score) + Math.random()*0.75};
+    let s = (score===Infinity ? 999 : score) + Math.random()*0.75;
+    if(currentAvoidPatterns && currentAvoidPatterns.has(MOVEMENT_PATTERNS[m.name])) s -= 3;
+    return {m, score: s};
   });
   scored.sort((a,b)=>b.score-a.score);
   return scored.slice(0, Math.min(n, pool.length)).map(s=>s.m);
@@ -1595,11 +1641,25 @@ function generateWorkout(type){
   if(bw) movementPool = movementPool.filter(m=>m.equip==='none');
   const wodMinutes = alloc ? alloc.wod : null;
   const formatId = pickLRU(WOD_FORMAT_CATALOG[type], type, h=>h.formatId);
+  // steer WOD movement selection away from whatever pattern today's skill lift already hit, and
+  // away from whatever's dominated this focus's last couple of sessions — workload-aware balance,
+  // not just avoiding the exact same movement name twice
+  const skillPattern = skillLiftKey ? LIFT_PATTERNS[skillLiftKey] : null;
+  const recentTally = recentPatternTally(type, 2);
+  const recentDominant = Object.keys(recentTally).sort((a,b)=>recentTally[b]-recentTally[a])[0] || null;
+  const avoidPatterns = new Set([skillPattern, recentDominant].filter(Boolean));
+  currentAvoidPatterns = avoidPatterns.size ? avoidPatterns : null;
   const built = WOD_FORMAT_DEFS[formatId]({pool:movementPool, type, volume:effectiveVolume, wodMinutes});
+  currentAvoidPatterns = null;
   let format = built.formatDisplay;
   let wodMovements = built.movements;
   let wodTimerSpec = built.timerSpec;
   let isBenchmark = false, benchmarkName = null;
+
+  const domain = timeDomainFor(wodMinutes);
+  let whyNote = `${DAY_TYPES.find(d=>d.key===type).label} focus` + (domain ? ` — ${domain} WOD (~${wodMinutes}′)` : '');
+  whyNote += avoidPatterns.size ? `, steering away from ${[...avoidPatterns].join(' and ')} work since that's been the recent emphasis.` : '.';
+  coachNotes.unshift(whyNote);
 
   if(type==='conditioning' && (!alloc || alloc.wod >= 15)){
     const benchmark = dueBenchmark();
@@ -2958,7 +3018,13 @@ function rerollSection(section){
     const alloc = allocateTime(state.timeAvailable);
     const catalog = WOD_FORMAT_CATALOG[w.type];
     const formatId = catalog[Math.floor(Math.random()*catalog.length)];
+    const skillPattern = w.skillLiftKey ? LIFT_PATTERNS[w.skillLiftKey] : null;
+    const recentTally = recentPatternTally(w.type, 2);
+    const recentDominant = Object.keys(recentTally).sort((a,b)=>recentTally[b]-recentTally[a])[0] || null;
+    const avoidPatterns = new Set([skillPattern, recentDominant].filter(Boolean));
+    currentAvoidPatterns = avoidPatterns.size ? avoidPatterns : null;
     const built = WOD_FORMAT_DEFS[formatId]({pool:movementPool, type:w.type, volume:w.volumeUsed||1, wodMinutes: alloc?alloc.wod:null});
+    currentAvoidPatterns = null;
     w.formatId = formatId;
     w.format = built.formatDisplay;
     w.wodMovements = built.movements;
