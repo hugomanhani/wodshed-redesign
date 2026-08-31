@@ -1952,19 +1952,6 @@ function buildDeloadNote(w){
 const SECTION_START_LABELS = {warmup:'Warmup', skill:'Skill', wod:'WOD', core:'Core'};
 const TIMER_KIND_NAMES = {AMRAP:'AMRAP', EMOM:'EMOM', TABATA:'Tabata', RFT:'Rounds for Time', LADDER:'For Time',
   FORTIME:'For Time', FORTIME_REPEATS:'For Time Repeats', INTERVAL:'Interval', COUNTDOWN:'Countdown'};
-// short "10 min" / "8 rounds" / "6 sets" suffix so the CTA names the exact timer that's about to open
-function timerSpecShortDetail(spec){
-  if(!spec) return '';
-  if(spec.kind==='AMRAP') return spec.cycles ? `${spec.cycles} x ${spec.minutes} min` : `${spec.minutes} min`;
-  if(spec.kind==='EMOM') return spec.openEnded ? 'until failure' : `${spec.minutes} min`;
-  if(spec.kind==='TABATA') return `${spec.rounds} rounds`;
-  if(spec.kind==='RFT') return `${spec.rounds} rounds`;
-  if(spec.kind==='LADDER') return spec.rungs.join('-');
-  if(spec.kind==='FORTIME_REPEATS') return `${spec.rounds} rounds`;
-  if(spec.kind==='INTERVAL') return spec.totalRounds ? `${spec.totalRounds} sets` : '';
-  if(spec.kind==='COUNTDOWN') return `${spec.minutes} min`;
-  return '';
-}
 // "1:30" for a fractional interval, "2 min" for a whole one — matches how the prescription
 // text itself already phrases "Each 1:30" / "Each 2 min"
 function fmtMinutesShort(minutes){
@@ -1972,20 +1959,39 @@ function fmtMinutesShort(minutes){
   const sec = Math.round((minutes - whole) * 60);
   return sec ? `${whole}:${String(sec).padStart(2,'0')}` : `${whole} min`;
 }
-// the CTA names whichever timer will actually open — not a generic "focus mode" label
+// the CTA names whichever timer will actually open — but stays a short, scannable phrase
+// (kind + the one number that matters), never the verbose catalog scheme name like
+// "RFT: Same Varying Reps" or "Alternate Movements per Interval"
+function timerSpecShortLabel(spec){
+  switch(spec.kind){
+    case 'AMRAP':
+      return spec.cycles ? `AMRAP ${spec.cycles}x${fmtMinutesShort(spec.minutes)}` : `AMRAP ${fmtMinutesShort(spec.minutes)}`;
+    case 'EMOM':
+      return spec.openEnded ? 'EMOM' : `EMOM ${fmtMinutesShort(spec.minutes)}`;
+    case 'TABATA':
+      return `Tabata ${spec.rounds}x`;
+    case 'RFT':
+      return `${spec.rounds} Rounds`;
+    case 'LADDER':
+      return `For Time ${spec.rungs.join('-')}`;
+    case 'FORTIME':
+      return 'For Time';
+    case 'FORTIME_REPEATS':
+      return `For Time x${spec.rounds}`;
+    case 'INTERVAL':
+      return spec.totalRounds ? `${fmtMinutesShort(spec.minutes)} x${spec.totalRounds}` : `${fmtMinutesShort(spec.minutes)} Timer`;
+    case 'COUNTDOWN':
+      return `Countdown ${fmtMinutesShort(spec.minutes)}`;
+    default:
+      return TIMER_KIND_NAMES[spec.kind] || spec.kind;
+  }
+}
 function sectionStartLabel(key, w){
   if(!w) return `Start ${SECTION_START_LABELS[key]}`;
   const data = getSectionFocusData(w, key);
   const spec = data && data.timerSpec;
   if(!spec) return `Start ${SECTION_START_LABELS[key]}`;
-  // "For X Cycles" / "X Rest Between Sets" don't say anything concrete on their own — naming the
-  // actual interval length is far more useful on a CTA than the generic scheme name
-  if(spec.kind==='INTERVAL' && spec.totalRounds){
-    return `Start ${fmtMinutesShort(spec.minutes)} Timer · ${spec.totalRounds} sets`;
-  }
-  const name = spec.label || TIMER_KIND_NAMES[spec.kind] || SECTION_START_LABELS[key];
-  const detail = timerSpecShortDetail(spec);
-  return `Start ${detail ? `${name} · ${detail}` : name}`;
+  return `Start ${timerSpecShortLabel(spec)}`;
 }
 // the checkmark is a real toggle — marking a section undone also resets its inline round counter
 // (if it has one) so the round button becomes tappable again instead of staying stuck on "Completed"
