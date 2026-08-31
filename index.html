@@ -904,7 +904,11 @@ const MOVEMENT_LIB = {
     {name:'Overhead Squat', range:[8,15], step:1, equip:'barbell'},
     {name:'Pistol Squats', range:[4,10], step:2, equip:'none'},
     {name:'Good Mornings', range:[8,15], step:1, equip:'barbell'},
-    {name:'Bent-Over Rows', range:[8,15], step:1, equip:'barbell'}
+    {name:'Bent-Over Rows', range:[8,15], step:1, equip:'barbell'},
+    {name:'Back Squat', range:[6,12], step:1, equip:'barbell'},
+    {name:'Front Squat', range:[6,12], step:1, equip:'barbell'},
+    {name:'Strict Press', range:[6,12], step:1, equip:'barbell'},
+    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'}
   ],
   gymnastics: [
     {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
@@ -921,7 +925,11 @@ const MOVEMENT_LIB = {
     {name:'Hollow Rocks', range:[15,25], step:5, equip:'none'},
     {name:'Knees to Elbows', range:[6,12], step:2, equip:'bar'},
     {name:'Chest-to-Bar Pull-Ups', range:[4,8], step:1, equip:'bar'},
-    {name:'Pistol Squats', range:[4,10], step:2, equip:'none'}
+    {name:'Pistol Squats', range:[4,10], step:2, equip:'none'},
+    {name:'Bar Muscle-Ups', range:[3,6], step:1, equip:'bar'},
+    {name:'Ring Muscle-Ups', range:[3,6], step:1, equip:'rings'},
+    {name:'Handstand Walk', range:[10,20], step:5, equip:'none'},
+    {name:'Superman Pulls', range:[10,20], step:5, equip:'none'}
   ],
   weightlifting: [
     {name:'Thrusters', range:[8,15], step:1, equip:'barbell'},
@@ -940,7 +948,12 @@ const MOVEMENT_LIB = {
     {name:'Push Press', range:[6,12], step:1, equip:'barbell'},
     {name:'Push Jerk', range:[5,10], step:1, equip:'barbell'},
     {name:'Hang Power Clean', range:[5,10], step:1, equip:'barbell'},
-    {name:'Hang Power Snatch', range:[5,10], step:1, equip:'barbell'}
+    {name:'Hang Power Snatch', range:[5,10], step:1, equip:'barbell'},
+    {name:'Squat Clean', range:[4,8], step:1, equip:'barbell'},
+    {name:'Squat Snatch', range:[4,8], step:1, equip:'barbell'},
+    {name:'Split Jerk', range:[4,8], step:1, equip:'barbell'},
+    {name:'Sumo Deadlift', range:[5,10], step:1, equip:'barbell'},
+    {name:'KB Push Press', range:[6,12], step:2, equip:'kb'}
   ],
   accessory: [
     {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
@@ -958,7 +971,11 @@ const MOVEMENT_LIB = {
     {name:'KB Deadlifts', range:[12,20], step:2, equip:'kb'},
     {name:'KB Romanian Deadlift', range:[10,15], step:5, equip:'kb'},
     {name:'Single-Arm KB Push Press', range:[6,12], step:2, equip:'kb'},
-    {name:'Bent-Over Rows', range:[8,15], step:1, equip:'barbell'}
+    {name:'Bent-Over Rows', range:[8,15], step:1, equip:'barbell'},
+    {name:'Turkish Get-Ups', range:[4,8], step:2, equip:'kb'},
+    {name:'KB Push Press', range:[6,12], step:2, equip:'kb'},
+    {name:'Superman Pulls', range:[10,20], step:5, equip:'none'},
+    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'}
   ],
   conditioning: [
     {name:'Double Unders', range:[20,40], step:10, equip:'rope'},
@@ -976,7 +993,10 @@ const MOVEMENT_LIB = {
     {name:'Burpee Box Jump Overs', range:[6,12], step:2, equip:'none'},
     {name:'KB Thrusters', range:[10,18], step:2, equip:'kb'},
     {name:'Pistol Squats', range:[4,10], step:2, equip:'none'},
-    {name:'Broad Jumps', range:[8,12], step:2, equip:'none'}
+    {name:'Broad Jumps', range:[8,12], step:2, equip:'none'},
+    {name:'Tuck Jumps', range:[10,20], step:5, equip:'none'},
+    {name:'Superman Pulls', range:[10,20], step:5, equip:'none'},
+    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'}
   ]
 };
 
@@ -1002,7 +1022,12 @@ const MOVEMENT_PATTERNS = {
   'Chest-to-Bar Pull-Ups':'pull', 'Push Press':'push', 'Push Jerk':'push',
   'Hang Power Clean':'hinge', 'Hang Power Snatch':'hinge', 'KB Deadlifts':'hinge',
   'KB Romanian Deadlift':'hinge', 'Single-Arm KB Push Press':'push',
-  'Burpee Box Jump Overs':'jump', 'KB Thrusters':'squat'
+  'Burpee Box Jump Overs':'jump', 'KB Thrusters':'squat', 'Back Squat':'squat',
+  'Front Squat':'squat', 'Strict Press':'push', 'Plank Up-Downs':'push',
+  'Bar Muscle-Ups':'pull', 'Ring Muscle-Ups':'pull', 'Handstand Walk':'push',
+  'Superman Pulls':'pull', 'Squat Clean':'hinge', 'Squat Snatch':'hinge',
+  'Split Jerk':'push', 'Sumo Deadlift':'hinge', 'KB Push Press':'push',
+  'Turkish Get-Ups':'core', 'Tuck Jumps':'jump'
 };
 // same idea for the barbell lifts used in Skill work
 const LIFT_PATTERNS = {backSquat:'squat', frontSquat:'squat', deadlift:'hinge', floorPress:'push', powerClean:'hinge', powerSnatch:'hinge'};
@@ -1049,7 +1074,16 @@ const WOD_LOAD_STANDARDS = {
   'KB Deadlifts': {w:35, m:53},
   'KB Romanian Deadlift': {w:35, m:53},
   'Single-Arm KB Push Press': {w:35, m:53},
-  'KB Thrusters': {w:35, m:53}
+  'KB Thrusters': {w:35, m:53},
+  'Back Squat': {w:95, m:135},
+  'Front Squat': {w:95, m:135},
+  'Strict Press': {w:65, m:95},
+  'Squat Clean': {w:95, m:135},
+  'Squat Snatch': {w:65, m:95},
+  'Split Jerk': {w:115, m:165},
+  'Sumo Deadlift': {w:155, m:225},
+  'KB Push Press': {w:35, m:53},
+  'Turkish Get-Ups': {w:35, m:53}
 };
 function wodMovementDisplayName(name){
   const std = WOD_LOAD_STANDARDS[name];
@@ -1421,7 +1455,18 @@ const EXERCISE_INFO = {
   "Hang Power Clean": {desc: "Starting with the bar at the hang (around knee height, not the floor), pull explosively and drop under it to catch on your shoulders in a quarter-squat, then stand.", url: "https://www.crossfit.com/essentials/the-hang-power-clean"},
   "Single-Arm KB Push Press": {desc: "Rack the kettlebell at your shoulder, dip slightly, then drive through your legs to press it overhead. Switch arms between sets."},
   "Burpee Box Jump Overs": {desc: "Burpee on the floor, then jump onto the box and immediately step or jump off the other side — the box crossing replaces the standing jump of a normal burpee."},
-  "KB Thrusters": {desc: "Hold the kettlebell racked at your shoulder or in a goblet grip, squat down, then drive up and press it overhead in one motion as your legs finish extending."}
+  "KB Thrusters": {desc: "Hold the kettlebell racked at your shoulder or in a goblet grip, squat down, then drive up and press it overhead in one motion as your legs finish extending."},
+  "Squat Clean": {desc: "Pull the bar from the floor explosively and drop into a full squat to catch it racked on your shoulders, then stand up to finish the lift.", url: "https://www.crossfit.com/essentials/the-squat-clean"},
+  "Squat Snatch": {desc: "Pull the bar from the floor in one explosive motion and drop into a full squat to catch it locked out overhead, then stand up to finish the lift.", url: "https://www.crossfit.com/essentials/the-squat-snatch"},
+  "Split Jerk": {desc: "Dip and drive the bar off your shoulders, then split your feet front-to-back as you drop under it to catch it locked out overhead, and bring your feet back together to stand.", url: "https://www.crossfit.com/essentials/the-split-jerk"},
+  "Sumo Deadlift": {desc: "Wide stance with hands inside your knees, chest up and back flat, drive through the floor to stand tall — the wide stance shifts more of the load to your legs than a conventional deadlift.", url: "https://www.crossfit.com/essentials/the-sumo-deadlift"},
+  "Turkish Get-Ups": {desc: "Lying down with the kettlebell locked out overhead in one hand, work your way up to standing one step at a time while keeping the bell locked out the whole way, then reverse it back down.", url: "https://www.crossfit.com/essentials/the-turkish-get-up"},
+  "KB Push Press": {desc: "Hold the kettlebell racked at your shoulder, dip slightly at the knees, then drive through your legs to help press it overhead."},
+  "Bar Muscle-Ups": {desc: "From a hang, pull explosively and lean back to bring your hips to the bar, then press out on top so you finish with straight arms above the bar."},
+  "Ring Muscle-Ups": {desc: "Pull explosively while pulling the rings into your body, transition your hands over the top as your chest clears the rings, then press out to lockout."},
+  "Handstand Walk": {desc: "Kick up into a handstand and walk forward on your hands, keeping your body tight and your gaze between your hands — count each hand step as a rep."},
+  "Plank Up-Downs": {desc: "From a forearm plank, press up to a push-up plank one arm at a time, then lower back to forearms one arm at a time — keep your hips as still and square as you can."},
+  "Tuck Jumps": {desc: "Jump straight up, drive both knees toward your chest at the top, then land soft with knees bent and go right back up."}
 };
 function findKnownMovements(text){
   const found = [];
