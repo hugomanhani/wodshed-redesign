@@ -141,6 +141,11 @@
   }
   .gw-daytabs-sheet-handle{width:36px; height:4px; border-radius:4px; background:var(--line-strong); margin:6px auto 14px;}
   .gw-daytabs-sheet-title{font-size:12px; font-weight:900; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); padding:0 10px 10px;}
+  /* the profile drawers' content sits flush with the sheet's own 10px inset (no per-row padding of
+     its own) — the shared sheet-title class adds another 10px on top of that, which visibly
+     misaligns the title from the rows below it here specifically, so this drawer's title is
+     pulled back in line instead */
+  #gw-profile-drawer-title{padding:0 0 10px;}
 
   /* ---- bottom floating nav ---- */
   #gw-pagetabs{
@@ -404,13 +409,6 @@
     cursor:pointer; font-family:var(--font-body); letter-spacing:0.03em;
   }
   .gw-unit-btn.active{background:var(--coral); color:var(--bg);}
-  .gw-weights-row{display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);}
-  .gw-weights-row:last-child{border-bottom:none;}
-  .gw-weights-row .gw-weights-label{font-size:13px; font-weight:600; color:#fff;}
-  .gw-weights-row input{
-    width:64px; height:36px; background:var(--surface-2); border:1px solid var(--line); color:var(--coral);
-    border-radius:6px; text-align:center; font-size:16px; font-weight:800; font-family:var(--font-body);
-  }
   .gw-activity-select{
     background:var(--surface-2); border:1px solid var(--line); color:#fff; border-radius:8px; padding:12px 16px; font-size:16px; width:100%; font-family:var(--font-body);
   }
@@ -429,15 +427,39 @@
   .gw-profile-list-row svg{width:16px; height:16px; stroke:var(--muted); fill:none; stroke-width:2.4; flex:none;}
   .gw-skill-group-title{
     font-size:11px; font-weight:900; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted);
-    padding:14px 4px 6px; font-family:var(--font-body);
+    padding:14px 0 6px; font-family:var(--font-body);
   }
   .gw-skill-row{
-    display:flex; align-items:center; justify-content:space-between; padding:11px 4px;
+    display:flex; align-items:center; justify-content:space-between; padding:11px 0;
     border-bottom:1px solid var(--line); cursor:pointer;
   }
   .gw-skill-row:last-child{border-bottom:none;}
   .gw-skill-row-label{font-size:13.5px; font-weight:600; color:#fff; font-family:var(--font-body);}
   .gw-skill-row input[type=checkbox]{width:21px; height:21px; accent-color:var(--coral); flex:none;}
+  .gw-skill-search{
+    width:100%; background:var(--surface-2); border:1px solid var(--line); color:#fff;
+    border-radius:10px; padding:11px 14px; font-size:15px; font-family:var(--font-body); margin-bottom:4px;
+  }
+  .gw-skill-search::placeholder{color:var(--muted);}
+
+  /* ---- Profile: Equipment cards ---- */
+  .gw-equip-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;}
+  .gw-equip-card{background:var(--surface-2); border-radius:14px; padding:18px 10px 14px; text-align:center; position:relative;}
+  .gw-equip-icon{
+    width:44px; height:44px; border-radius:50%; background:var(--coral-wash); color:var(--coral);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 10px;
+  }
+  .gw-equip-name{font-size:13px; font-weight:700; color:#fff; font-family:var(--font-body);}
+  .gw-equip-check{position:absolute; top:10px; right:10px; color:var(--coral); display:flex;}
+  .gw-equip-check svg{width:14px; height:14px;}
+
+  /* ---- Profile: Benchmarks ---- */
+  .gw-benchmark-card{background:var(--surface-2); border-radius:14px; padding:14px; margin-bottom:10px;}
+  .gw-benchmark-card:last-of-type{margin-bottom:0;}
+  .gw-benchmark-headrow{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+  .gw-benchmark-name{font-family:var(--font-display); font-weight:900; font-size:18px; color:#fff;}
+  .gw-benchmark-best{font-size:11.5px; color:var(--coral); font-weight:700; flex:none;}
+  .gw-benchmark-detail{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4;}
   .gw-activity-notes{
     width:100%; min-height:56px; background:var(--surface-2); border:1px solid var(--line); color:#fff;
     border-radius:8px; padding:12px 16px; font-size:16px; font-family:var(--font-body); resize:vertical;
@@ -826,6 +848,10 @@ const ICON_TROPHY = '<svg viewBox="0 0 256 256" fill="currentColor" width="11" h
 const ICON_X = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/></svg>';
 const ICON_CHECK = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>';
 const ICON_ARROW_LEFT = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"/></svg>';
+const ICON_BARBELL = '<svg viewBox="0 0 256 256" fill="currentColor" width="20" height="20"><path d="M248,120h-8V88a16,16,0,0,0-16-16H208V64a16,16,0,0,0-16-16H168a16,16,0,0,0-16,16v56H104V64A16,16,0,0,0,88,48H64A16,16,0,0,0,48,64v8H32A16,16,0,0,0,16,88v32H8a8,8,0,0,0,0,16h8v32a16,16,0,0,0,16,16H48v8a16,16,0,0,0,16,16H88a16,16,0,0,0,16-16V136h48v56a16,16,0,0,0,16,16h24a16,16,0,0,0,16-16v-8h16a16,16,0,0,0,16-16V136h8a8,8,0,0,0,0-16ZM32,168V88H48v80Zm56,24H64V64H88V192Zm104,0H168V64h24V175.82c0,.06,0,.12,0,.18s0,.12,0,.18V192Zm32-24H208V88h16Z"/></svg>';
+// Phosphor "image" (a picture-frame glyph) stands in for the four pieces of equipment that don't
+// have a real icon yet — an honest "artwork pending" placeholder rather than guessing at a shape
+const ICON_EQUIP_PLACEHOLDER = '<svg viewBox="0 0 256 256" fill="currentColor" width="20" height="20"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V158.75l-26.07-26.06a16,16,0,0,0-22.63,0l-20,20-44-44a16,16,0,0,0-22.62,0L40,149.37V56ZM40,172l52-52,80,80H40Zm176,28H194.63l-36-36,20-20L216,181.38V200ZM144,100a12,12,0,1,1,12,12A12,12,0,0,1,144,100Z"/></svg>';
 
 const DAY_TYPES = [
   {key:'strength', label:'Strength'},
@@ -3595,8 +3621,26 @@ function convertBodyweight(value, fromUnit, toUnit){
   if(value==null || fromUnit===toUnit) return value;
   return fromUnit==='lb' ? Math.round(value/2.20462) : Math.round(value*2.20462);
 }
-// what workouts currently assume is in the gym — static for now; picking equipment per-gym is future work
-const MY_GYM_EQUIPMENT = ['Barbell & Rack', 'Pull-Up Bar', 'Rings', 'Kettlebell', 'Jump Rope'];
+// what workouts currently assume is in the gym — static for now; picking your own equipment and
+// adding more to this list is future work. Each key matches the `equip` field used across
+// MOVEMENT_LIB/EXERCISE_INFO/BENCHMARKS, so a future custom-equipment picker can key off these
+// directly instead of re-deriving them.
+const MY_GYM_EQUIPMENT = [
+  {key:'barbell', name:'Barbell & Rack'},
+  {key:'bar', name:'Pull-Up Bar'},
+  {key:'rings', name:'Rings'},
+  {key:'kb', name:'Kettlebell'},
+  {key:'rope', name:'Jump Rope'}
+];
+// real artwork lands here later — every card's icon comes from this map keyed by MY_GYM_EQUIPMENT's
+// `key`, so dropping in custom icons per item is a one-line change, no markup to touch
+const EQUIPMENT_ICONS = {
+  barbell: ICON_BARBELL,
+  bar: ICON_EQUIP_PLACEHOLDER,
+  rings: ICON_EQUIP_PLACEHOLDER,
+  kb: ICON_EQUIP_PLACEHOLDER,
+  rope: ICON_EQUIP_PLACEHOLDER
+};
 function countWorkoutsTotal(){ return state.history.filter(h=>h.kind!=='external').length; }
 function countWorkoutsThisWeek(){
   const start = weekStart(Date.now());
@@ -3655,7 +3699,7 @@ function renderProfilePage(){
   [
     {key:'equipment', label:'Equipment'},
     {key:'skills', label:'Skills'},
-    {key:'weights', label:'Weights'}
+    {key:'benchmarks', label:'Benchmarks'}
   ].forEach(item=>{
     const row = document.createElement('div');
     row.className = 'gw-profile-list-row';
@@ -3666,35 +3710,49 @@ function renderProfilePage(){
   panel.appendChild(list);
 }
 function renderEquipmentDrawer(content){
-  MY_GYM_EQUIPMENT.forEach(name=>{
-    const row = document.createElement('div');
-    row.className = 'gw-weights-row';
-    row.innerHTML = `<span class="gw-weights-label">${name}</span><span style="color:var(--coral); display:flex;">${ICON_CHECK}</span>`;
-    content.appendChild(row);
+  const grid = document.createElement('div');
+  grid.className = 'gw-equip-grid';
+  MY_GYM_EQUIPMENT.forEach(item=>{
+    const card = document.createElement('div');
+    card.className = 'gw-equip-card';
+    card.innerHTML = `
+      <span class="gw-equip-check">${ICON_CHECK}</span>
+      <div class="gw-equip-icon">${EQUIPMENT_ICONS[item.key] || ICON_EQUIP_PLACEHOLDER}</div>
+      <div class="gw-equip-name">${item.name}</div>`;
+    grid.appendChild(card);
   });
+  content.appendChild(grid);
   const note = document.createElement('div');
-  note.style.cssText = 'font-size:12px; color:var(--muted); padding-top:12px;';
+  note.style.cssText = 'font-size:12px; color:var(--muted); padding-top:14px;';
   note.textContent = 'Choosing your own equipment is coming soon — for now every workout assumes this list.';
   content.appendChild(note);
 }
 // starts fully checked (everything assumed known) — unchecking a movement here removes it from
-// the pool a WOD can draw from, same idea as bodyweight mode filtering by equipment
+// the pool a WOD can draw from, same idea as bodyweight mode filtering by equipment. The search
+// box filters this same list live, re-rendering just the group below it on every keystroke.
 function renderSkillsDrawer(content){
   const note = document.createElement('div');
-  note.style.cssText = 'font-size:12px; color:var(--muted); padding-bottom:6px;';
+  note.style.cssText = 'font-size:12px; color:var(--muted); padding-bottom:10px;';
   note.textContent = "Everything starts checked. Uncheck anything you can't do yet — workouts won't use it until you check it back on.";
   content.appendChild(note);
 
+  const search = document.createElement('input');
+  search.type = 'text';
+  search.className = 'gw-skill-search';
+  search.placeholder = 'Search skills…';
+  content.appendChild(search);
+
+  const listWrap = document.createElement('div');
+  content.appendChild(listWrap);
+
   const names = allMovementNames();
-  const advanced = names.filter(n=>ADVANCED_MOVEMENTS.has(n));
-  const everyday = names.filter(n=>!ADVANCED_MOVEMENTS.has(n));
 
   function buildGroup(title, list){
     if(!list.length) return;
     const h = document.createElement('div');
     h.className = 'gw-skill-group-title';
     h.textContent = title;
-    content.appendChild(h);
+    listWrap.appendChild(h);
     list.forEach(name=>{
       const row = document.createElement('label');
       row.className = 'gw-skill-row';
@@ -3711,39 +3769,62 @@ function renderSkillsDrawer(content){
       };
       row.appendChild(labelSpan);
       row.appendChild(cb);
-      content.appendChild(row);
+      listWrap.appendChild(row);
     });
   }
-  buildGroup('Advanced', advanced);
-  buildGroup('Everyday', everyday);
-}
-function renderWeightsDrawer(content){
-  Object.keys(LIFT_LABELS).forEach(key=>{
-    const row = document.createElement('div');
-    row.className = 'gw-weights-row';
-    const labelSpan = document.createElement('span');
-    labelSpan.className = 'gw-weights-label';
-    labelSpan.textContent = LIFT_LABELS[key].toUpperCase();
-    row.appendChild(labelSpan);
-    const input = document.createElement('input');
-    input.type = 'number'; input.step = '5'; input.value = state.weights[key];
-    input.onchange = async ()=>{ state.weights[key] = Number(input.value)||0; await saveWeights(); toast('Saved.'); };
-    row.appendChild(input);
-    content.appendChild(row);
-
-    const entries = state.history.filter(h=>h.liftKey===key && h.loggedLoad!=null).map(h=>h.loggedLoad);
-    if(entries.length>=2){
-      const chartWrap = document.createElement('div');
-      chartWrap.style.cssText = 'width:100%; padding:0 0 12px;';
-      chartWrap.innerHTML = buildSparkline(entries);
-      content.appendChild(chartWrap);
+  function renderList(query){
+    listWrap.innerHTML = '';
+    const q = query.trim().toLowerCase();
+    const filtered = q ? names.filter(n=>n.toLowerCase().includes(q)) : names;
+    buildGroup('Advanced', filtered.filter(n=>ADVANCED_MOVEMENTS.has(n)));
+    buildGroup('Everyday', filtered.filter(n=>!ADVANCED_MOVEMENTS.has(n)));
+    if(q && !filtered.length){
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:12.5px; color:var(--muted); text-align:center; padding:20px 0;';
+      empty.textContent = `No skills match "${query.trim()}".`;
+      listWrap.appendChild(empty);
     }
+  }
+  search.oninput = ()=>renderList(search.value);
+  renderList('');
+}
+function renderBenchmarksDrawer(content){
+  BENCHMARKS.forEach(b=>{
+    const hist = (state.benchmarks[b.name] && state.benchmarks[b.name].history) || [];
+    const scores = hist.map(h=>h.score);
+    const best = scores.length ? (b.scoreType==='rounds' ? Math.max(...scores) : Math.min(...scores)) : null;
+
+    const card = document.createElement('div');
+    card.className = 'gw-benchmark-card';
+    card.innerHTML = `
+      <div class="gw-benchmark-headrow">
+        <span class="gw-benchmark-name">${b.name}</span>
+        <span class="gw-benchmark-best">${best!=null ? 'Best '+fmtBenchmarkScore(b, best) : 'Not tested yet'}</span>
+      </div>
+      <div class="gw-benchmark-detail">${b.format} · ${b.movements.map(m=>`${m.reps} ${m.name}`).join(', ')}</div>`;
+
+    if(scores.length>=2){
+      const chartWrap = document.createElement('div');
+      chartWrap.style.cssText = 'width:100%; padding:8px 0 0;';
+      chartWrap.innerHTML = buildSparkline(scores);
+      card.appendChild(chartWrap);
+    } else if(scores.length===1){
+      const last = document.createElement('div');
+      last.style.cssText = 'font-size:11px; color:var(--muted); padding-top:8px;';
+      last.textContent = `Tested ${new Date(hist[0].date).toLocaleDateString(undefined,{month:'short', day:'numeric'})}`;
+      card.appendChild(last);
+    }
+    content.appendChild(card);
   });
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:12px; color:var(--muted); padding-top:4px;';
+  note.textContent = `Retested automatically about every ${BENCHMARK_RETEST_DAYS} days as part of a Conditioning day.`;
+  content.appendChild(note);
 }
 const PROFILE_DRAWERS = {
   equipment: {title:'Equipment', render:renderEquipmentDrawer},
   skills: {title:'Skills', render:renderSkillsDrawer},
-  weights: {title:'Current Working Weights (lb)', render:renderWeightsDrawer}
+  benchmarks: {title:'Benchmarks', render:renderBenchmarksDrawer}
 };
 function openProfileDrawer(key){
   const def = PROFILE_DRAWERS[key];
