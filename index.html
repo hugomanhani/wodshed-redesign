@@ -1798,11 +1798,18 @@ function parseSetScheme(text){
   }
   return null;
 }
-function buildSkillSetReps(skillTplText, skillTimer){
+// only fabricate a straight-sets editor when there's real set structure to log: a genuine
+// repeated-sets timer (INTERVAL), or a lift whose weight is worth adjusting set by set. An EMOM
+// (or similar) with no lift and no explicit "N x R" text is minute-by-minute work, not discrete
+// sets — there's nothing meaningful to edit reps/weight for, so it gets no editor at all.
+function buildSkillSetReps(skillTplText, skillTimer, hasLiftKey){
   const scheme = parseSetScheme(skillTplText);
   if(scheme) return scheme;
-  const n = (skillTimer && skillTimer.totalRounds) || 3;
-  return Array(n).fill(5);
+  if(hasLiftKey || (skillTimer && skillTimer.kind==='INTERVAL')){
+    const n = (skillTimer && skillTimer.totalRounds) || 3;
+    return Array(n).fill(5);
+  }
+  return [];
 }
 function buildSkillSetWeights(n, suggestedLoad){
   return Array(n).fill(suggestedLoad || 0);
@@ -1925,7 +1932,7 @@ function generateWorkout(type){
     coreTimer = CORE.find(c=>c.text===core).timer;
   }
 
-  const initSkillSetReps = buildSkillSetReps(skillTplText, skillTimer);
+  const initSkillSetReps = buildSkillSetReps(skillTplText, skillTimer, !!skillLiftKey);
   state.currentWorkout = {
     type, warmup, skillTplText, skillLiftKey, suggestedLoad, deload, skillTimer,
     skillSetReps: initSkillSetReps,
@@ -3248,8 +3255,8 @@ function rerollSection(section){
     if(skillPool.length>1){ do{ choiceTpl = skillPool[Math.floor(Math.random()*skillPool.length)]; } while(choiceTpl.text===w.skillTplText); }
     w.skillTplText = choiceTpl.text;
     w.skillTimer = choiceTpl.timer || null;
-    w.skillSetReps = buildSkillSetReps(w.skillTplText, w.skillTimer);
     w.skillLiftKey = (!bw && choiceTpl.liftKey) ? choiceTpl.liftKey : null;
+    w.skillSetReps = buildSkillSetReps(w.skillTplText, w.skillTimer, !!w.skillLiftKey);
     if(w.skillLiftKey){
       const result = computeSuggestedLoad(w.skillLiftKey);
       w.suggestedLoad = result.load; w.deload = result.deload;
