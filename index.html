@@ -1343,7 +1343,25 @@ const BENCHMARKS = [
   {name:'Fran', format:"FOR TIME", scoreType:'time', equip:'barbell',
    movements:[{name:'Thrusters', reps:'21-15-9'},{name:'Pull-Ups', reps:'21-15-9'}]},
   {name:'Donny', format:"FOR TIME", scoreType:'time', equip:'barbell',
-   movements:[{name:'Deadlift', reps:'21-15-9-9-15-21'},{name:'Burpees', reps:'21-15-9-9-15-21'}]}
+   movements:[{name:'Deadlift', reps:'21-15-9-9-15-21'},{name:'Burpees', reps:'21-15-9-9-15-21'}]},
+  {name:'Grace', format:"FOR TIME", scoreType:'time', equip:'barbell',
+   movements:[{name:'Clean and Jerks', reps:30}]},
+  {name:'Isabel', format:"FOR TIME", scoreType:'time', equip:'barbell',
+   movements:[{name:'Squat Snatch', reps:30}]},
+  {name:'Elizabeth', format:"FOR TIME", scoreType:'time', equip:'barbell',
+   movements:[{name:'Squat Clean', reps:'21-15-9'},{name:'Ring Dips', reps:'21-15-9'}]},
+  {name:'Diane', format:"FOR TIME", scoreType:'time', equip:'barbell',
+   movements:[{name:'Deadlift', reps:'21-15-9'},{name:'Handstand Push-Ups', reps:'21-15-9'}]},
+  {name:'Helen', format:"3 RFT", scoreType:'time', equip:'kb',
+   movements:[{name:'Running', reps:'400m'},{name:'KB Swings', reps:21},{name:'Pull-Ups', reps:12}]},
+  {name:'Angie', format:"FOR TIME", scoreType:'time', equip:'bar',
+   movements:[{name:'Pull-Ups', reps:100},{name:'Push-Ups', reps:100},{name:'Sit-Ups', reps:100},{name:'Air Squats', reps:100}]},
+  {name:'Nancy', format:"5 RFT", scoreType:'time', equip:'barbell',
+   movements:[{name:'Running', reps:'400m'},{name:'Overhead Squat', reps:15}]},
+  {name:'DT', format:"5 RFT", scoreType:'time', equip:'barbell',
+   movements:[{name:'Deadlift', reps:12},{name:'Hang Power Clean', reps:9},{name:'Push Jerk', reps:6}]},
+  {name:'Murph', format:"FOR TIME", scoreType:'time', equip:'bar',
+   movements:[{name:'Running', reps:'1 mile'},{name:'Pull-Ups', reps:100},{name:'Push-Ups', reps:200},{name:'Air Squats', reps:300},{name:'Running', reps:'1 mile'}]}
 ];
 const BENCHMARK_RETEST_DAYS = 21;
 
@@ -1596,7 +1614,9 @@ const EXERCISE_INFO = {
   "Ring Muscle-Ups": {desc: "Pull explosively while pulling the rings into your body, transition your hands over the top as your chest clears the rings, then press out to lockout."},
   "Handstand Walk": {desc: "Kick up into a handstand and walk forward on your hands, keeping your body tight and your gaze between your hands — count each hand step as a rep."},
   "Plank Up-Downs": {desc: "From a forearm plank, press up to a push-up plank one arm at a time, then lower back to forearms one arm at a time — keep your hips as still and square as you can."},
-  "Tuck Jumps": {desc: "Jump straight up, drive both knees toward your chest at the top, then land soft with knees bent and go right back up."}
+  "Tuck Jumps": {desc: "Jump straight up, drive both knees toward your chest at the top, then land soft with knees bent and go right back up."},
+  "Clean and Jerks": {desc: "Pull the bar from the floor to your shoulders in one motion (the clean), stand up, then dip and drive it overhead (the jerk). Reset and reset your breath between reps as needed."},
+  "Running": {desc: "Steady, sustainable pace — the goal is covering the distance without cooking yourself for the movements that follow."}
 };
 function findKnownMovements(text){
   const found = [];
