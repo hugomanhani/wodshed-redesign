@@ -32,6 +32,7 @@
     --line-strong:rgba(255,255,255,0.16);
     --danger:#ff6b6b;
     --good:#5fd0a3;
+    --warn:#f5b350;
     --font-display:'Big Shoulders Display', Impact, 'Arial Narrow', sans-serif;
     --font-hero:'Fraunces', Georgia, serif;
     --font-body:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -163,11 +164,22 @@
   .gw-pagetab.active svg{fill:var(--coral);}
   .gw-page{padding:8px 20px 20px; min-height:70vh; min-height:70dvh; box-sizing:border-box;}
 
-  /* ---- LOG calendar (always shows the full month) ---- */
+  /* ---- LOG expandable calendar ---- */
   .gw-cal-card{padding:16px;}
-  .gw-cal-headrow{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+  .gw-cal-headrow{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
   .gw-cal-title{font-family:var(--font-display); font-weight:900; font-size:20px; color:#fff;}
-  .gw-cal-month{color:var(--coral); font-family:var(--font-body); font-weight:800; font-size:13px; letter-spacing:0.02em;}
+  .gw-cal-toggle{
+    display:flex; align-items:center; gap:5px; background:none; border:none; cursor:pointer;
+    color:var(--coral); font-family:var(--font-body); font-weight:800; font-size:13px; letter-spacing:0.02em; padding:4px;
+  }
+  .gw-cal-toggle svg{width:13px; height:13px; stroke:var(--coral); fill:none; stroke-width:2.6; transition:transform 0.2s;}
+  .gw-cal-toggle.expanded svg{transform:rotate(180deg);}
+  .gw-cal-navrow{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .gw-cal-navbtn{background:none; border:none; cursor:pointer; padding:4px 8px; display:flex;}
+  .gw-cal-navbtn svg{width:16px; height:16px; stroke:var(--muted); fill:none; stroke-width:2.6;}
+  .gw-cal-navbtn:hover svg{stroke:var(--coral);}
+  .gw-cal-navlabel{font-family:var(--font-body); font-weight:800; font-size:14px; color:#fff;}
+  .gw-cal-today-link{text-align:center; font-size:11px; color:var(--coral); cursor:pointer; text-decoration:underline; margin:-4px 0 12px;}
   .gw-cal-dow-row{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px;}
   .gw-cal-dow{text-align:center; font-size:10px; font-weight:800; letter-spacing:0.04em; color:var(--muted); text-transform:uppercase;}
   .gw-cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
@@ -182,6 +194,14 @@
   .gw-cal-cell.selected .gw-cal-dot{background:var(--bg);}
   .gw-cal-trophy{display:flex; justify-content:center; color:var(--coral); margin-top:3px;}
   .gw-cal-cell.selected .gw-cal-trophy{color:var(--bg);}
+
+  /* ---- LOG "last trained" chips ---- */
+  .gw-lasttrained-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;}
+  .gw-lasttrained-chip{background:var(--surface-2); border-radius:12px; padding:12px 4px; text-align:center;}
+  .gw-lasttrained-num{font-family:var(--font-display); font-weight:900; font-size:20px; color:var(--coral); line-height:1;}
+  .gw-lasttrained-chip.never .gw-lasttrained-num{color:var(--muted);}
+  .gw-lasttrained-chip.stale .gw-lasttrained-num{color:var(--warn);}
+  .gw-lasttrained-label{font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.02em; font-weight:800; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
   /* ---- LOG timeline ---- */
   .gw-timeline{position:relative; margin-left:5px; padding-left:22px; border-left:2px solid var(--line-strong);}
@@ -1679,6 +1699,8 @@ let state = {
   unknownSkills: [], // movement names the athlete has unchecked as "don't know yet" — everything else is assumed known
   logFilterDate: null,
   showActivityForm: false,
+  logCalExpanded: false,
+  logCalMonthOffset: 0,
   benchmarks: {},
   focusMode: false,
   focusSectionKey: null,
@@ -3748,8 +3770,17 @@ function weekStart(ts){
 }
 function fmtTime(d){ return new Date(d).toLocaleTimeString(undefined,{hour:'2-digit', minute:'2-digit'}); }
 function fmtDateHeader(d){ return new Date(d).toLocaleDateString(undefined,{weekday:'short', month:'long', day:'numeric'}).toUpperCase(); }
-// always the full current month, with muted lead/trail cells from the adjacent months for grid
-// alignment. Tapping a real day toggles state.logFilterDate to filter the timeline below. Days
+// the month currently being viewed in expanded mode — day 1, offset by state.logCalMonthOffset
+// so a run of setMonth() calls never rolls over from a 31st into the wrong month
+function calendarViewDate(){
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + (state.logCalMonthOffset||0));
+  return d;
+}
+// collapsed = current week only (7 cells); expanded = a full month, with muted lead/trail cells
+// from the adjacent months for grid alignment and prev/next controls to page between months.
+// Either mode, tapping a real day toggles state.logFilterDate to filter the timeline below. Days
 // with a benchmark/hero WOD get a trophy mark instead of the plain dot, so hero-WOD days are
 // visible at a glance without opening the timeline.
 function buildLogCalendar(container){
@@ -3761,11 +3792,38 @@ function buildLogCalendar(container){
   const title = document.createElement('span');
   title.className = 'gw-cal-title';
   title.textContent = 'Calendar';
-  const monthLabel = document.createElement('span');
-  monthLabel.className = 'gw-cal-month';
-  monthLabel.textContent = new Date().toLocaleDateString(undefined,{month:'long', year:'numeric'});
-  headRow.appendChild(title); headRow.appendChild(monthLabel);
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'gw-cal-toggle' + (state.logCalExpanded ? ' expanded' : '');
+  toggle.innerHTML = `<span>${state.logCalExpanded ? 'Collapse' : 'This Week'}</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  toggle.onclick = ()=>{ state.logCalExpanded = !state.logCalExpanded; renderLogPage(); };
+  headRow.appendChild(title); headRow.appendChild(toggle);
   card.appendChild(headRow);
+
+  if(state.logCalExpanded){
+    const navRow = document.createElement('div');
+    navRow.className = 'gw-cal-navrow';
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button'; prevBtn.className = 'gw-cal-navbtn'; prevBtn.setAttribute('aria-label', 'Previous month');
+    prevBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    prevBtn.onclick = ()=>{ state.logCalMonthOffset = (state.logCalMonthOffset||0) - 1; renderLogPage(); };
+    const navLabel = document.createElement('span');
+    navLabel.className = 'gw-cal-navlabel';
+    navLabel.textContent = calendarViewDate().toLocaleDateString(undefined,{month:'long', year:'numeric'});
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button'; nextBtn.className = 'gw-cal-navbtn'; nextBtn.setAttribute('aria-label', 'Next month');
+    nextBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    nextBtn.onclick = ()=>{ state.logCalMonthOffset = (state.logCalMonthOffset||0) + 1; renderLogPage(); };
+    navRow.appendChild(prevBtn); navRow.appendChild(navLabel); navRow.appendChild(nextBtn);
+    card.appendChild(navRow);
+    if(state.logCalMonthOffset){
+      const todayLink = document.createElement('div');
+      todayLink.className = 'gw-cal-today-link';
+      todayLink.textContent = 'Jump to today';
+      todayLink.onclick = ()=>{ state.logCalMonthOffset = 0; renderLogPage(); };
+      card.appendChild(todayLink);
+    }
+  }
 
   const dowRow = document.createElement('div');
   dowRow.className = 'gw-cal-dow-row';
@@ -3799,13 +3857,26 @@ function buildLogCalendar(container){
     return cell;
   }
 
-  const year = today.getFullYear(), month = today.getMonth();
-  const leadDays = new Date(year, month, 1).getDay();
-  for(let i=leadDays;i>0;i--) grid.appendChild(makeCell(new Date(year, month, 1-i), true));
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  for(let i=1;i<=daysInMonth;i++) grid.appendChild(makeCell(new Date(year, month, i), false));
-  const trailDays = (7 - grid.children.length % 7) % 7;
-  for(let i=1;i<=trailDays;i++) grid.appendChild(makeCell(new Date(year, month+1, i), true));
+  if(!state.logCalExpanded){
+    const dow = today.getDay();
+    const diffToMonday = (dow===0 ? -6 : 1-dow);
+    const monday = new Date(today);
+    monday.setDate(today.getDate()+diffToMonday);
+    for(let i=0;i<7;i++){
+      const d = new Date(monday);
+      d.setDate(monday.getDate()+i);
+      grid.appendChild(makeCell(d, false));
+    }
+  } else {
+    const viewDate = calendarViewDate();
+    const year = viewDate.getFullYear(), month = viewDate.getMonth();
+    const leadDays = new Date(year, month, 1).getDay();
+    for(let i=leadDays;i>0;i--) grid.appendChild(makeCell(new Date(year, month, 1-i), true));
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    for(let i=1;i<=daysInMonth;i++) grid.appendChild(makeCell(new Date(year, month, i), false));
+    const trailDays = (7 - grid.children.length % 7) % 7;
+    for(let i=1;i<=trailDays;i++) grid.appendChild(makeCell(new Date(year, month+1, i), true));
+  }
   card.appendChild(grid);
   container.appendChild(card);
 }
@@ -3959,14 +4030,28 @@ function renderLogPage(){
       container.appendChild(summary);
     }
 
+    // a chip per focus (big number + label) reads at a glance far better than a wall of muted
+    // text — color flags a focus that's gone stale (14+ days, same threshold layoffFactor() uses
+    // to ease weight back in) so it stands out instead of blending into the rest of the row
     const lastTrained = document.createElement('div');
     lastTrained.className = 'gw-card';
-    lastTrained.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.7; padding:16px;';
-    lastTrained.innerHTML = `<div style="color:#fff; font-weight:700; margin-bottom:4px;">Last trained</div>` + DAY_TYPES.map(dt=>{
+    lastTrained.style.padding = '16px';
+    const ltHeading = document.createElement('div');
+    ltHeading.style.cssText = 'color:#fff; font-weight:700; margin-bottom:12px; font-size:13px;';
+    ltHeading.textContent = 'Last Trained';
+    lastTrained.appendChild(ltHeading);
+    const chipGrid = document.createElement('div');
+    chipGrid.className = 'gw-lasttrained-grid';
+    DAY_TYPES.forEach(dt=>{
       const last = lastSessionDate(dt.key);
-      const txt = last===null ? 'never' : Math.round(daysSince(last))+'d ago';
-      return `${dt.label}: ${txt}`;
-    }).join(' · ');
+      const days = last===null ? null : daysSince(last);
+      const chip = document.createElement('div');
+      chip.className = 'gw-lasttrained-chip' + (days===null ? ' never' : (days>14 ? ' stale' : ''));
+      const numText = days===null ? '—' : (Math.round(days)===0 ? 'Today' : Math.round(days)+'d');
+      chip.innerHTML = `<div class="gw-lasttrained-num">${numText}</div><div class="gw-lasttrained-label">${dt.label}</div>`;
+      chipGrid.appendChild(chip);
+    });
+    lastTrained.appendChild(chipGrid);
     container.appendChild(lastTrained);
 
     // ---- benchmark progress ----
