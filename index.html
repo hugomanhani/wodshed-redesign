@@ -2142,6 +2142,7 @@ function timerSpecShortLabel(spec){
     case 'FORTIME_REPEATS':
       return `For Time x${spec.rounds}`;
     case 'INTERVAL':
+      if(spec.totalRounds && spec.label==='X Rest Between Sets') return `${spec.totalRounds} Sets · Rest ${fmtMinutesShort(spec.minutes)}`;
       return spec.totalRounds ? `${fmtMinutesShort(spec.minutes)} x${spec.totalRounds}` : `${fmtMinutesShort(spec.minutes)} Timer`;
     case 'COUNTDOWN':
       return `Countdown ${fmtMinutesShort(spec.minutes)}`;
@@ -2595,14 +2596,20 @@ function renderSectionFocus(){
     const isAmreps = kind==='AMRAP' && spec.mode==='reps';
     const isAscending = kind==='AMRAP' && spec.mode==='ascending';
     const isAlternate = (kind==='EMOM' || kind==='TABATA') && spec.alternate;
+    // "X Rest Between Sets" means the work itself is untimed (do your reps at your own pace) and
+    // only the rest between sets is on a clock — unlike "For X Cycles" where the interval itself
+    // is the fixed clock. So this one is athlete-paced: tap "Set Done" to start the rest, instead
+    // of the clock running continuously through totalRounds regardless of when you actually finish.
+    const isPacedRestInterval = kind==='INTERVAL' && spec.totalRounds && spec.label==='X Rest Between Sets';
 
-    if((kind==='AMRAP' && !isAmreps) || kind==='RFT' || kind==='LADDER' || kind==='FORTIME_REPEATS'){
+    if((kind==='AMRAP' && !isAmreps) || kind==='RFT' || kind==='LADDER' || kind==='FORTIME_REPEATS' || isPacedRestInterval){
       card.querySelector('#gw-focus-plus').style.display = '';
     }
-    if(kind==='INTERVAL'){
+    if(kind==='INTERVAL' && !isPacedRestInterval){
       card.querySelector('#gw-floatcard-next').style.display = '';
     }
     if(kind==='FORTIME_REPEATS') document.getElementById('gw-focus-plus-label').textContent = 'Round Done';
+    if(isPacedRestInterval) document.getElementById('gw-focus-plus-label').textContent = 'Set Done';
     if(isAmreps){
       card.querySelector('#gw-floatcard-amreps').style.display = '';
     }
@@ -2614,7 +2621,7 @@ function renderSectionFocus(){
     }
     if(isAscending) document.getElementById('gw-focus-plus-label').textContent = `+${spec.increment}`;
 
-    const roundCap = (kind==='RFT') ? spec.rounds : (kind==='LADDER' ? spec.rungs.length : (kind==='FORTIME_REPEATS' ? spec.rounds : null));
+    const roundCap = (kind==='RFT') ? spec.rounds : (kind==='LADDER' ? spec.rungs.length : ((kind==='FORTIME_REPEATS' || isPacedRestInterval) ? spec.rounds || spec.totalRounds : null));
     if(roundCap) document.getElementById('gw-focus-round-target').textContent = `/ ${roundCap}`;
     if(isResume){
       document.getElementById('gw-focus-roundsbadge').textContent = isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount;
@@ -2647,6 +2654,7 @@ function renderSectionFocus(){
         document.getElementById('gw-focus-plus').disabled = true;
       } else {
         if(kind==='FORTIME_REPEATS' && focusTimer) focusTimer.restUntil = focusCurrentElapsed() + spec.restSeconds;
+        if(isPacedRestInterval && focusTimer) focusTimer.restUntil = focusCurrentElapsed() + spec.minutes*60;
         focusUpdateDisplay();
       }
     };
@@ -2851,7 +2859,9 @@ function focusToggleFromTap(){
 // jumps straight to the next TABATA phase boundary (work->rest or rest->work), tapped from the "Skip rest" link
 // lets the athlete manually skip ahead to the next rest interval instead of waiting for it to elapse naturally
 function focusSkipToNextRound(){
-  if(!focusTimer || focusTimer.kind!=='INTERVAL') return;
+  // paced-rest intervals aren't on a fixed cycle clock to jump forward on — the button that
+  // triggers this is hidden for them, but guard here too in case that ever changes
+  if(!focusTimer || focusTimer.kind!=='INTERVAL' || focusTimer.label==='X Rest Between Sets') return;
   const cycle = focusTimer.minutes*60;
   const elapsed = focusCurrentElapsed();
   const currentUnit = Math.floor(elapsed/cycle);
@@ -2986,7 +2996,31 @@ function focusUpdateDisplay(){
   } else if(focusTimer.kind==='INTERVAL'){
     const cycle = focusTimer.minutes*60;
     const nextPreviewEl = document.getElementById('gw-floatcard-nextpreview');
-    if(focusTimer.totalRounds){
+    if(focusTimer.totalRounds && focusTimer.label==='X Rest Between Sets'){
+      // athlete-paced: the work itself is untimed — nothing counts down until "Set Done" is
+      // tapped, which starts the one fixed rest countdown. The button-disable for the length of
+      // that rest is handled by the shared "once finished, lock the controls" code further down.
+      const setNum = Math.min(state.focusTapCount+1, focusTimer.totalRounds);
+      const resting = focusTimer.restUntil != null;
+      if(resting){
+        const remain = Math.max(0, focusTimer.restUntil - elapsed);
+        displaySeconds = remain;
+        fraction = cycle>0 ? remain/cycle : 0;
+        subEl.textContent = `Resting — set ${setNum} of ${focusTimer.totalRounds} next`;
+        if(remain<=0 && focusTimer.running){
+          focusTimer.restUntil = null;
+          switchBeep(); vibrate([60,40,60]);
+        } else {
+          if(remain<=3) warn=true;
+          focusMaybeTick(remain);
+        }
+      } else {
+        displaySeconds = cycle;
+        fraction = 1;
+        subEl.textContent = `Set ${setNum} of ${focusTimer.totalRounds} — tap Set Done when finished`;
+      }
+      setRing(fraction);
+    } else if(focusTimer.totalRounds){
       const totalDuration = cycle*focusTimer.totalRounds;
       const clamped = Math.min(elapsed, totalDuration);
       const unit = Math.floor(clamped/cycle);
@@ -3085,9 +3119,12 @@ function focusUpdateDisplay(){
   numberEl.textContent = fmtClock(displaySeconds);
   numberEl.classList.toggle('warn', warn);
 
-  // once finished, locking the + / swipe controls prevents mis-taps from changing a score that's already locked in
+  // once finished, locking the + / swipe controls prevents mis-taps from changing a score that's
+  // already locked in — a paced-rest interval also locks it for the length of the rest itself,
+  // since there's nothing to log again until the next set is actually done
   const plusBtn = document.getElementById('gw-focus-plus');
-  if(plusBtn) plusBtn.disabled = focusTimer.doneBeeped;
+  const isPacedRestResting = focusTimer.label==='X Rest Between Sets' && focusTimer.restUntil != null;
+  if(plusBtn) plusBtn.disabled = focusTimer.doneBeeped || isPacedRestResting;
   const swipeZone = document.getElementById('gw-focus-swipezone');
   if(swipeZone) swipeZone.classList.toggle('gw-swipe-locked', focusTimer.doneBeeped);
 
