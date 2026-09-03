@@ -2067,6 +2067,8 @@ function formatPerformance(perf){
   if(!perf) return '';
   if(perf.rounds != null) return `scored ${perf.rounds} rd${perf.rounds===1?'':'s'}${perf.extraReps ? ' + '+perf.extraReps+' reps' : ''}`;
   if(perf.time) return `finished in ${perf.time}${perf.hitCap ? ' (hit cap)' : ''}`;
+  // AMReps (max total reps in a fixed window) has no rounds and no time, just a rep total
+  if(perf.extraReps != null) return `scored ${perf.extraReps} reps`;
   if(perf.completedAll != null) return perf.completedAll ? 'completed all rounds' : 'missed some rounds';
   return '';
 }
@@ -2597,7 +2599,11 @@ function renderSectionFocus(){
       if(isAscending){
         state.focusAscendingTotal = (state.focusAscendingTotal||0) + (spec.startReps + (state.focusTapCount-1)*spec.increment);
       }
-      if(key==='wod'){
+      // this same "+" button also tracks progress toward roundCap for RFT/LADDER/FORTIME_REPEATS,
+      // but those are FOR-TIME formats — the goal is finishing fast, not the (fixed, prescribed)
+      // round count, so only AMRAP actually logs rounds as the score. Their real score is the
+      // elapsed time set by focusManualFinish/focusFinish when the cap is reached or time's called.
+      if(key==='wod' && kind==='AMRAP'){
         if(!w.wodPerformance) w.wodPerformance = {};
         w.wodPerformance.rounds = state.focusTapCount;
         if(isAscending) w.wodPerformance.extraReps = state.focusAscendingTotal;
