@@ -334,6 +334,8 @@
     font-family:var(--font-body); font-size:13.5px;
   }
   .gw-setlist-row:last-child{border-bottom:none;}
+  .gw-setlist-row-done{opacity:0.45;}
+  .gw-setlist-done-badge{color:var(--good); display:flex; flex:none; margin-left:auto;}
   .gw-setlist-num{color:var(--muted); font-weight:700; flex:none; width:52px;}
   .gw-setlist-reps{display:flex; align-items:center; gap:5px; flex:1;}
   .gw-setlist-weight{display:flex; align-items:center; gap:5px; flex:none;}
@@ -2150,7 +2152,8 @@ function timerSpecShortLabel(spec){
     case 'FORTIME_REPEATS':
       return `For Time x${spec.rounds}`;
     case 'INTERVAL':
-      if(spec.totalRounds && spec.label==='X Rest Between Sets') return `${spec.totalRounds} Sets · Rest ${fmtMinutesShort(spec.minutes)}`;
+      // "X Rest Between Sets" doesn't use this — addStartSectionButton gives it its own constant
+      // "Start N min Rest" label, since it opens one single rest at a time, not this whole spec
       return spec.totalRounds ? `${fmtMinutesShort(spec.minutes)} x${spec.totalRounds}` : `${fmtMinutesShort(spec.minutes)} Timer`;
     case 'COUNTDOWN':
       return `Countdown ${fmtMinutesShort(spec.minutes)}`;
@@ -2204,10 +2207,14 @@ function buildInlineRoundCounter(key, w, stepData){
   };
   return btn;
 }
+function isPacedRestSpec(spec){
+  return !!(spec && spec.kind==='INTERVAL' && spec.totalRounds && spec.label==='X Rest Between Sets');
+}
 function addStartSectionButton(node, key){
   const w = state.currentWorkout;
   const stepData = w && getSectionFocusData(w, key);
   if(!stepData) return;
+  const isPacedRest = isPacedRestSpec(stepData.timerSpec);
   if(w.sectionsDone && w.sectionsDone[key]){
     const doneBtn = document.createElement('button');
     doneBtn.className = 'gw-section-round-btn';
@@ -2220,10 +2227,21 @@ function addStartSectionButton(node, key){
     // (and every tick after that, from focusTick) so it reads as visibly, actually still running.
     const btn = document.createElement('button');
     btn.className = 'gw-section-start-btn gw-resume-btn';
-    btn.innerHTML = `<div class="gw-resume-fill" id="gw-resume-fill"></div>${ICON_TIMER}<span id="gw-resume-label">${sectionStartLabel(key, w).replace(/^Start /, 'Resume ')}</span>`;
+    const fallbackLabel = isPacedRest ? 'Resume' : sectionStartLabel(key, w).replace(/^Start /, 'Resume ');
+    btn.innerHTML = `<div class="gw-resume-fill" id="gw-resume-fill"></div>${ICON_TIMER}<span id="gw-resume-label">${fallbackLabel}</span>`;
     btn.onclick = ()=>resumeSectionFocus(key);
     node.bodyEl.appendChild(btn);
     updateMinimizedProgress();
+  } else if(isPacedRest){
+    // one rest at a time: each tap opens a single, simple countdown for whichever set is next.
+    // When it finishes (or is skipped) the drawer closes on its own and that set gets marked done
+    // — see openPacedRestSet(). The label is constant since it's always the same kind of rest,
+    // never "set N of M" — that progress shows on the set rows themselves instead.
+    const btn = document.createElement('button');
+    btn.className = 'gw-section-start-btn';
+    btn.innerHTML = `${ICON_TIMER}<span>Start ${fmtMinutesShort(stepData.timerSpec.minutes)} Rest</span>`;
+    btn.onclick = ()=>openPacedRestSet(key);
+    node.bodyEl.appendChild(btn);
   } else if(stepData.timerSpec){
     const btn = document.createElement('button');
     btn.className = 'gw-section-start-btn';
@@ -2257,6 +2275,7 @@ function renderSectionNode(key, w, opts){
       timerSpec: w.skillTimer,
       setsList: w.skillSetReps,
       setsWeights: w.skillLiftKey ? w.skillSetWeights : null,
+      doneCount: isPacedRestSpec(w.skillTimer) ? ((w.roundCounts && w.roundCounts.skill) || 0) : 0,
       onWeightChange: opts.simple ? null : (idx, val)=>{
         for(let i=idx; i<w.skillSetWeights.length; i++) w.skillSetWeights[i] = val;
         w.suggestedLoad = w.skillSetWeights[w.skillSetWeights.length-1]; // logged/progression value tracks the last set
@@ -2464,6 +2483,26 @@ function openSectionFocus(key){
   document.getElementById('gw-timer-drawer-backdrop').classList.add('show');
   renderSectionFocus();
 }
+// opens ONE simple rest countdown for whichever set is next — not the whole "N sets, rest between
+// them" spec. It's a plain COUNTDOWN, tagged with repeatKey/repeatTotal so focusFinish() knows to
+// advance that one set instead of marking the whole section done (see advancePacedRestRound()).
+// Starts immediately — no lead-in ceremony, no separate play tap — since it's meant to be as
+// simple as tapping "start" on a kitchen timer.
+function openPacedRestSet(key){
+  if(!state.currentWorkout) return;
+  const stepData = getSectionFocusData(state.currentWorkout, key);
+  const baseSpec = stepData && stepData.timerSpec;
+  if(!isPacedRestSpec(baseSpec)) return;
+  if(focusTimer && focusTimer.sectionKey!==key){
+    focusStopTicking();
+    focusTimer = null;
+  }
+  state.focusMode = true;
+  state.focusSectionKey = key;
+  state.focusTapCount = 0;
+  document.getElementById('gw-timer-drawer-backdrop').classList.add('show');
+  renderSectionFocus({kind:'COUNTDOWN', minutes:baseSpec.minutes, repeatKey:key, repeatTotal:baseSpec.totalRounds});
+}
 function closeTimerDrawer(){
   state.focusMode = false;
   focusStopTicking();
@@ -2536,7 +2575,10 @@ function confirmExitFocus(){
   maybePromptRating(w, key);
 }
 
-function renderSectionFocus(){
+// overrideSpec is how openPacedRestSet() hands in a plain COUNTDOWN (tagged with repeatKey) in
+// place of the section's real "N sets, rest between them" spec — everything else about the
+// drawer (title, weight adjuster) still comes from stepData/key as normal
+function renderSectionFocus(overrideSpec){
   const w = state.currentWorkout;
   const key = state.focusSectionKey;
   const stepData = w ? getSectionFocusData(w, key) : null;
@@ -2555,7 +2597,9 @@ function renderSectionFocus(){
   // section headline/detail/buy-in/buy-out/set-by-set breakdown already live on the homepage card —
   // the drawer stays a focused, timer-only view. Weight (for lift-based skill work) is the one thing
   // worth adjusting mid-session, so it gets a compact stepper on the stage itself (see below).
-  const spec = stepData.timerSpec;
+  // Resuming reads the spec straight off the already-open focusTimer (it may be an overrideSpec
+  // from an earlier openPacedRestSet() call that stepData.timerSpec knows nothing about).
+  const spec = isResume ? focusTimer : (overrideSpec || stepData.timerSpec);
 
   // live round-by-round log — built as rounds are logged, for AMRAP/RFT and non-timer round-based steps
   if(key==='wod' || !stepData.timerSpec){
@@ -2567,7 +2611,7 @@ function renderSectionFocus(){
   }
 
   if(stepData.timerSpec){
-    const kind = stepData.timerSpec.kind;
+    const kind = spec.kind;
 
     const card = document.createElement('div');
     card.className = 'gw-stage';
@@ -2627,25 +2671,22 @@ function renderSectionFocus(){
     const isAmreps = kind==='AMRAP' && spec.mode==='reps';
     const isAscending = kind==='AMRAP' && spec.mode==='ascending';
     const isAlternate = (kind==='EMOM' || kind==='TABATA') && spec.alternate;
-    // "X Rest Between Sets" means the work itself is untimed (do your reps at your own pace) and
-    // only the rest between sets is on a clock — unlike "For X Cycles" where the interval itself
-    // is the fixed clock. So this one is athlete-paced: tap "Set Done" to start the rest, instead
-    // of the clock running continuously through totalRounds regardless of when you actually finish.
-    const isPacedRestInterval = kind==='INTERVAL' && spec.totalRounds && spec.label==='X Rest Between Sets';
+    // a plain COUNTDOWN opened via openPacedRestSet() carries repeatKey/repeatTotal — one single
+    // rest, no round-tap button needed; "Skip" (the Next/skip-ahead slot, repurposed) is the only
+    // way to end it early, same as letting it run out.
+    const isRepeatCountdown = kind==='COUNTDOWN' && !!spec.repeatKey;
 
-    if((kind==='AMRAP' && !isAmreps) || kind==='RFT' || kind==='LADDER' || kind==='FORTIME_REPEATS' || isPacedRestInterval){
+    if((kind==='AMRAP' && !isAmreps) || kind==='RFT' || kind==='LADDER' || kind==='FORTIME_REPEATS'){
       card.querySelector('#gw-focus-plus').style.display = '';
     }
-    if(kind==='INTERVAL' && !isPacedRestInterval){
+    if(kind==='INTERVAL'){
       card.querySelector('#gw-floatcard-next').style.display = '';
     }
-    // one button should do one thing: "Start Rest"/"Skip Rest" already starts and stops the
-    // clock, so the separate play/pause circle would just be a second, redundant way to start it
-    // that doesn't touch the rest countdown — hiding it keeps this to a single, simple control
-    if(isPacedRestInterval) card.querySelector('#gw-floatcard-playpause').style.display = 'none';
+    if(isRepeatCountdown){
+      card.querySelector('#gw-floatcard-next').style.display = '';
+      document.getElementById('gw-focus-skipnext').innerHTML = `<span>Skip</span>${ICON_PLAY}`;
+    }
     if(kind==='FORTIME_REPEATS') document.getElementById('gw-focus-plus-label').textContent = 'Round Done';
-    // paced-rest's label swaps between "Start ... Rest" and "Skip Rest" every tick — set by
-    // focusUpdateDisplay(), not here, since it depends on whether a rest is currently running
     if(isAmreps){
       card.querySelector('#gw-floatcard-amreps').style.display = '';
     }
@@ -2657,63 +2698,45 @@ function renderSectionFocus(){
     }
     if(isAscending) document.getElementById('gw-focus-plus-label').textContent = `+${spec.increment}`;
 
-    const roundCap = (kind==='RFT') ? spec.rounds : (kind==='LADDER' ? spec.rungs.length : ((kind==='FORTIME_REPEATS' || isPacedRestInterval) ? spec.rounds || spec.totalRounds : null));
+    const roundCap = (kind==='RFT') ? spec.rounds : (kind==='LADDER' ? spec.rungs.length : (kind==='FORTIME_REPEATS' ? spec.rounds : null));
     if(roundCap) document.getElementById('gw-focus-round-target').textContent = `/ ${roundCap}`;
     if(isResume){
       document.getElementById('gw-focus-roundsbadge').textContent = isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount;
       if(roundCap && state.focusTapCount >= roundCap) document.getElementById('gw-focus-plus').disabled = true;
     }
 
-    if(isPacedRestInterval){
-      // one button, two jobs: idle it starts this set's rest; mid-rest it skips the remainder.
-      // Either way, ending the rest (naturally or via skip) is what marks that set done — see
-      // focusCompletePacedRest(), which also runs headlessly so a minimized rest still completes.
-      document.getElementById('gw-focus-plus').onclick = ()=>{
-        if(!focusTimer) return;
-        if(focusTimer.restUntil != null){
-          focusCompletePacedRest();
-        } else if(state.focusTapCount < roundCap){
-          // the countdown is driven by focusCurrentElapsed(), which only advances while the timer
-          // is actually running — without this it never starts (elapsed stays frozen at 0), so
-          // the rest just sits there showing the full duration forever
-          if(!focusTimer.running) focusStart();
-          focusTimer.restUntil = focusCurrentElapsed() + spec.minutes*60;
-          vibrate(15);
-          focusUpdateDisplay();
-        }
-      };
-    } else {
-      document.getElementById('gw-focus-plus').onclick = ()=>{
-        if(roundCap && state.focusTapCount >= roundCap) return;
-        state.focusTapCount++;
-        if(isAscending){
-          state.focusAscendingTotal = (state.focusAscendingTotal||0) + (spec.startReps + (state.focusTapCount-1)*spec.increment);
-        }
-        // this same "+" button also tracks progress toward roundCap for RFT/LADDER/FORTIME_REPEATS,
-        // but those are FOR-TIME formats — the goal is finishing fast, not the (fixed, prescribed)
-        // round count, so only AMRAP actually logs rounds as the score. Their real score is the
-        // elapsed time set by focusManualFinish/focusFinish when the cap is reached or time's called.
-        if(key==='wod' && kind==='AMRAP'){
-          if(!w.wodPerformance) w.wodPerformance = {};
-          w.wodPerformance.rounds = state.focusTapCount;
-          if(isAscending) w.wodPerformance.extraReps = state.focusAscendingTotal;
-        }
-        document.getElementById('gw-focus-roundsbadge').textContent = isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount;
-        document.getElementById('gw-focus-plus').classList.add('gw-tap-flash');
-        setTimeout(()=>document.getElementById('gw-focus-plus').classList.remove('gw-tap-flash'), 120);
-        vibrate(15);
-        logRoundTap(focusCurrentElapsed());
-        if(roundCap && state.focusTapCount >= roundCap){
-          // last prescribed round just got logged — this finishes the WOD, same as swiping to finish
-          focusManualFinish(key);
-          document.getElementById('gw-focus-plus').disabled = true;
-        } else {
-          if(kind==='FORTIME_REPEATS' && focusTimer) focusTimer.restUntil = focusCurrentElapsed() + spec.restSeconds;
-          focusUpdateDisplay();
-        }
-      };
-    }
-    document.getElementById('gw-focus-skipnext').onclick = focusSkipToNextRound;
+    document.getElementById('gw-focus-plus').onclick = ()=>{
+      if(roundCap && state.focusTapCount >= roundCap) return;
+      state.focusTapCount++;
+      if(isAscending){
+        state.focusAscendingTotal = (state.focusAscendingTotal||0) + (spec.startReps + (state.focusTapCount-1)*spec.increment);
+      }
+      // this same "+" button also tracks progress toward roundCap for RFT/LADDER/FORTIME_REPEATS,
+      // but those are FOR-TIME formats — the goal is finishing fast, not the (fixed, prescribed)
+      // round count, so only AMRAP actually logs rounds as the score. Their real score is the
+      // elapsed time set by focusManualFinish/focusFinish when the cap is reached or time's called.
+      if(key==='wod' && kind==='AMRAP'){
+        if(!w.wodPerformance) w.wodPerformance = {};
+        w.wodPerformance.rounds = state.focusTapCount;
+        if(isAscending) w.wodPerformance.extraReps = state.focusAscendingTotal;
+      }
+      document.getElementById('gw-focus-roundsbadge').textContent = isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount;
+      document.getElementById('gw-focus-plus').classList.add('gw-tap-flash');
+      setTimeout(()=>document.getElementById('gw-focus-plus').classList.remove('gw-tap-flash'), 120);
+      vibrate(15);
+      logRoundTap(focusCurrentElapsed());
+      if(roundCap && state.focusTapCount >= roundCap){
+        // last prescribed round just got logged — this finishes the WOD, same as swiping to finish
+        focusManualFinish(key);
+        document.getElementById('gw-focus-plus').disabled = true;
+      } else {
+        if(kind==='FORTIME_REPEATS' && focusTimer) focusTimer.restUntil = focusCurrentElapsed() + spec.restSeconds;
+        focusUpdateDisplay();
+      }
+    };
+    // a repeat-countdown's "Next" slot is repurposed as "Skip" — ending the rest early counts the
+    // same as letting it run out, via the exact same focusFinish() path
+    document.getElementById('gw-focus-skipnext').onclick = isRepeatCountdown ? ()=>{ focusFinish(); focusUpdateDisplay(); } : focusSkipToNextRound;
     document.getElementById('gw-floatcard-playpause').onclick = focusToggleFromTap;
     document.getElementById('gw-floatcard-close').onclick = requestCloseFloatCard;
     if(isAmreps){
@@ -2748,6 +2771,9 @@ function renderSectionFocus(){
       focusUpdateButtonStates();
     } else {
       focusOpenTimer(spec, key);
+      // a repeat-countdown is meant to be as simple as a kitchen timer: tapping "Start Rest" on
+      // the section card should be the one action that starts it, no separate play tap needed
+      if(spec.repeatKey) focusStart();
     }
   } else {
     // the only way to reach the drawer is via a Start button gated on stepData.timerSpec — this shouldn't happen
@@ -2830,23 +2856,21 @@ function focusManualFinish(stepKey){
   state.focusStepDone[stepKey] = true;
   focusAutoCloseAndRate(stepKey);
 }
-// ends the current paced-rest interval's rest — whether it ran out on its own or was skipped —
-// and marks that set done. Reads only focusTimer/state (not renderSectionFocus's closure), so it
-// runs identically from a tap or headlessly from focusTick() while the drawer is minimized —
-// which is what lets a rest keep counting down, and the set still get marked done, in the background.
-function focusCompletePacedRest(){
-  if(!focusTimer || focusTimer.restUntil==null) return;
-  focusTimer.restUntil = null;
-  state.focusTapCount++;
-  switchBeep(); vibrate([60,40,60]);
-  logRoundTap(focusCurrentElapsed());
-  const badgeEl = document.getElementById('gw-focus-roundsbadge');
-  if(badgeEl) badgeEl.textContent = state.focusTapCount;
-  if(state.focusTapCount >= focusTimer.totalRounds){
-    focusManualFinish(focusTimer.sectionKey);
-  } else {
-    focusUpdateDisplay();
-    focusUpdateButtonStates();
+// a repeat-countdown's completion (natural or skipped) advances the paced-rest set counter
+// instead of marking the whole section done outright — only the LAST set's rest actually finishes
+// the section. Progress lives on the workout itself (w.roundCounts), not on the transient
+// focusTimer, so each fresh countdown remembers where it left off the same way the inline round
+// counters (for untimed sections) already do.
+function advancePacedRestRound(){
+  const key = focusTimer.repeatKey, total = focusTimer.repeatTotal;
+  const w = state.currentWorkout;
+  if(!w || !key) return;
+  if(!w.roundCounts) w.roundCounts = {};
+  if(w.roundCounts[key] == null) w.roundCounts[key] = 0;
+  w.roundCounts[key] = Math.min(total, w.roundCounts[key] + 1);
+  if(w.roundCounts[key] >= total){
+    state.focusStepDone[key] = true;
+    if(w.sectionsDone) w.sectionsDone[key] = true;
   }
 }
 
@@ -2881,7 +2905,9 @@ function focusFinish(){
     beepTriple();
     vibrate([100,60,100,60,200]);
     focusUpdateButtonStates();
-    if(focusTimer.sectionKey){
+    if(focusTimer.repeatKey){
+      advancePacedRestRound();
+    } else if(focusTimer.sectionKey){
       state.focusStepDone[focusTimer.sectionKey] = true;
       const w = state.currentWorkout;
       if(w && w.sectionsDone) w.sectionsDone[focusTimer.sectionKey] = true;
@@ -2897,13 +2923,14 @@ function focusFinish(){
 }
 function focusTick(){
   if(!focusTimer || !focusTimer.running) return;
-  // paced-rest's own completion check runs unconditionally (not inside focusUpdateDisplay, which
-  // bails out entirely when the drawer's closed) so a minimized rest still ends and marks its set
-  // done on time, instead of sitting frozen until the drawer's reopened
-  if(focusTimer.label==='X Rest Between Sets' && focusTimer.restUntil!=null && focusCurrentElapsed() >= focusTimer.restUntil){
-    focusCompletePacedRest();
+  // a repeat-countdown's natural finish is checked here unconditionally (not just inside
+  // focusUpdateDisplay, which is skipped entirely while the drawer's closed) so a minimized rest
+  // still completes — and its set still gets marked done — on time instead of sitting frozen
+  // until the drawer's reopened
+  if(focusTimer.repeatKey && focusCurrentElapsed() >= focusTimer.minutes*60){
+    focusFinish();
   }
-  if(!focusTimer || !focusTimer.running) return; // may have just finished on the last set
+  if(!focusTimer || !focusTimer.running) return; // may have just finished
   updateMinimizedProgress();
   if(document.getElementById('gw-focus-number')) focusUpdateDisplay();
   focusTimer.raf = requestAnimationFrame(focusTick);
@@ -2922,14 +2949,13 @@ function minimizedTimerReadout(){
   const k = focusTimer.kind;
   const growing = (total)=> total>0 ? Math.max(0, Math.min(1, elapsed/total)) : 0;
 
-  if(k==='INTERVAL' && focusTimer.totalRounds && focusTimer.label==='X Rest Between Sets'){
-    const setNum = Math.min(state.focusTapCount+1, focusTimer.totalRounds);
-    if(focusTimer.restUntil!=null){
-      const cycle = focusTimer.minutes*60;
-      const remain = Math.max(0, focusTimer.restUntil-elapsed);
-      return {text:`Set ${setNum} of ${focusTimer.totalRounds} — resting ${fmtClock(remain)}`, fraction: cycle>0 ? 1-remain/cycle : 0};
-    }
-    return {text:`Set ${setNum} of ${focusTimer.totalRounds} — ready`, fraction:0};
+  if(focusTimer.repeatKey){
+    const w = state.currentWorkout;
+    const done = (w && w.roundCounts && w.roundCounts[focusTimer.repeatKey]) || 0;
+    const setNum = Math.min(done+1, focusTimer.repeatTotal);
+    const total = focusTimer.minutes*60;
+    const remain = Math.max(0, total-elapsed);
+    return {text:`Set ${setNum} of ${focusTimer.repeatTotal} — resting ${fmtClock(remain)}`, fraction: growing(total)};
   }
   if((k==='AMRAP'||k==='COUNTDOWN') && !focusTimer.cycles){
     const total = focusTimer.minutes*60;
@@ -3012,9 +3038,7 @@ function focusToggleFromTap(){
 // jumps straight to the next TABATA phase boundary (work->rest or rest->work), tapped from the "Skip rest" link
 // lets the athlete manually skip ahead to the next rest interval instead of waiting for it to elapse naturally
 function focusSkipToNextRound(){
-  // paced-rest intervals aren't on a fixed cycle clock to jump forward on — the button that
-  // triggers this is hidden for them, but guard here too in case that ever changes
-  if(!focusTimer || focusTimer.kind!=='INTERVAL' || focusTimer.label==='X Rest Between Sets') return;
+  if(!focusTimer || focusTimer.kind!=='INTERVAL') return;
   const cycle = focusTimer.minutes*60;
   const elapsed = focusCurrentElapsed();
   const currentUnit = Math.floor(elapsed/cycle);
@@ -3049,10 +3073,6 @@ function focusReset(){
   focusTimer.running = false; focusTimer.startedAt = null; focusTimer.elapsedBefore = 0;
   focusTimer.lastBeepUnit = -1; focusTimer.lastPhaseKey = null; focusTimer.lastTickSecond = null;
   focusTimer.doneBeeped = false; focusTimer.halfwayBeeped = false; focusTimer.leadIn = false;
-  // paced-rest tracks its own progress (which set, whether a rest is running) outside the
-  // elapsed-clock fields reset above — clear that too, or "cancel" would restart the clock while
-  // silently leaving the rest sequence stuck mid-set
-  if(focusTimer.label==='X Rest Between Sets'){ focusTimer.restUntil = null; state.focusTapCount = 0; }
   focusUpdateDisplay();
   focusUpdateButtonStates();
 }
@@ -3121,6 +3141,10 @@ function focusUpdateDisplay(){
         ? `Next round: ${focusTimer.startReps + state.focusTapCount*focusTimer.increment} reps`
         : focusTimer.mode==='reps' ? `${fmtMinutesShort(focusTimer.minutes)} — rack up total reps`
         : `${fmtMinutesShort(focusTimer.minutes)} AMRAP — counts down`;
+    } else if(focusTimer.repeatKey){
+      const w = state.currentWorkout;
+      const done = (w && w.roundCounts && w.roundCounts[focusTimer.repeatKey]) || 0;
+      subEl.textContent = `Set ${Math.min(done+1, focusTimer.repeatTotal)} of ${focusTimer.repeatTotal} — resting`;
     } else {
       subEl.textContent = `${fmtMinutesShort(focusTimer.minutes)} countdown`;
     }
@@ -3153,29 +3177,7 @@ function focusUpdateDisplay(){
   } else if(focusTimer.kind==='INTERVAL'){
     const cycle = focusTimer.minutes*60;
     const nextPreviewEl = document.getElementById('gw-floatcard-nextpreview');
-    if(focusTimer.totalRounds && focusTimer.label==='X Rest Between Sets'){
-      // athlete-paced: nothing counts down until "Start Rest" is tapped. The rest-expiry
-      // completion (marking that set done) happens headlessly in focusTick(), before this ever
-      // runs — this block is purely a readout, so it stays correct right after that too.
-      const setNum = Math.min(state.focusTapCount+1, focusTimer.totalRounds);
-      const resting = focusTimer.restUntil != null;
-      const labelEl = document.getElementById('gw-focus-plus-label');
-      if(resting){
-        const remain = Math.max(0, focusTimer.restUntil - elapsed);
-        displaySeconds = remain;
-        fraction = cycle>0 ? remain/cycle : 0;
-        subEl.textContent = `Resting — set ${setNum} of ${focusTimer.totalRounds} next`;
-        if(labelEl) labelEl.textContent = 'Skip Rest';
-        if(remain<=3) warn=true;
-        focusMaybeTick(remain);
-      } else {
-        displaySeconds = cycle;
-        fraction = 1;
-        subEl.textContent = `Set ${setNum} of ${focusTimer.totalRounds} — do your reps, then start the rest`;
-        if(labelEl) labelEl.textContent = `Start ${fmtMinutesShort(focusTimer.minutes)} Rest`;
-      }
-      setRing(fraction);
-    } else if(focusTimer.totalRounds){
+    if(focusTimer.totalRounds){
       const totalDuration = cycle*focusTimer.totalRounds;
       const clamped = Math.min(elapsed, totalDuration);
       const unit = Math.floor(clamped/cycle);
@@ -3404,9 +3406,12 @@ function sectionWithChips(title, body, tag, opts){
     const listWrap = document.createElement('div');
     listWrap.className = 'gw-setlist';
     const weightInputs = [];
+    // for a paced-rest skill, each set row shows done/not — checked off as its rest completes
+    // (see advancePacedRestRound()), not editable at that point since the set's already logged
     opts.setsList.forEach((reps, idx)=>{
+      const isDone = opts.doneCount && idx < opts.doneCount;
       const row = document.createElement('div');
-      row.className = 'gw-setlist-row';
+      row.className = 'gw-setlist-row' + (isDone ? ' gw-setlist-row-done' : '');
       const num = document.createElement('span');
       num.className = 'gw-setlist-num';
       num.textContent = `Set ${idx+1}`;
@@ -3414,6 +3419,7 @@ function sectionWithChips(title, body, tag, opts){
       repsWrap.className = 'gw-setlist-reps';
       const repsInput = document.createElement('input');
       repsInput.type = 'text'; repsInput.inputMode = 'numeric'; repsInput.value = reps;
+      repsInput.disabled = isDone;
       // reps can be a range like "8-10" straight from the prescription — editing just narrows/overrides
       // that one set, it never cascades the way weight does
       repsInput.onchange = ()=>{
@@ -3426,6 +3432,12 @@ function sectionWithChips(title, body, tag, opts){
       repsUnit.textContent = 'reps';
       repsWrap.appendChild(repsUnit);
       row.appendChild(num); row.appendChild(repsWrap);
+      if(isDone){
+        const badge = document.createElement('span');
+        badge.className = 'gw-setlist-done-badge';
+        badge.innerHTML = ICON_CHECK;
+        row.appendChild(badge);
+      }
       if(opts.setsWeights){
         const weightWrap = document.createElement('span');
         weightWrap.className = 'gw-setlist-weight';
