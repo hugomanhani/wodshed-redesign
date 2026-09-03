@@ -2478,8 +2478,14 @@ function cancelTimerAndClose(){
   focusUpdateButtonStates();
 }
 function requestCloseFloatCard(){
-  if(focusTimer && (focusTimer.running || focusTimer.elapsedBefore > 0) && !focusTimer.doneBeeped){
+  if(!focusTimer || focusTimer.doneBeeped) return;
+  if(focusTimer.running || focusTimer.elapsedBefore > 0){
+    // real progress is on the line — confirm before resetting it back to 0:00
     document.getElementById('gw-timerstop-backdrop').classList.add('show');
+  } else {
+    // nothing's happened yet, so there's nothing to confirm discarding — this was a silent
+    // no-op before, which read as "the button doesn't work"; just back out like the X does
+    requestExitFocus();
   }
 }
 function cancelCloseFloatCard(){
@@ -2633,6 +2639,10 @@ function renderSectionFocus(){
     if(kind==='INTERVAL' && !isPacedRestInterval){
       card.querySelector('#gw-floatcard-next').style.display = '';
     }
+    // one button should do one thing: "Start Rest"/"Skip Rest" already starts and stops the
+    // clock, so the separate play/pause circle would just be a second, redundant way to start it
+    // that doesn't touch the rest countdown — hiding it keeps this to a single, simple control
+    if(isPacedRestInterval) card.querySelector('#gw-floatcard-playpause').style.display = 'none';
     if(kind==='FORTIME_REPEATS') document.getElementById('gw-focus-plus-label').textContent = 'Round Done';
     // paced-rest's label swaps between "Start ... Rest" and "Skip Rest" every tick — set by
     // focusUpdateDisplay(), not here, since it depends on whether a rest is currently running
@@ -2663,6 +2673,10 @@ function renderSectionFocus(){
         if(focusTimer.restUntil != null){
           focusCompletePacedRest();
         } else if(state.focusTapCount < roundCap){
+          // the countdown is driven by focusCurrentElapsed(), which only advances while the timer
+          // is actually running — without this it never starts (elapsed stays frozen at 0), so
+          // the rest just sits there showing the full duration forever
+          if(!focusTimer.running) focusStart();
           focusTimer.restUntil = focusCurrentElapsed() + spec.minutes*60;
           vibrate(15);
           focusUpdateDisplay();
@@ -3035,6 +3049,10 @@ function focusReset(){
   focusTimer.running = false; focusTimer.startedAt = null; focusTimer.elapsedBefore = 0;
   focusTimer.lastBeepUnit = -1; focusTimer.lastPhaseKey = null; focusTimer.lastTickSecond = null;
   focusTimer.doneBeeped = false; focusTimer.halfwayBeeped = false; focusTimer.leadIn = false;
+  // paced-rest tracks its own progress (which set, whether a rest is running) outside the
+  // elapsed-clock fields reset above — clear that too, or "cancel" would restart the clock while
+  // silently leaving the rest sequence stuck mid-set
+  if(focusTimer.label==='X Rest Between Sets'){ focusTimer.restUntil = null; state.focusTapCount = 0; }
   focusUpdateDisplay();
   focusUpdateButtonStates();
 }
