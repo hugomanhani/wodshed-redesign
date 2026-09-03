@@ -1251,7 +1251,7 @@ function movementsFor(pool, type, n, volume, rungs){
 function singleMovementTask(pool, reps){
   const m = pool[Math.floor(Math.random()*pool.length)];
   const count = Math.max(m.step, Math.round(reps/m.step)*m.step);
-  return {text:`${count} ${m.name}${repsSuffixFor(m.name)}`, name:m.name};
+  return {text:`${count} ${m.name}${repsSuffixFor(m.name)}`, name:m.name, reps:count};
 }
 
 // ---------- WOD FORMAT CATALOG ----------
@@ -1285,7 +1285,10 @@ const WOD_FORMAT_DEFS = {
   amrapBuyIn(ctx){
     const minutes = ctx.wodMinutes || pickOne([10,12]);
     const buyIn = singleMovementTask(ctx.pool, pickOne([30,40,50]));
-    return { formatDisplay:`Buy-In + AMRAP ${minutes}'`, movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
+    // the buy-in is a real part of the WOD (done once, before the clock's rounds), so it belongs
+    // in the exercises list alongside everything else, not just mentioned in the description
+    const movements = [{name:buyIn.name, reps:buyIn.reps, tag:'Buy-In'}, ...movementsFor(ctx.pool, ctx.type, 2, ctx.volume)];
+    return { formatDisplay:`Buy-In + AMRAP ${minutes}'`, movements,
       timerSpec:{kind:'AMRAP', minutes, mode:'rounds', buyIn:{text:buyIn.text}, label:'AMRAP with Buy-In'} };
   },
   amrepsAscending(ctx){
@@ -1332,13 +1335,21 @@ const WOD_FORMAT_DEFS = {
     const rounds = pickOne([3,4,5]), cap = ctx.wodMinutes || null;
     const buyIn = singleMovementTask(ctx.pool, pickOne([20,30]));
     const buyOut = singleMovementTask(ctx.pool, pickOne([20,30]));
-    return { formatDisplay:`Buy-In + ${rounds} RFT + Buy-Out` + (cap?` - cap ${cap}'`:''), movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
+    // buy-in and buy-out are real, once-through parts of the WOD — list them with the rest of the
+    // exercises (buy-in first, buy-out last) instead of only mentioning them in the description
+    const movements = [
+      {name:buyIn.name, reps:buyIn.reps, tag:'Buy-In'},
+      ...movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
+      {name:buyOut.name, reps:buyOut.reps, tag:'Buy-Out'}
+    ];
+    return { formatDisplay:`Buy-In + ${rounds} RFT + Buy-Out` + (cap?` - cap ${cap}'`:''), movements,
       timerSpec:{kind:'RFT', rounds, cap, buyIn:{text:buyIn.text}, buyOut:{text:buyOut.text}, label:'RFT with Bookends'} };
   },
   forTimeBetween(ctx){
     const rounds = pickOne([3,4]), cap = ctx.wodMinutes || null;
     const between = singleMovementTask(ctx.pool, pickOne([10,15,20]));
-    return { formatDisplay:`${rounds} RFT + ${between.text} between rounds` + (cap?` - cap ${cap}'`:''), movements: movementsFor(ctx.pool, ctx.type, 2, ctx.volume),
+    const movements = [...movementsFor(ctx.pool, ctx.type, 2, ctx.volume), {name:between.name, reps:between.reps, tag:'Between Rounds'}];
+    return { formatDisplay:`${rounds} RFT + ${between.text} between rounds` + (cap?` - cap ${cap}'`:''), movements,
       timerSpec:{kind:'RFT', rounds, cap, betweenMovement:{text:between.text}, label:'For Time with Movement In Between'} };
   }
 };
@@ -1694,7 +1705,7 @@ function pickMovementsLRU(pool, type, n){
   return scored.slice(0, Math.min(n, pool.length)).map(s=>s.m);
 }
 function buildWodText(format, wodMovements){
-  return `${format}\n` + wodMovements.map(m => `- ${m.reps} ${m.name}${repsSuffixFor(m.name)}`).join('\n');
+  return `${format}\n` + wodMovements.map(m => `- ${m.reps} ${m.name}${repsSuffixFor(m.name)}${m.tag ? ' ('+m.tag+')' : ''}`).join('\n');
 }
 function repsFor(movement, formatStr, multiplier=1){
   let [lo, hi] = movement.range;
@@ -3328,7 +3339,7 @@ function renderWodSection(w){
     nameEl.textContent = wodMovementDisplayName(m.name);
     const repsEl = document.createElement('span');
     repsEl.className = 'gw-movement-reps';
-    repsEl.textContent = `${m.reps} reps${repsSuffixFor(m.name)}`;
+    repsEl.textContent = `${m.reps} reps${repsSuffixFor(m.name)}${m.tag ? ' · '+m.tag : ''}`;
     main.appendChild(nameEl); main.appendChild(repsEl);
     row.appendChild(main);
     listEl.appendChild(row);
