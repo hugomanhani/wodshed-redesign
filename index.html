@@ -1024,7 +1024,9 @@ const MOVEMENT_LIB = {
     {name:'Back Squat', range:[6,12], step:1, equip:'barbell'},
     {name:'Front Squat', range:[6,12], step:1, equip:'barbell'},
     {name:'Strict Press', range:[6,12], step:1, equip:'barbell'},
-    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'}
+    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'},
+    {name:'Romanian Deadlift', range:[6,12], step:1, equip:'barbell'},
+    {name:'Pike Push-Ups', range:[8,15], step:1, equip:'none'}
   ],
   gymnastics: [
     {name:'Single Unders', range:[20,40], step:10, equip:'rope'},
@@ -1045,7 +1047,9 @@ const MOVEMENT_LIB = {
     {name:'Bar Muscle-Ups', range:[3,6], step:1, equip:'bar'},
     {name:'Ring Muscle-Ups', range:[3,6], step:1, equip:'rings'},
     {name:'Handstand Walk', range:[10,20], step:5, equip:'none'},
-    {name:'Superman Pulls', range:[10,20], step:5, equip:'none'}
+    {name:'Superman Pulls', range:[10,20], step:5, equip:'none'},
+    {name:'Butterfly Pull-Ups', range:[6,15], step:1, equip:'bar'},
+    {name:'Pike Push-Ups', range:[8,15], step:1, equip:'none'}
   ],
   weightlifting: [
     {name:'Thrusters', range:[8,15], step:1, equip:'barbell'},
@@ -1069,7 +1073,8 @@ const MOVEMENT_LIB = {
     {name:'Squat Snatch', range:[4,8], step:1, equip:'barbell'},
     {name:'Split Jerk', range:[4,8], step:1, equip:'barbell'},
     {name:'Sumo Deadlift', range:[5,10], step:1, equip:'barbell'},
-    {name:'KB Push Press', range:[6,12], step:2, equip:'kb'}
+    {name:'KB Push Press', range:[6,12], step:2, equip:'kb'},
+    {name:'Clean and Jerks', range:[3,8], step:1, equip:'barbell'}
   ],
   accessory: [
     {name:'KB Swings', range:[12,20], step:2, equip:'kb'},
@@ -1091,7 +1096,8 @@ const MOVEMENT_LIB = {
     {name:'Turkish Get-Ups', range:[4,8], step:2, equip:'kb'},
     {name:'KB Push Press', range:[6,12], step:2, equip:'kb'},
     {name:'Superman Pulls', range:[10,20], step:5, equip:'none'},
-    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'}
+    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'},
+    {name:'Barbell Walking Lunges', range:[16,24], step:4, equip:'barbell'}
   ],
   conditioning: [
     {name:'Double Unders', range:[20,40], step:10, equip:'rope'},
@@ -1112,7 +1118,8 @@ const MOVEMENT_LIB = {
     {name:'Broad Jumps', range:[8,12], step:2, equip:'none'},
     {name:'Tuck Jumps', range:[10,20], step:5, equip:'none'},
     {name:'Superman Pulls', range:[10,20], step:5, equip:'none'},
-    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'}
+    {name:'Plank Up-Downs', range:[8,15], step:1, equip:'none'},
+    {name:'Devil Press', range:[6,12], step:2, equip:'kb'}
   ]
 };
 
@@ -1143,7 +1150,8 @@ const MOVEMENT_PATTERNS = {
   'Bar Muscle-Ups':'pull', 'Ring Muscle-Ups':'pull', 'Handstand Walk':'push',
   'Superman Pulls':'pull', 'Squat Clean':'hinge', 'Squat Snatch':'hinge',
   'Split Jerk':'push', 'Sumo Deadlift':'hinge', 'KB Push Press':'push',
-  'Turkish Get-Ups':'core', 'Tuck Jumps':'jump'
+  'Turkish Get-Ups':'core', 'Tuck Jumps':'jump', 'Romanian Deadlift':'hinge', 'Pike Push-Ups':'push',
+  'Butterfly Pull-Ups':'pull', 'Clean and Jerks':'hinge', 'Barbell Walking Lunges':'lunge', 'Devil Press':'push'
 };
 // same idea for the barbell lifts used in Skill work
 const LIFT_PATTERNS = {backSquat:'squat', frontSquat:'squat', deadlift:'hinge', floorPress:'push', powerClean:'hinge', powerSnatch:'hinge'};
@@ -1170,7 +1178,7 @@ function allMovementNames(){
 const ADVANCED_MOVEMENTS = new Set([
   'Bar Muscle-Ups', 'Ring Muscle-Ups', 'Handstand Push-Ups', 'Handstand Walk', 'Squat Clean',
   'Squat Snatch', 'Split Jerk', 'Turkish Get-Ups', 'Pistol Squats', 'Toes to Bar',
-  'Chest-to-Bar Pull-Ups', 'Wall Walks'
+  'Chest-to-Bar Pull-Ups', 'Wall Walks', 'Butterfly Pull-Ups', 'Clean and Jerks', 'Devil Press'
 ]);
 // drops any movement the athlete has unchecked in the Skills drawer — but never below 2 options,
 // since a fully-filtered pool would leave a format builder nothing to pick from
@@ -1220,7 +1228,11 @@ const WOD_LOAD_STANDARDS = {
   'Split Jerk': {w:115, m:165},
   'Sumo Deadlift': {w:155, m:225},
   'KB Push Press': {w:35, m:53},
-  'Turkish Get-Ups': {w:35, m:53}
+  'Turkish Get-Ups': {w:35, m:53},
+  'Romanian Deadlift': {w:95, m:135},
+  'Clean and Jerks': {w:95, m:135},
+  'Barbell Walking Lunges': {w:45, m:65},
+  'Devil Press': {w:35, m:53}
 };
 function wodMovementDisplayName(name){
   const std = WOD_LOAD_STANDARDS[name];
@@ -1237,7 +1249,7 @@ function pickOne(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 // count is genuinely ambiguous (10 total, or 10 each?). Movements whose own description already
 // says "switch arms/sides between sets" (KB Snatch, KB Clean & Press, Renegade Rows) are left out
 // on purpose — that phrasing already tells you the count is a total split across the switch.
-const UNILATERAL_LEG_MOVEMENTS = new Set(['Pistol Squats', 'Reverse Lunges', 'Walking Lunges', 'Box Step-Ups']);
+const UNILATERAL_LEG_MOVEMENTS = new Set(['Pistol Squats', 'Reverse Lunges', 'Walking Lunges', 'Box Step-Ups', 'Barbell Walking Lunges']);
 const UNILATERAL_ARM_MOVEMENTS = new Set(['Turkish Get-Ups', 'Single-Arm KB Push Press']);
 function repsSuffixFor(name){
   if(UNILATERAL_LEG_MOVEMENTS.has(name)) return ' each leg';
@@ -1660,7 +1672,12 @@ const EXERCISE_INFO = {
   "Tuck Jumps": {desc: "Jump straight up, drive both knees toward your chest at the top, then land soft with knees bent and go right back up."},
   "Clean and Jerks": {desc: "Pull the bar from the floor to your shoulders in one motion (the clean), stand up, then dip and drive it overhead (the jerk). Reset and reset your breath between reps as needed."},
   "Running": {desc: "Steady, sustainable pace — the goal is covering the distance without cooking yourself for the movements that follow."},
-  "Rowing": {desc: "Legs-back-arms on the drive (drive with your legs first, then swing your back, then pull with your arms), reverse the order on the recovery. Keep the pace steady, not spiky."}
+  "Rowing": {desc: "Legs-back-arms on the drive (drive with your legs first, then swing your back, then pull with your arms), reverse the order on the recovery. Keep the pace steady, not spiky."},
+  "Butterfly Pull-Ups": {desc: "A continuous, circular kipping pull-up — your hips trace a figure-eight instead of swinging front-to-back, letting you chain reps faster once the timing clicks. Higher skill floor than a regular kipping pull-up, so it's worth drilling on its own before using it in a WOD."},
+  "Pike Push-Ups": {desc: "Hips high in a pike position (like the top of a downward dog), lower your head toward the floor between your hands, then press back up. Builds overhead pressing strength as a stepping stone toward handstand push-ups."},
+  "Romanian Deadlift": {desc: "Soft bend in the knees, hinge at the hips and lower the bar down your thighs staying close, feeling a stretch in your hamstrings, then drive your hips forward to stand tall — more hinge and less knee bend than a conventional deadlift."},
+  "Barbell Walking Lunges": {desc: "Bar on your back like a squat, step forward into a lunge with your back knee grazing the floor, then bring your back foot through into the next step — count each step as a rep."},
+  "Devil Press": {desc: "A dumbbell (or kettlebell) on the floor — burpee over it, then in one motion swing it up to a two-arm overhead press. A brutal combo of a burpee and a clean-and-press, so pace it early."}
 };
 function findKnownMovements(text){
   const found = [];
