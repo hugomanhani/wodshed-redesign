@@ -104,6 +104,8 @@
   }
   .gw-switch-btn:hover{background:var(--coral-dark);}
   .gw-switch-btn svg{width:14px; height:14px;}
+  .gw-undo-btn{background:var(--surface-2); color:var(--muted); border:1px solid var(--line-strong);}
+  .gw-undo-btn:hover{background:var(--surface-raised); color:#fff;}
 
   #gw-controls{
     display:flex; align-items:center; gap:8px; flex-wrap:wrap;
@@ -716,8 +718,12 @@
           <div class="gw-hero-meta" id="gw-hero-meta"></div>
         </div>
         <div class="gw-hero-actions">
+          <button type="button" class="gw-switch-btn gw-undo-btn" id="gw-undo-btn" style="display:none;">
+            <svg viewBox="0 0 256 256" fill="currentColor"><path d="M232,144a64.07,64.07,0,0,1-64,64H80a8,8,0,0,1,0-16h88a48,48,0,0,0,0-96H51.31l34.35,34.34a8,8,0,0,1-11.32,11.32l-48-48a8,8,0,0,1,0-11.32l48-48A8,8,0,0,1,85.66,45.66L51.31,80H168A64.07,64.07,0,0,1,232,144Z"/></svg>
+            <span>Undo</span>
+          </button>
           <button type="button" class="gw-switch-btn" id="gw-refresh-btn">
-            <svg viewBox="0 0 256 256" fill="currentColor"><path d="M237.66,178.34a8,8,0,0,1,0,11.32l-24,24a8,8,0,0,1-11.32-11.32L212.69,192H168a8,8,0,0,1-6.51-3.35L83.88,80H32a8,8,0,0,1,0-16H88a8,8,0,0,1,6.51,3.35L172.12,176h40.57l-10.35-10.34a8,8,0,0,1,11.32-11.32ZM143,107a8,8,0,0,0,11.16-1.86l18-25.12h40.57L202.34,90.34a8,8,0,0,0,11.32,11.32l24-24a8,8,0,0,0,0-11.32l-24-24a8,8,0,0,0-11.32,11.32L212.69,64H168a8,8,0,0,0-6.51,3.35L141.15,95.82A8,8,0,0,0,143,107Zm-30,42a8,8,0,0,0-11.16,1.86L83.88,176H32a8,8,0,0,0,0,16H88a8,8,0,0,0,6.51-3.35l20.34-28.47A8,8,0,0,0,113,149Z"/></svg>
+            <svg viewBox="0 0 256 256" fill="currentColor"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27a96,96,0,0,1,135,.79L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"/></svg>
             <span>Refresh</span>
           </button>
         </div>
@@ -843,8 +849,8 @@ if(!window.storage){
   };
 }
 
-// Phosphor Icons "shuffle-angular" (regular weight) — used for every reroll/refresh action
-const ICON_REFRESH = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M237.66,178.34a8,8,0,0,1,0,11.32l-24,24a8,8,0,0,1-11.32-11.32L212.69,192H168a8,8,0,0,1-6.51-3.35L83.88,80H32a8,8,0,0,1,0-16H88a8,8,0,0,1,6.51,3.35L172.12,176h40.57l-10.35-10.34a8,8,0,0,1,11.32-11.32ZM143,107a8,8,0,0,0,11.16-1.86l18-25.12h40.57L202.34,90.34a8,8,0,0,0,11.32,11.32l24-24a8,8,0,0,0,0-11.32l-24-24a8,8,0,0,0-11.32,11.32L212.69,64H168a8,8,0,0,0-6.51,3.35L141.15,95.82A8,8,0,0,0,143,107Zm-30,42a8,8,0,0,0-11.16,1.86L83.88,176H32a8,8,0,0,0,0,16H88a8,8,0,0,0,6.51-3.35l20.34-28.47A8,8,0,0,0,113,149Z"/></svg>';
+// Phosphor Icons "arrows-clockwise" (regular weight) — used for every reroll/refresh action
+const ICON_REFRESH = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27a96,96,0,0,1,135,.79L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"/></svg>';
 const ICON_PLAY = '<svg viewBox="0 0 256 256" fill="currentColor" width="18" height="18"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg>';
 // Phosphor Icons "clock-countdown" (regular weight) — the section Start/Resume buttons open a
 // timer, so they get a timer glyph instead of a generic play triangle
@@ -1810,6 +1816,7 @@ let state = {
   history: [],
   currentType: 'strength',
   currentWorkout: null,
+  previousWorkout: null, // one-level undo for the "refresh this same workout" actions (see generateWorkout's isRefresh option)
   bodyweightOnly: false,
   timeAvailable: null,
   profile: {name:'', bodyweight:null, bodyweightUnit:'lb'},
@@ -1851,7 +1858,7 @@ async function saveBenchmarks(){ await window.storage.set('garage-wod-benchmarks
 async function saveUnknownSkills(){ await window.storage.set('garage-wod-unknown-skills', JSON.stringify(state.unknownSkills)); }
 
 // ---------- logging activities done outside the app ----------
-const ACTIVITY_PRESETS = ['BJJ / Grappling', 'Running', 'Cycling', 'Swimming', 'Walking / Hiking', 'Yoga / Mobility', 'Other'];
+const ACTIVITY_PRESETS = ['BJJ / Grappling', 'Running', 'Cycling', 'Swimming', 'Walking / Hiking', 'Yoga / Mobility', 'Sally Up Sally Down', 'Other'];
 // which of our 5 focuses each external activity counts toward, for recency/recovery purposes (null = doesn't count as training load)
 const ACTIVITY_FOCUS_MAP = {
   'BJJ / Grappling': 'conditioning',
@@ -1977,7 +1984,14 @@ function updateSkillSchemeText(text, newReps){
   return text;
 }
 
-function generateWorkout(type){
+// opts.isRefresh marks calls that replace the CURRENT workout with a new one for the same focus
+// (the header Refresh button, and the bodyweight/time-budget toggles that also regenerate) — those
+// keep the just-replaced workout around for one-level undo. Switching focus or the initial
+// "Generate Workout" isn't a "refresh" of anything, so those clear it — there's nothing sensible
+// to undo back to.
+function generateWorkout(type, opts){
+  opts = opts || {};
+  state.previousWorkout = (opts.isRefresh && state.currentWorkout) ? state.currentWorkout : null;
   state.currentType = type;
   const bw = state.bodyweightOnly;
   const alloc = allocateTime(state.timeAvailable);
@@ -2402,11 +2416,19 @@ document.getElementById('gw-hero-title').onclick = openDayTypeSheet;
 document.getElementById('gw-daytabs-menu').onclick = (e)=>{ if(e.target.id==='gw-daytabs-menu') closeDayTypeSheet(); };
 document.getElementById('gw-refresh-btn').onclick = ()=>{
   const w = state.currentWorkout;
-  if(w){ generateWorkout(w.type); toast('Workout refreshed.'); }
+  if(w){ generateWorkout(w.type, {isRefresh:true}); toast('Workout refreshed.'); }
+};
+document.getElementById('gw-undo-btn').onclick = ()=>{
+  if(!state.previousWorkout) return;
+  state.currentWorkout = state.previousWorkout;
+  state.previousWorkout = null;
+  render();
+  toast('Back to the previous workout.');
 };
 function renderHero(w){
   const title = document.getElementById('gw-hero-title-text');
   const meta = document.getElementById('gw-hero-meta');
+  document.getElementById('gw-undo-btn').style.display = state.previousWorkout ? '' : 'none';
   if(!w){ title.textContent = 'Workout'; meta.textContent = ''; return; }
   title.textContent = DAY_TYPES.find(d=>d.key===w.type).label;
   const count = countWorkoutExercises(w);
@@ -3704,6 +3726,7 @@ async function logWorkout(){
     toast(prMessage || ('Logged. Next ' + DAY_TYPES.find(d=>d.key===w.type).label + ' session will build on this.'));
     focusStopTicking();
     state.currentWorkout = null;
+    state.previousWorkout = null; // it's logged now — nothing left to undo back to
     document.getElementById('gw-timebanner').style.display = 'none';
     render();
   }catch(err){
@@ -3738,7 +3761,7 @@ document.getElementById('gw-bw-toggle').onchange = async (e)=>{
   state.bodyweightOnly = e.target.checked;
   document.getElementById('gw-controls').classList.toggle('gw-travel-on', state.bodyweightOnly);
   await savePrefs();
-  if(state.currentType) generateWorkout(state.currentType);
+  if(state.currentType) generateWorkout(state.currentType, {isRefresh:true});
   toast(state.bodyweightOnly ? '✓ Bodyweight mode ON — workout refreshed for zero equipment.' : '✓ Bodyweight mode OFF — workout refreshed.');
 };
 // the dropdown options are just Default/Shorter/Longer, no numbers to pick blind from — the closed
@@ -3757,7 +3780,7 @@ async function applyTimeChange(newValue){
   state.timeAvailable = newValue;
   document.getElementById('gw-time-select').value = newValue || '';
   await savePrefs();
-  if(state.currentType) generateWorkout(state.currentType);
+  if(state.currentType) generateWorkout(state.currentType, {isRefresh:true});
   toast(state.timeAvailable ? `✓ Time budget set to ~${state.timeAvailable} min — workout refreshed.` : '✓ Time budget cleared — workout refreshed.');
 }
 document.getElementById('gw-time-select').onchange = (e)=>{
