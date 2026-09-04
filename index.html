@@ -96,12 +96,6 @@
   .gw-hero-title-btn svg{width:20px; height:20px; stroke:var(--muted); fill:none; stroke-width:2.4; flex:none; margin-top:4px;}
   .gw-hero-title-btn:hover svg{stroke:var(--coral);}
   .gw-hero-meta{color:var(--muted); font-size:13px; margin-top:6px; font-weight:500;}
-  /* Log/Profile don't switch focus like the Train tab's hero does, but still get the same
-     italic display-title treatment so every tab reads as part of one app, not a bare content dump */
-  .gw-page-title{
-    font-family:var(--font-hero); font-style:italic; font-weight:600; font-size:34px;
-    color:#fff; line-height:1.05; letter-spacing:-0.01em; margin:2px 0 16px;
-  }
   .gw-hero-actions{display:flex; align-items:center; gap:8px; flex:none; padding-top:2px;}
   .gw-switch-btn{
     display:flex; align-items:center; gap:6px; background:var(--coral); color:var(--bg); border:none;
@@ -797,12 +791,10 @@
   </div>
 
   <div id="gw-page-log" class="gw-page" style="display:none;">
-    <div class="gw-page-title">Log</div>
     <div id="gw-log-content"></div>
   </div>
 
   <div id="gw-page-profile" class="gw-page" style="display:none;">
-    <div class="gw-page-title">Profile</div>
     <div id="gw-profile-content"></div>
   </div>
 
