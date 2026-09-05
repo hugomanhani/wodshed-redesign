@@ -1867,10 +1867,21 @@ const ACTIVITY_FOCUS_MAP = {
   'Swimming': 'conditioning',
   'Walking / Hiking': null,
   'Yoga / Mobility': null,
+  'Sally Up Sally Down': 'conditioning',
   'Other': null
 };
 
 function daysSince(ts){ return (Date.now() - ts) / (1000*60*60*24); }
+// any logged outside activity, regardless of whether it maps to one of the 5 focuses — activities
+// like Walking/Hiking or Yoga (mappedType: null) never show up in a per-focus "last trained" chip
+// otherwise, so this is the only place they're reflected at all
+function lastExternalActivityDate(){
+  let last = null;
+  state.history.forEach(h=>{
+    if(h.kind==='external' && (last===null || h.date>last)) last = h.date;
+  });
+  return last;
+}
 function lastSessionDate(type){
   let last = null;
   state.history.forEach(h=>{
@@ -3812,7 +3823,7 @@ document.querySelectorAll('.gw-pagetab').forEach(t=>{
 });
 let activityDraft = null;
 function renderActivityForm(container){
-  activityDraft = activityDraft || {activity: ACTIVITY_PRESETS[0], custom:'', duration:null, intensity:null, notes:''};
+  activityDraft = activityDraft || {activity: ACTIVITY_PRESETS[0], custom:'', exercise:'', exerciseCustom:'', duration:null, intensity:null, notes:''};
   container.innerHTML = '';
 
   const row1 = document.createElement('div');
@@ -3839,6 +3850,40 @@ function renderActivityForm(container){
     customInput.oninput = ()=>{ activityDraft.custom = customInput.value; };
     row1b.appendChild(customInput);
     container.appendChild(row1b);
+  }
+
+  // Sally Up Sally Down is played with whatever movement the group picks — burpees is classic,
+  // but it's played with all sorts of things, so ask which one instead of assuming
+  if(activityDraft.activity==='Sally Up Sally Down'){
+    const rowEx = document.createElement('div');
+    rowEx.className = 'gw-setting-row';
+    rowEx.innerHTML = '<span>Exercise</span>';
+    const exSelect = document.createElement('select');
+    exSelect.className = 'gw-activity-select';
+    const placeholder = document.createElement('option');
+    placeholder.value = ''; placeholder.textContent = 'Choose exercise…'; placeholder.disabled = true;
+    if(!activityDraft.exercise) placeholder.selected = true;
+    exSelect.appendChild(placeholder);
+    [...allMovementNames(), 'Other'].forEach(name=>{
+      const opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      if(name===activityDraft.exercise) opt.selected = true;
+      exSelect.appendChild(opt);
+    });
+    exSelect.onchange = ()=>{ activityDraft.exercise = exSelect.value; renderActivityForm(container); };
+    rowEx.appendChild(exSelect);
+    container.appendChild(rowEx);
+
+    if(activityDraft.exercise==='Other'){
+      const rowExCustom = document.createElement('div');
+      rowExCustom.className = 'gw-setting-row';
+      rowExCustom.innerHTML = '<span>Which one?</span>';
+      const exCustomInput = document.createElement('input');
+      exCustomInput.type = 'text'; exCustomInput.value = activityDraft.exerciseCustom; exCustomInput.style.width='140px';
+      exCustomInput.oninput = ()=>{ activityDraft.exerciseCustom = exCustomInput.value; };
+      rowExCustom.appendChild(exCustomInput);
+      container.appendChild(rowExCustom);
+    }
   }
 
   const row2 = document.createElement('div');
@@ -3879,14 +3924,15 @@ function renderActivityForm(container){
   row4.appendChild(notesInput);
   container.appendChild(row4);
 
+  const needsExercise = activityDraft.activity==='Sally Up Sally Down' && !activityDraft.exercise;
   const saveBtn = mkBtn('Save Activity', 'gw-teal', saveActivity);
   saveBtn.style.cssText = 'margin-top:10px; width:100%; padding:20px;';
-  if(!activityDraft.intensity) saveBtn.disabled = true;
+  if(!activityDraft.intensity || needsExercise) saveBtn.disabled = true;
   container.appendChild(saveBtn);
-  if(!activityDraft.intensity){
+  if(!activityDraft.intensity || needsExercise){
     const hint = document.createElement('div');
     hint.style.cssText = 'font-size:11.5px; color:var(--muted); margin-top:8px; text-align:center; font-weight:700;';
-    hint.textContent = 'Rate the intensity above to save.';
+    hint.textContent = needsExercise ? 'Pick which exercise you did to save.' : 'Rate the intensity above to save.';
     container.appendChild(hint);
   }
 }
@@ -3894,8 +3940,13 @@ function renderActivityForm(container){
 async function saveActivity(){
   const d = activityDraft;
   if(!d || !d.intensity) return;
+  if(d.activity==='Sally Up Sally Down' && !d.exercise) return;
   try{
-    const activityName = d.activity==='Other' && d.custom.trim() ? d.custom.trim() : d.activity;
+    let activityName = d.activity==='Other' && d.custom.trim() ? d.custom.trim() : d.activity;
+    if(d.activity==='Sally Up Sally Down'){
+      const exerciseName = d.exercise==='Other' && d.exerciseCustom.trim() ? d.exerciseCustom.trim() : d.exercise;
+      activityName = `Sally Up Sally Down (${exerciseName})`;
+    }
     const mappedType = ACTIVITY_FOCUS_MAP[d.activity] || null;
     state.history.push({
       date: Date.now(), kind:'external', activity: activityName, mappedType,
@@ -4437,15 +4488,18 @@ function renderLogPage(){
     lastTrained.appendChild(ltHeading);
     const chipGrid = document.createElement('div');
     chipGrid.className = 'gw-lasttrained-grid';
-    DAY_TYPES.forEach(dt=>{
-      const last = lastSessionDate(dt.key);
+    function buildLastTrainedChip(last, label){
       const days = last===null ? null : daysSince(last);
       const chip = document.createElement('div');
       chip.className = 'gw-lasttrained-chip' + (days===null ? ' never' : (days>14 ? ' stale' : ''));
       const numText = days===null ? '—' : (Math.round(days)===0 ? 'Today' : Math.round(days)+'d');
-      chip.innerHTML = `<div class="gw-lasttrained-num">${numText}</div><div class="gw-lasttrained-label">${dt.label}</div>`;
-      chipGrid.appendChild(chip);
+      chip.innerHTML = `<div class="gw-lasttrained-num">${numText}</div><div class="gw-lasttrained-label">${label}</div>`;
+      return chip;
+    }
+    DAY_TYPES.forEach(dt=>{
+      chipGrid.appendChild(buildLastTrainedChip(lastSessionDate(dt.key), dt.label));
     });
+    chipGrid.appendChild(buildLastTrainedChip(lastExternalActivityDate(), 'Outside Activity'));
     lastTrained.appendChild(chipGrid);
     container.appendChild(lastTrained);
 
