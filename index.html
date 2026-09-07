@@ -1870,6 +1870,17 @@ const ACTIVITY_FOCUS_MAP = {
   'Sally Up Sally Down': 'conditioning',
   'Other': null
 };
+// the fixed set of movements Sally Up Sally Down is played with — not the full app-wide roster
+const SALLY_UP_DOWN_EXERCISES = [
+  {name:'Leg Raises', category:'Abs'},
+  {name:'Planks', category:'Core'},
+  {name:'V-Ups', category:'Abs'},
+  {name:'Pull-Ups or Chin-Ups', category:'Upper Body'},
+  {name:'Bicep Curls', category:'Arms'},
+  {name:'Lunges', category:'Legs'},
+  {name:'Glute Bridges', category:'Glutes'},
+  {name:'Burpees', category:'Full Body'}
+];
 
 function daysSince(ts){ return (Date.now() - ts) / (1000*60*60*24); }
 // any logged outside activity, regardless of whether it maps to one of the 5 focuses — activities
@@ -3820,7 +3831,7 @@ document.querySelectorAll('.gw-pagetab').forEach(t=>{
 });
 let activityDraft = null;
 function renderActivityForm(container){
-  activityDraft = activityDraft || {activity: ACTIVITY_PRESETS[0], custom:'', exercise:'', exerciseCustom:'', duration:null, intensity:null, notes:''};
+  activityDraft = activityDraft || {activity: ACTIVITY_PRESETS[0], custom:'', exercise:'', duration:null, intensity:null, notes:''};
   container.innerHTML = '';
 
   const row1 = document.createElement('div');
@@ -3849,8 +3860,7 @@ function renderActivityForm(container){
     container.appendChild(row1b);
   }
 
-  // Sally Up Sally Down is played with whatever movement the group picks — burpees is classic,
-  // but it's played with all sorts of things, so ask which one instead of assuming
+  // Sally Up Sally Down only ever uses one of these 8 — not the full app-wide movement roster
   if(activityDraft.activity==='Sally Up Sally Down'){
     const rowEx = document.createElement('div');
     rowEx.className = 'gw-setting-row';
@@ -3861,26 +3871,15 @@ function renderActivityForm(container){
     placeholder.value = ''; placeholder.textContent = 'Choose exercise…'; placeholder.disabled = true;
     if(!activityDraft.exercise) placeholder.selected = true;
     exSelect.appendChild(placeholder);
-    [...allMovementNames(), 'Other'].forEach(name=>{
+    SALLY_UP_DOWN_EXERCISES.forEach(({name, category})=>{
       const opt = document.createElement('option');
-      opt.value = name; opt.textContent = name;
+      opt.value = name; opt.textContent = `${name} (${category})`;
       if(name===activityDraft.exercise) opt.selected = true;
       exSelect.appendChild(opt);
     });
     exSelect.onchange = ()=>{ activityDraft.exercise = exSelect.value; renderActivityForm(container); };
     rowEx.appendChild(exSelect);
     container.appendChild(rowEx);
-
-    if(activityDraft.exercise==='Other'){
-      const rowExCustom = document.createElement('div');
-      rowExCustom.className = 'gw-setting-row';
-      rowExCustom.innerHTML = '<span>Which one?</span>';
-      const exCustomInput = document.createElement('input');
-      exCustomInput.type = 'text'; exCustomInput.value = activityDraft.exerciseCustom; exCustomInput.style.width='140px';
-      exCustomInput.oninput = ()=>{ activityDraft.exerciseCustom = exCustomInput.value; };
-      rowExCustom.appendChild(exCustomInput);
-      container.appendChild(rowExCustom);
-    }
   }
 
   const row2 = document.createElement('div');
@@ -3940,10 +3939,7 @@ async function saveActivity(){
   if(d.activity==='Sally Up Sally Down' && !d.exercise) return;
   try{
     let activityName = d.activity==='Other' && d.custom.trim() ? d.custom.trim() : d.activity;
-    if(d.activity==='Sally Up Sally Down'){
-      const exerciseName = d.exercise==='Other' && d.exerciseCustom.trim() ? d.exerciseCustom.trim() : d.exercise;
-      activityName = `Sally Up Sally Down (${exerciseName})`;
-    }
+    if(d.activity==='Sally Up Sally Down') activityName = `Sally Up Sally Down (${d.exercise})`;
     const mappedType = ACTIVITY_FOCUS_MAP[d.activity] || null;
     state.history.push({
       date: Date.now(), kind:'external', activity: activityName, mappedType,
