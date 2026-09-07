@@ -656,7 +656,9 @@
   .gw-focus-exit:hover{color:var(--coral);}
 
   #gw-timerstop-backdrop{
-    display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:185;
+    /* above #gw-timer-drawer-backdrop's 210 — this dialog opens from inside that drawer, so it
+       has to render on top of it, not behind it */
+    display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:220;
     align-items:center; justify-content:center; padding:20px;
   }
   #gw-timerstop-backdrop.show{display:flex;}
@@ -1872,6 +1874,8 @@ const ACTIVITY_FOCUS_MAP = {
 };
 // the fixed set of movements Sally Up Sally Down is played with — not the full app-wide roster
 const SALLY_UP_DOWN_EXERCISES = [
+  {name:'Squats', category:'Legs'},
+  {name:'Push-Ups', category:'Upper Body'},
   {name:'Leg Raises', category:'Abs'},
   {name:'Planks', category:'Core'},
   {name:'V-Ups', category:'Abs'},
@@ -2559,6 +2563,9 @@ function closeTimerDrawer(){
 // It should actually discard the session and back out, same as closing a timer with no progress on it.
 function cancelTimerAndClose(){
   document.getElementById('gw-timerstop-backdrop').classList.remove('show');
+  // this session's timer (and the pause it may have triggered) is about to be discarded entirely
+  // — reset the flag so it can't leak into a later timer session that gets its own fresh pause/resume
+  cancelPromptAutoPaused = false;
   const key = state.focusSectionKey;
   const w = state.currentWorkout;
   focusStopTicking();
@@ -2566,9 +2573,20 @@ function cancelTimerAndClose(){
   render();
   maybePromptRating(w, key);
 }
+// tracks whether requestCloseFloatCard() itself paused a running timer to show the confirm
+// dialog — vs. it was already paused (the athlete's own choice) before Cancel was even tapped —
+// so dismissing the dialog only auto-resumes in the first case, never overriding a pause the
+// athlete set deliberately
+let cancelPromptAutoPaused = false;
 function requestCloseFloatCard(){
   if(!focusTimer || focusTimer.doneBeeped) return;
   if(focusTimer.running || focusTimer.elapsedBefore > 0){
+    // pause immediately so the clock visibly freezes the instant "Cancel timer" is tapped —
+    // otherwise it keeps ticking behind the confirm dialog and reads as "still not stopped"
+    if(focusTimer.running){
+      focusPause();
+      cancelPromptAutoPaused = true;
+    }
     // real progress is on the line — confirm before resetting it back to 0:00
     document.getElementById('gw-timerstop-backdrop').classList.add('show');
   } else {
@@ -2579,6 +2597,10 @@ function requestCloseFloatCard(){
 }
 function cancelCloseFloatCard(){
   document.getElementById('gw-timerstop-backdrop').classList.remove('show');
+  if(cancelPromptAutoPaused){
+    cancelPromptAutoPaused = false;
+    focusStart();
+  }
 }
 // the X (and tapping the backdrop) never asks to confirm anymore — a timer that's still going
 // just minimizes so the athlete can glance at the workout, while a finished one has nothing left
@@ -2934,6 +2956,7 @@ function focusCurrentElapsed(){
 }
 function focusOpenTimer(spec, sectionKey){
   focusTimer = { ...spec, running:false, startedAt:null, elapsedBefore:0, lastBeepUnit:-1, lastPhaseKey:null, lastTickSecond:null, doneBeeped:false, halfwayBeeped:false, leadIn:false, sectionKey };
+  cancelPromptAutoPaused = false; // a fresh session starts with no pending auto-pause from a prior one
   focusUpdateDisplay();
   focusUpdateButtonStates();
 }
