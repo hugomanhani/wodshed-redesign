@@ -223,11 +223,19 @@
   .gw-timeline-time{font-family:var(--font-mono); font-size:11px; color:var(--muted); flex:none;}
   .gw-timeline-badges{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
   .gw-timeline-badge{font-size:10px; font-weight:900; letter-spacing:0.03em; text-transform:uppercase; color:var(--coral); background:var(--coral-wash); border-radius:999px; padding:3px 8px;}
+  .gw-timeline-badge.badge-rx{color:var(--good); background:rgba(95,208,163,0.14);}
+  .gw-timeline-badge.badge-scaled{color:var(--muted); background:var(--surface-2);}
+  .gw-timeline-badge.badge-pr{color:var(--warn); background:rgba(245,179,80,0.16); display:inline-flex; align-items:center; gap:3px;}
+  .gw-timeline-badge.badge-pr svg{width:10px; height:10px; flex:none;}
+  .gw-timeline-result{font-family:var(--font-display); font-weight:900; font-size:24px; color:var(--coral); margin-top:10px;}
+  .gw-timeline-result-sub{font-size:11px; color:var(--muted); font-weight:700; margin-top:1px;}
   .gw-timeline-stats{display:flex; gap:8px; margin-top:12px;}
-  .gw-timeline-stat{flex:1; min-width:0; background:var(--surface-2); border-radius:10px; padding:8px; text-align:center;}
+  .gw-timeline-stat{flex:1 1 120px; max-width:160px; min-width:0; background:var(--surface-2); border-radius:10px; padding:8px; text-align:center;}
   .gw-timeline-stat-num{font-family:var(--font-display); font-weight:900; font-size:14px; color:var(--coral); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .gw-timeline-stat-label{font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:800; margin-top:2px;}
-  .gw-timeline-detail{color:var(--muted); font-size:12.5px; margin-top:10px; line-height:1.5;}
+  .gw-timeline-meta{color:var(--muted); font-size:12px; margin-top:10px; line-height:1.5;}
+  .gw-timeline-caveat{color:var(--muted-2); font-size:11px; margin-top:6px; font-style:italic;}
+  .gw-timeline-notes{color:var(--text); opacity:0.82; font-size:12.5px; margin-top:10px; line-height:1.5; font-style:italic; padding-left:10px; border-left:2px solid var(--line-strong);}
 
   #gw-focusline{display:none;}
   .gw-daytabs-sheet-item{
@@ -473,6 +481,12 @@
     width:100%; min-height:56px; background:var(--surface-2); border:1px solid var(--line); color:#fff;
     border-radius:8px; padding:12px 16px; font-size:16px; font-family:var(--font-body); resize:vertical;
   }
+  .gw-split-inputs{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .gw-split-inputs input{
+    width:64px; height:36px; background:var(--surface-2); border:1px solid var(--line); color:#fff;
+    border-radius:6px; text-align:center; font-size:16px; font-weight:800; font-family:var(--font-body);
+  }
+  .gw-split-inputs span{color:var(--muted); font-size:12.5px; font-weight:700;}
   .gw-gloss-item{padding:10px 0; border-bottom:1px solid var(--line);}
   .gw-gloss-item .gw-gloss-name{font-weight:900; font-size:13px; color:var(--coral);}
   .gw-gloss-item .gw-gloss-desc{font-size:12.5px; color:var(--muted); margin-top:2px;}
@@ -1467,10 +1481,47 @@ function computeBenchmarkScore(benchmark, perf){
   }
   return null;
 }
+// an AMRAP's real, comparable score is total reps — a benchmark already carries its reps-per-round,
+// but a custom AMRAP doesn't store that anywhere on the history entry, so it's computed once here,
+// at save time, from the live workout's actual movement list (skipping a Buy-In, which only
+// happens once at the start, not every round, so it isn't part of the per-round rep count)
+function computeAmrapTotalReps(w){
+  const perf = w.wodPerformance;
+  if(!perf || perf.rounds == null) return null;
+  let repsPerRound = null;
+  if(w.isBenchmark){
+    const benchmark = BENCHMARKS.find(b=>b.name===w.benchmarkName);
+    repsPerRound = benchmark ? benchmark.repsPerRound : null;
+  } else if(w.wodMovements){
+    repsPerRound = w.wodMovements.filter(m=>m.tag!=='Buy-In').reduce((sum,m)=> sum + (typeof m.reps==='number' ? m.reps : 0), 0);
+  }
+  if(!repsPerRound) return null;
+  return perf.rounds*repsPerRound + (perf.extraReps||0);
+}
 function fmtBenchmarkScore(benchmark, score){
   if(score==null) return '—';
   if(benchmark.scoreType==='rounds') return `${score} reps`;
   return fmtClock(score);
+}
+// scores a benchmark result against its history, records it (so it shows up in the Profile
+// Benchmarks drawer and resets dueBenchmark()'s 21-day clock), and flags a PR — shared by the
+// auto-served benchmark flow in logWorkout() and the user-triggered Quick Log WOD flow, so a
+// benchmark logged either way stays comparable to the same history
+async function recordBenchmarkResult(benchmark, perf){
+  const score = computeBenchmarkScore(benchmark, perf);
+  if(!benchmark || score==null) return {score:null, isPR:false, message:null};
+  const prevHist = (state.benchmarks[benchmark.name] && state.benchmarks[benchmark.name].history) || [];
+  const prevBest = prevHist.length
+    ? (benchmark.scoreType==='rounds' ? Math.max(...prevHist.map(h=>h.score)) : Math.min(...prevHist.map(h=>h.score)))
+    : null;
+  const isPR = prevBest!=null && ((benchmark.scoreType==='rounds' && score>prevBest) || (benchmark.scoreType==='time' && score<prevBest));
+  state.benchmarks[benchmark.name] = state.benchmarks[benchmark.name] || {history:[]};
+  state.benchmarks[benchmark.name].history.push({date: Date.now(), score});
+  await saveBenchmarks();
+  const message = isPR
+    ? `New best on ${benchmark.name}! ${fmtBenchmarkScore(benchmark, score)} (previous: ${fmtBenchmarkScore(benchmark, prevBest)})`
+    : (prevBest==null ? `${benchmark.name} baseline set: ${fmtBenchmarkScore(benchmark, score)}. Next retest will compare against this.` : null);
+  return {score, isPR, message};
 }
 
 // anti-extension/rotation/bracing work leads by default — spinal flexion (sit-ups, V-ups) stays in
@@ -2117,6 +2168,7 @@ function generateWorkout(type, opts){
     formatId, format, wodMovements, movements: wodMovements.map(m=>m.name), wodTimerSpec,
     core, coreTimer, rpe: null, wodRpe: null, bw,
     volumeUsed: effectiveVolume, coachNotes, isBenchmark, benchmarkName,
+    rxStatus: 'rx', wodNotes: '',
     sectionsDone: {warmup:false, skill:false, wod:false, core:false}, roundCounts: {}, wodPerformance: {}
   };
   renderTimeBanner(alloc);
@@ -2141,14 +2193,21 @@ function renderCoachNotes(notes){
   box.style.display = 'block';
 }
 
-function formatPerformance(perf){
+// bare score with no verb, for the timeline's hero number — "12:34" instead of "finished in 12:34".
+// an AMRAP's real, comparable score is total reps, not the raw rounds+reps split — when totalReps
+// has been computed (see logWorkout), that's what leads; rounds+reps still shows as a sub-caption.
+function formatPerformanceShort(perf){
   if(!perf) return '';
-  if(perf.rounds != null) return `scored ${perf.rounds} rd${perf.rounds===1?'':'s'}${perf.extraReps ? ' + '+perf.extraReps+' reps' : ''}`;
-  if(perf.time) return `finished in ${perf.time}${perf.hitCap ? ' (hit cap)' : ''}`;
-  // AMReps (max total reps in a fixed window) has no rounds and no time, just a rep total
-  if(perf.extraReps != null) return `scored ${perf.extraReps} reps`;
-  if(perf.completedAll != null) return perf.completedAll ? 'completed all rounds' : 'missed some rounds';
+  if(perf.totalReps != null) return `${perf.totalReps} reps`;
+  if(perf.rounds != null) return `${perf.rounds} rd${perf.rounds===1?'':'s'}${perf.extraReps ? ' + '+perf.extraReps+' reps' : ''}`;
+  if(perf.time) return `${perf.time}${perf.hitCap ? ' (cap)' : ''}`;
+  if(perf.extraReps != null) return `${perf.extraReps} reps`;
+  if(perf.completedAll != null) return perf.completedAll ? 'Completed' : 'Incomplete';
   return '';
+}
+function formatRoundsBreakdown(perf){
+  if(!perf || perf.rounds == null) return '';
+  return `${perf.rounds} rd${perf.rounds===1?'':'s'}${perf.extraReps ? ' + '+perf.extraReps+' reps' : ''}`;
 }
 
 function buildDeloadNote(w){
@@ -2377,12 +2436,114 @@ function openRateDrawer(kind){
   if(!w) return;
   const content = document.getElementById('gw-rate-drawer-content');
   content.innerHTML = '';
-  const label = kind==='wod' ? 'How did the WOD feel?' : `How did ${LIFT_LABELS[w.skillLiftKey]} feel?`;
-  content.appendChild(buildRateBlock(label, kind==='wod' ? w.wodRpe : w.rpe, (r)=>{
-    if(kind==='wod') w.wodRpe = r; else w.rpe = r;
-    closeRateDrawer();
-    render();
-  }));
+
+  if(kind==='skill'){
+    content.appendChild(buildRateBlock(`How did ${LIFT_LABELS[w.skillLiftKey]} feel?`, w.rpe, (r)=>{
+      w.rpe = r;
+      closeRateDrawer();
+      render();
+    }));
+    document.getElementById('gw-rate-drawer-backdrop').classList.add('show');
+    return;
+  }
+
+  // the timer flow (tapping rounds, or running the clock to a finish) is what normally fills in
+  // wodPerformance — but tapping "Mark as done" on the section skips all of that entirely, and an
+  // AMRAP's tap counter never asks about the partial round in progress when time ran out either.
+  // So: whatever this WOD's format actually scores, make sure there's a way to enter it here.
+  const spec = w.wodTimerSpec || parseTimerFromText(w.format);
+  const wodKind = spec && spec.kind;
+  const wodMode = spec && spec.mode;
+  if(!w.wodPerformance) w.wodPerformance = {};
+  const perf = w.wodPerformance;
+
+  if(wodKind==='FORTIME' || wodKind==='RFT' || wodKind==='LADDER' || wodKind==='FORTIME_REPEATS'){
+    const timeParts = (perf.time || '').split(':');
+    const row = document.createElement('div');
+    row.className = 'gw-setting-row';
+    row.innerHTML = '<span>Finishing Time</span>';
+    const wrap = document.createElement('div');
+    wrap.className = 'gw-split-inputs';
+    const minInput = document.createElement('input');
+    minInput.type = 'number'; minInput.min = '0'; minInput.placeholder = '0'; minInput.value = timeParts[0] || '';
+    const secInput = document.createElement('input');
+    secInput.type = 'number'; secInput.min = '0'; secInput.max = '59'; secInput.placeholder = '0'; secInput.value = timeParts[1] || '';
+    const syncTime = ()=>{
+      perf.time = (minInput.value || secInput.value) ? `${String(minInput.value||0).padStart(2,'0')}:${String(secInput.value||0).padStart(2,'0')}` : null;
+    };
+    minInput.oninput = syncTime; secInput.oninput = syncTime;
+    wrap.appendChild(minInput);
+    wrap.appendChild(Object.assign(document.createElement('span'), {textContent:'min'}));
+    wrap.appendChild(secInput);
+    wrap.appendChild(Object.assign(document.createElement('span'), {textContent:'sec'}));
+    row.appendChild(wrap);
+    content.appendChild(row);
+  } else if(wodKind==='AMRAP' && (wodMode==='reps' || wodMode==='ascending')){
+    const row = document.createElement('div');
+    row.className = 'gw-setting-row';
+    row.innerHTML = '<span>Total Reps</span>';
+    const repsInput = document.createElement('input');
+    repsInput.type = 'number'; repsInput.min = '0'; repsInput.placeholder = '0';
+    repsInput.value = perf.extraReps != null ? perf.extraReps : '';
+    repsInput.oninput = ()=>{ perf.extraReps = repsInput.value === '' ? null : Number(repsInput.value); };
+    row.appendChild(repsInput);
+    content.appendChild(row);
+  } else if(wodKind==='AMRAP'){
+    const row = document.createElement('div');
+    row.className = 'gw-setting-row';
+    row.innerHTML = '<span>Score — rounds + extra reps into the next round</span>';
+    const wrap = document.createElement('div');
+    wrap.className = 'gw-split-inputs';
+    const roundsInput = document.createElement('input');
+    roundsInput.type = 'number'; roundsInput.min = '0'; roundsInput.placeholder = '0';
+    roundsInput.value = perf.rounds != null ? perf.rounds : '';
+    roundsInput.oninput = ()=>{ perf.rounds = roundsInput.value === '' ? null : Number(roundsInput.value); };
+    const repsInput = document.createElement('input');
+    repsInput.type = 'number'; repsInput.min = '0'; repsInput.placeholder = '0';
+    repsInput.value = perf.extraReps != null ? perf.extraReps : '';
+    repsInput.oninput = ()=>{ perf.extraReps = repsInput.value === '' ? null : Number(repsInput.value); };
+    wrap.appendChild(roundsInput);
+    wrap.appendChild(Object.assign(document.createElement('span'), {textContent:'rounds +'}));
+    wrap.appendChild(repsInput);
+    wrap.appendChild(Object.assign(document.createElement('span'), {textContent:'reps'}));
+    row.appendChild(wrap);
+    content.appendChild(row);
+  }
+
+  // the WOD rating carries a bit more than feel — RX/Scaled and an optional note — so it's all
+  // one drawer with an explicit Done, rather than closing the instant a feel button is tapped
+  const rxBlock = document.createElement('div');
+  rxBlock.className = 'gw-rate-block';
+  const rxLbl = document.createElement('div');
+  rxLbl.className = 'gw-rate-label';
+  rxLbl.textContent = 'Did you do the full workout, or change something?';
+  rxBlock.appendChild(rxLbl);
+  const rxRow = document.createElement('div');
+  rxRow.className = 'gw-rate-options';
+  [{v:'rx', label:'Full Workout'}, {v:'scaled', label:'Modified It'}].forEach(opt=>{
+    const b = mkBtn(opt.label, w.rxStatus===opt.v ? 'gw-primary' : 'gw-btn', ()=>{ w.rxStatus = opt.v; openRateDrawer('wod'); });
+    rxRow.appendChild(b);
+  });
+  rxBlock.appendChild(rxRow);
+  content.appendChild(rxBlock);
+
+  content.appendChild(buildRateBlock('How did the WOD feel?', w.wodRpe, (r)=>{ w.wodRpe = r; openRateDrawer('wod'); }));
+
+  const notesLabel = document.createElement('div');
+  notesLabel.style.cssText = 'font-size:12px; color:var(--muted); margin:14px 0 6px;';
+  notesLabel.textContent = 'Notes (optional)';
+  content.appendChild(notesLabel);
+  const notesInput = document.createElement('textarea');
+  notesInput.className = 'gw-activity-notes';
+  notesInput.style.minHeight = '44px';
+  notesInput.value = w.wodNotes || '';
+  notesInput.oninput = ()=>{ w.wodNotes = notesInput.value; };
+  content.appendChild(notesInput);
+
+  const doneBtn = mkBtn('Done', 'gw-teal', ()=>{ closeRateDrawer(); render(); });
+  doneBtn.style.cssText = 'margin-top:16px; width:100%; padding:16px;';
+  content.appendChild(doneBtn);
+
   document.getElementById('gw-rate-drawer-backdrop').classList.add('show');
 }
 function closeRateDrawer(){
@@ -3685,6 +3846,8 @@ function rerollSection(section){
     w.movements = w.wodMovements.map(m=>m.name);
     w.wodRpe = null;
     w.wodPerformance = {};
+    w.rxStatus = 'rx';
+    w.wodNotes = '';
   } else if(section==='core'){
     let choice = CORE.find(c=>c.text===w.core) || CORE[0];
     if(CORE.length>1){ do{ choice = CORE[Math.floor(Math.random()*CORE.length)]; } while(choice.text===w.core); }
@@ -3739,22 +3902,16 @@ async function logWorkout(){
       state.volume[w.type] = clamp((state.volume[w.type] || 1.0) + adj, 0.7, 1.4);
       await saveVolume();
     }
-    let prMessage = null;
+    let prMessage = null, isPR = false;
     if(w.isBenchmark){
       const benchmark = BENCHMARKS.find(b=>b.name===w.benchmarkName);
-      const score = computeBenchmarkScore(benchmark, w.wodPerformance);
-      if(benchmark && score!=null){
-        const prevHist = (state.benchmarks[benchmark.name] && state.benchmarks[benchmark.name].history) || [];
-        const prevBest = prevHist.length
-          ? (benchmark.scoreType==='rounds' ? Math.max(...prevHist.map(h=>h.score)) : Math.min(...prevHist.map(h=>h.score)))
-          : null;
-        const isPR = prevBest!=null && ((benchmark.scoreType==='rounds' && score>prevBest) || (benchmark.scoreType==='time' && score<prevBest));
-        state.benchmarks[benchmark.name] = state.benchmarks[benchmark.name] || {history:[]};
-        state.benchmarks[benchmark.name].history.push({date: Date.now(), score});
-        await saveBenchmarks();
-        if(isPR) prMessage = `New best on ${benchmark.name}! ${fmtBenchmarkScore(benchmark, score)} (previous: ${fmtBenchmarkScore(benchmark, prevBest)})`;
-        else if(prevBest==null) prMessage = `${benchmark.name} baseline set: ${fmtBenchmarkScore(benchmark, score)}. Next retest will compare against this.`;
-      }
+      const result = await recordBenchmarkResult(benchmark, w.wodPerformance);
+      isPR = result.isPR;
+      prMessage = result.message;
+    }
+    if(w.wodPerformance && w.wodPerformance.rounds != null){
+      const totalReps = computeAmrapTotalReps(w);
+      if(totalReps != null) w.wodPerformance.totalReps = totalReps;
     }
     state.history.push({
       date: Date.now(), type: w.type, warmup: w.warmup, skillTplText: w.skillTplText,
@@ -3762,7 +3919,8 @@ async function logWorkout(){
       wodRpe: w.wodRpe || null, volumeUsed: w.volumeUsed || 1.0,
       format: w.format, movements: w.movements, movementNames: w.movements, core: w.core, bw: w.bw,
       sectionsDone: w.sectionsDone || null, wodPerformance: w.wodPerformance || null,
-      isBenchmark: w.isBenchmark || false, benchmarkName: w.benchmarkName || null
+      isBenchmark: w.isBenchmark || false, benchmarkName: w.benchmarkName || null, isPR,
+      rxStatus: w.rxStatus || null, notes: (w.wodNotes || '').trim()
     });
     await saveHistory();
     toast(prMessage || ('Logged. Next ' + DAY_TYPES.find(d=>d.key===w.type).label + ' session will build on this.'));
@@ -3905,14 +4063,23 @@ function renderActivityForm(container){
     container.appendChild(rowEx);
   }
 
-  const row2 = document.createElement('div');
-  row2.className = 'gw-setting-row';
-  row2.innerHTML = '<span>Duration (min)</span>';
-  const durInput = document.createElement('input');
-  durInput.type = 'number'; durInput.min='0'; durInput.step='5'; durInput.value = activityDraft.duration ?? '';
-  durInput.oninput = ()=>{ activityDraft.duration = durInput.value===''?null:Number(durInput.value); };
-  row2.appendChild(durInput);
-  container.appendChild(row2);
+  if(activityDraft.activity==='Sally Up Sally Down'){
+    // it's always the same fixed-time ladder — no need to ask
+    activityDraft.duration = 3.5;
+    const row2 = document.createElement('div');
+    row2.className = 'gw-setting-row';
+    row2.innerHTML = '<span>Duration</span><span style="color:var(--muted); font-weight:700;">3.5 min (fixed)</span>';
+    container.appendChild(row2);
+  } else {
+    const row2 = document.createElement('div');
+    row2.className = 'gw-setting-row';
+    row2.innerHTML = '<span>Duration (min)</span>';
+    const durInput = document.createElement('input');
+    durInput.type = 'number'; durInput.min='0'; durInput.step='5'; durInput.value = activityDraft.duration ?? '';
+    durInput.oninput = ()=>{ activityDraft.duration = durInput.value===''?null:Number(durInput.value); };
+    row2.appendChild(durInput);
+    container.appendChild(row2);
+  }
 
   const row3 = document.createElement('div');
   row3.className = 'gw-rate-block'; row3.style.padding = '0'; row3.style.border = 'none'; row3.style.background = 'none';
@@ -4359,23 +4526,34 @@ function buildTimelineCard(h){
         <div class="gw-timeline-stat"><div class="gw-timeline-stat-num">${RPE_LABELS[h.intensity]||'—'}</div><div class="gw-timeline-stat-label">Felt</div></div>
         <div class="gw-timeline-stat"><div class="gw-timeline-stat-num">${mappedLabel||'—'}</div><div class="gw-timeline-stat-label">Counted As</div></div>
       </div>
-      ${h.notes ? `<div class="gw-timeline-detail">${h.notes}</div>` : ''}`;
+      ${h.notes ? `<div class="gw-timeline-notes">${h.notes}</div>` : ''}`;
     return card;
   }
 
   const typeLabel = DAY_TYPES.find(d=>d.key===h.type).label;
-  const perfText = formatPerformance(h.wodPerformance);
+  const perfShort = formatPerformanceShort(h.wodPerformance);
+  // when the hero number is a computed total-reps score, the rounds+reps it came from is still
+  // worth showing — just as a smaller caption underneath, not competing with the headline number
+  const roundsBreakdown = (h.wodPerformance && h.wodPerformance.totalReps != null) ? formatRoundsBreakdown(h.wodPerformance) : '';
   const skipped = [];
   if(h.sectionsDone){
     if(h.sectionsDone.warmup===false) skipped.push('warm-up');
     if(h.sectionsDone.skill===false) skipped.push('skill');
     if(h.sectionsDone.core===false) skipped.push('core');
   }
+  // PR first — it's the most exciting thing on the card — then what kind of session this was,
+  // then how it was done; {text, cls} lets each carry its own color instead of the default coral
   const badges = [];
-  if(h.bw) badges.push('Travel');
-  if(h.isBenchmark) badges.push(`Benchmark: ${h.benchmarkName}`);
+  if(h.isPR) badges.push({text:'PR', cls:'badge-pr', icon:true});
+  if(h.isBenchmark) badges.push({text:`Benchmark: ${h.benchmarkName}`});
+  if(h.bw) badges.push({text:'Travel'});
+  if(h.rxStatus==='rx') badges.push({text:'Full Workout', cls:'badge-rx'});
+  if(h.rxStatus==='scaled') badges.push({text:'Modified Workout', cls:'badge-scaled'});
   const feel = RPE_LABELS[h.wodRpe] || RPE_LABELS[h.rpe] || '—';
-  const detail = `${h.format} · ${h.movements.join(', ')}${h.liftKey? ' · '+LIFT_LABELS[h.liftKey]+' @ '+h.loggedLoad+' lb ('+(RPE_LABELS[h.rpe]||'—')+')' : ''}${h.wodRpe? ' · WOD felt '+RPE_LABELS[h.wodRpe] : ''}${perfText? ' · '+perfText : ''}${skipped.length? ' · skipped: '+skipped.join(', ') : ''}`;
+  const movementsText = h.movements && h.movements.length ? h.movements.join(', ') : '';
+  // what the session WAS (format + movements) — the score, load, and feel already have their own
+  // prominent spots above, so this line is pure background context, kept short and muted
+  const meta = `${h.format}${movementsText ? ' · '+movementsText : ''}`;
   // load only means something for a session built around a specific lift — otherwise it's just
   // an empty tile, so it's dropped rather than shown as "Load: —"
   const loadStat = h.liftKey
@@ -4387,13 +4565,15 @@ function buildTimelineCard(h){
       <span class="gw-timeline-title">${typeLabel}</span>
       <span class="gw-timeline-time">${fmtTime(h.date)}</span>
     </div>
-    ${badges.length ? `<div class="gw-timeline-badges">${badges.map(b=>`<span class="gw-timeline-badge">${b}</span>`).join('')}</div>` : ''}
+    ${badges.length ? `<div class="gw-timeline-badges">${badges.map(b=>`<span class="gw-timeline-badge ${b.cls||''}">${b.icon?ICON_TROPHY:''}${b.text}</span>`).join('')}</div>` : ''}
+    ${perfShort ? `<div class="gw-timeline-result">${perfShort}</div>${roundsBreakdown ? `<div class="gw-timeline-result-sub">${roundsBreakdown}</div>` : ''}` : ''}
     <div class="gw-timeline-stats">
-      <div class="gw-timeline-stat"><div class="gw-timeline-stat-num">${h.movements.length}</div><div class="gw-timeline-stat-label">Movements</div></div>
       ${loadStat}
       <div class="gw-timeline-stat"><div class="gw-timeline-stat-num">${feel}</div><div class="gw-timeline-stat-label">Felt</div></div>
     </div>
-    <div class="gw-timeline-detail">${detail}</div>`;
+    <div class="gw-timeline-meta">${meta}</div>
+    ${skipped.length ? `<div class="gw-timeline-caveat">Skipped ${skipped.join(', ')}</div>` : ''}
+    ${h.notes ? `<div class="gw-timeline-notes">${h.notes}</div>` : ''}`;
   return card;
 }
 // one timeline node per day (dot + date header), holding a card for every session logged that day
@@ -4452,7 +4632,7 @@ function renderLogPage(){
     state.showActivityForm = !state.showActivityForm;
     renderLogPage();
   });
-  actBtn.style.cssText = 'margin:16px 0; width:100%; padding:16px;';
+  actBtn.style.cssText = 'margin-top:16px; width:100%; padding:16px;';
   container.appendChild(actBtn);
   if(state.showActivityForm){
     const formWrap = document.createElement('div');
