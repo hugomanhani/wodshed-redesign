@@ -2542,12 +2542,18 @@ function closeTimerDrawer(){
   focusTimer = null;
   document.getElementById('gw-timer-drawer-backdrop').classList.remove('show');
 }
+// confirmed "Cancel Timer" in the discard-progress dialog — despite the name, this used to just
+// reset the clock back to 0:00 and leave the same drawer open, which read as the button doing
+// nothing while the timer was still running (tap it, dialog closes, nothing else visibly changes).
+// It should actually discard the session and back out, same as closing a timer with no progress on it.
 function cancelTimerAndClose(){
   document.getElementById('gw-timerstop-backdrop').classList.remove('show');
+  const key = state.focusSectionKey;
+  const w = state.currentWorkout;
   focusStopTicking();
-  focusReset();
-  focusUpdateDisplay();
-  focusUpdateButtonStates();
+  closeTimerDrawer();
+  render();
+  maybePromptRating(w, key);
 }
 function requestCloseFloatCard(){
   if(!focusTimer || focusTimer.doneBeeped) return;
@@ -3099,15 +3105,6 @@ function focusPause(){
   focusUpdateDisplay();
   focusUpdateButtonStates();
   vibrate(25);
-}
-function focusReset(){
-  if(!focusTimer) return;
-  cancelAnimationFrame(focusTimer.raf);
-  focusTimer.running = false; focusTimer.startedAt = null; focusTimer.elapsedBefore = 0;
-  focusTimer.lastBeepUnit = -1; focusTimer.lastPhaseKey = null; focusTimer.lastTickSecond = null;
-  focusTimer.doneBeeped = false; focusTimer.halfwayBeeped = false; focusTimer.leadIn = false;
-  focusUpdateDisplay();
-  focusUpdateButtonStates();
 }
 function focusUpdateButtonStates(){
   if(!focusTimer) return;
