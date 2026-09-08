@@ -47,6 +47,10 @@
     background:var(--bg);
     color:var(--text);
     margin:0;
+    /* belt-and-suspenders against horizontal scroll on phones — a badge row, a long dynamic
+       string, or anything else that briefly overflows its container gets clipped here instead
+       of ever handing the whole page a sideways scrollbar */
+    overflow-x:hidden;
   }
   #gw-root{
     background:var(--bg);
@@ -86,13 +90,19 @@
   /* ---- hero: today's workout, styled after a plan-card (name + meta + pills) ---- */
   #gw-hero{padding:10px 20px 4px;}
   .gw-hero-toprow{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  /* the title column has to be allowed to shrink (min-width:0) and the title itself has to
+     truncate — otherwise a long day-type name pushes the action buttons past the viewport edge
+     and the whole page gains a horizontal scrollbar instead of just clipping this one line */
+  .gw-hero-titlecol{min-width:0; flex:1 1 auto;}
   .gw-hero-title{
     font-family:var(--font-hero); font-style:italic; font-weight:600; font-size:34px;
     color:#fff; line-height:1.05; letter-spacing:-0.01em;
   }
   .gw-hero-title-btn{
     display:flex; align-items:center; gap:6px; background:none; border:none; padding:0; cursor:pointer; text-align:left;
+    min-width:0; max-width:100%;
   }
+  #gw-hero-title-text{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
   .gw-hero-title-btn svg{width:20px; height:20px; stroke:var(--muted); fill:none; stroke-width:2.4; flex:none; margin-top:4px;}
   .gw-hero-title-btn:hover svg{stroke:var(--coral);}
   .gw-hero-meta{color:var(--muted); font-size:13px; margin-top:6px; font-weight:500;}
@@ -104,7 +114,15 @@
   }
   .gw-switch-btn:hover{background:var(--coral-dark);}
   .gw-switch-btn svg{width:14px; height:14px;}
-  .gw-undo-btn{background:var(--surface-2); color:var(--muted); border:1px solid var(--line-strong);}
+  /* Undo is a secondary, occasional action that only appears alongside Refresh — an icon-only
+     circle (matching the section reroll/done buttons elsewhere) keeps that pairing narrow instead
+     of two full text pills fighting for the same row on a phone-width screen */
+  .gw-undo-btn{
+    background:var(--surface-2); color:var(--muted); border:1px solid var(--line-strong);
+    border-radius:50%; width:34px; height:34px; padding:0; flex:none;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .gw-undo-btn svg{width:16px; height:16px;}
   .gw-undo-btn:hover{background:var(--surface-raised); color:#fff;}
 
   #gw-controls{
@@ -125,13 +143,20 @@
   .gw-slider:before{content:""; position:absolute; width:16px; height:16px; left:2px; top:2px; background:var(--muted); border-radius:50%; transition:0.2s;}
   .gw-switch input:checked + .gw-slider{background:var(--coral); border-color:var(--coral);}
   .gw-switch input:checked + .gw-slider:before{transform:translateX(18px); background:#fff;}
-  #gw-controls label.gw-time{display:flex; align-items:center; gap:0;}
+  #gw-controls label.gw-time{display:flex; align-items:center; gap:4px;}
+  /* -webkit-appearance:none is the fix, not just decoration — without it, some mobile browsers
+     (iOS Safari especially) render the CLOSED select with their own native control chrome instead
+     of respecting this background/color, which can pair a light system background with this
+     white text and make it unreadable even though it looks fine in a desktop preview. Removing the
+     native appearance also removes the native dropdown arrow, so a custom chevron replaces it. */
   #gw-time-select{
     background:none; border:none; color:#fff; padding:0 2px; font-size:13px; font-weight:700;
     font-family:var(--font-body); cursor:pointer;
+    -webkit-appearance:none; appearance:none;
   }
   #gw-time-select:focus{outline:none;}
   #gw-time-select option{background:var(--surface); color:#fff;}
+  .gw-time-chevron{width:11px; height:11px; stroke:var(--muted); fill:none; stroke-width:2.8; flex:none; pointer-events:none;}
   #gw-daytabs-menu, #gw-rate-drawer-backdrop, #gw-profile-drawer-backdrop{
     display:none; position:fixed; inset:0; background:rgba(12,20,32,0.7); z-index:120;
     align-items:flex-end; justify-content:center;
@@ -234,7 +259,9 @@
   .gw-timeline-stat-num{font-family:var(--font-display); font-weight:900; font-size:14px; color:var(--coral); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .gw-timeline-stat-label{font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:800; margin-top:2px;}
   .gw-timeline-meta{color:var(--muted); font-size:12px; margin-top:10px; line-height:1.5;}
-  .gw-timeline-caveat{color:var(--muted-2); font-size:11px; margin-top:6px; font-style:italic;}
+  /* --muted-2 only measures ~3:1 against this dark card background, below the 4.5:1 small-text
+     floor — --muted (~5.3:1) reads the same "quiet" but stays legible */
+  .gw-timeline-caveat{color:var(--muted); font-size:11px; margin-top:6px; font-style:italic;}
   .gw-timeline-notes{color:var(--text); opacity:0.82; font-size:12.5px; margin-top:10px; line-height:1.5; font-style:italic; padding-left:10px; border-left:2px solid var(--line-strong);}
 
   #gw-focusline{display:none;}
@@ -726,7 +753,7 @@
   <div id="gw-page-wod" class="gw-page" style="margin-top:0;">
     <div id="gw-hero">
       <div class="gw-hero-toprow">
-        <div>
+        <div class="gw-hero-titlecol">
           <button type="button" class="gw-hero-title gw-hero-title-btn" id="gw-hero-title">
             <span id="gw-hero-title-text">Workout</span>
             <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
@@ -734,9 +761,8 @@
           <div class="gw-hero-meta" id="gw-hero-meta"></div>
         </div>
         <div class="gw-hero-actions">
-          <button type="button" class="gw-switch-btn gw-undo-btn" id="gw-undo-btn" style="display:none;">
+          <button type="button" class="gw-undo-btn" id="gw-undo-btn" style="display:none;" title="Undo — go back to the previous workout" aria-label="Undo — go back to the previous workout">
             <svg viewBox="0 0 256 256" fill="currentColor"><path d="M232,144a64.07,64.07,0,0,1-64,64H80a8,8,0,0,1,0-16h88a48,48,0,0,0,0-96H51.31l34.35,34.34a8,8,0,0,1-11.32,11.32l-48-48a8,8,0,0,1,0-11.32l48-48A8,8,0,0,1,85.66,45.66L51.31,80H168A64.07,64.07,0,0,1,232,144Z"/></svg>
-            <span>Undo</span>
           </button>
           <button type="button" class="gw-switch-btn" id="gw-refresh-btn">
             <svg viewBox="0 0 256 256" fill="currentColor"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27a96,96,0,0,1,135,.79L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"/></svg>
@@ -759,6 +785,7 @@
           <option value="15">Shorter</option>
           <option value="45">Longer</option>
         </select>
+        <svg class="gw-time-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
       </label>
     </div>
 
