@@ -101,8 +101,7 @@
   .gw-hero-meta{color:var(--muted); font-size:13px; margin-top:6px; font-weight:500;}
   /* "swap the whole workout" lives at the bottom of the page, after the exercises, since that's
      when an athlete actually decides they don't want this one — not up by the title before
-     they've even read it. Refresh takes the primary slot; Undo (only after a refresh) sits beside
-     it as a quiet icon-only circle rather than a second competing text pill. */
+     they've even read it. */
   .gw-refresh-row{display:flex; align-items:center; gap:8px;}
   .gw-refresh-btn{
     flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
@@ -111,13 +110,6 @@
   }
   .gw-refresh-btn:hover{color:#fff; border-color:var(--coral);}
   .gw-refresh-btn svg{width:15px; height:15px; flex:none;}
-  .gw-undo-btn{
-    background:var(--surface-2); color:var(--muted); border:1px solid var(--line-strong);
-    border-radius:50%; width:48px; height:48px; padding:0; flex:none;
-    display:inline-flex; align-items:center; justify-content:center;
-  }
-  .gw-undo-btn svg{width:18px; height:18px;}
-  .gw-undo-btn:hover{background:var(--surface-raised); color:#fff;}
 
   #gw-controls{
     display:flex; align-items:center; gap:8px; flex-wrap:wrap;
@@ -970,34 +962,34 @@ const WARMUPS_BW = {
 // ---------- SKILLS ----------
 const SKILLS = {
   strength: [
-    {text:"STRENGTH\nBACK SQUAT (rack)\n5 x 5\nEach 2 min", liftKey:'backSquat', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
-    {text:"STRENGTH\nFRONT SQUAT (rack)\n5-5-3-3-2-2\nEach 2 min", liftKey:'frontSquat', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
-    {text:"STRENGTH\nDEADLIFT\n4 x 6\nEach 2 min", liftKey:'deadlift', timer:{kind:'INTERVAL', minutes:2, totalRounds:4, label:'X Rest Between Sets'}},
-    {text:"STRENGTH\nBACK SQUAT (rack)\n8 x 3\nEach 1:30", liftKey:'backSquat', timer:{kind:'INTERVAL', minutes:1.5, totalRounds:8, label:'For X Cycles'}},
-    {text:"STRENGTH (KB)\n5 sets:\n8 KB goblet squats\n8 glute bridges\nEach 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'X Rest Between Sets'}}
+    {text:"STRENGTH\nBACK SQUAT (rack)\n5 x 5\nEvery 2 min", liftKey:'backSquat', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
+    {text:"STRENGTH\nFRONT SQUAT (rack)\n5-5-3-3-2-2\nEvery 2 min", liftKey:'frontSquat', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
+    {text:"STRENGTH\nDEADLIFT\n4 x 6\nEvery 2 min", liftKey:'deadlift', timer:{kind:'INTERVAL', minutes:2, totalRounds:4, label:'For X Cycles'}},
+    {text:"STRENGTH\nBACK SQUAT (rack)\n8 x 3\nEvery 1:30", liftKey:'backSquat', timer:{kind:'INTERVAL', minutes:1.5, totalRounds:8, label:'For X Cycles'}},
+    {text:"STRENGTH (KB)\n5 sets:\n8 KB goblet squats\n8 glute bridges\nEvery 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}}
   ],
   gymnastics: [
     {text:"GYMNASTIC\nEMOM 10'\nOdd: 8-10 Toes to Bar\nEven: 20\" L-sit (bar or rings)", timer:{kind:'EMOM', minutes:10, alternate:['Toes to Bar','L-sit'], label:'Alternate Movements per Interval'}},
-    {text:"GYMNASTIC - PULL-UPS\n5 sets x 8-10 (strict or banded)\nEach 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}},
+    {text:"GYMNASTIC - PULL-UPS\n5 sets x 8-10 (strict or banded)\nEvery 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}},
     {text:"GYMNASTIC\nEMOM 12'\n6-10 Toes to Bar", timer:{kind:'EMOM', minutes:12, label:'Multiple Movements per Interval'}},
     {text:"GYMNASTIC\nEMOM — AMRAP each minute until you can't hit the rep target\nMax Pull-Ups every minute", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}},
-    {text:"GYMNASTIC - RING DIPS\n5 sets x 5-8 (banded as needed)\nEach 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}},
+    {text:"GYMNASTIC - RING DIPS\n5 sets x 5-8 (banded as needed)\nEvery 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}},
     {text:"GYMNASTIC\nEMOM 10'\nOdd: 3-5 Handstand Push-Ups (or hold)\nEven: 3 Wall Walks", timer:{kind:'EMOM', minutes:10, alternate:['Handstand Push-Ups','Wall Walks'], label:'Alternate Movements per Interval'}}
   ],
   weightlifting: [
-    {text:"OLYMPIC LIFTING - COMPLEX (main bar)\n5 sets, each 2 min:\n1 Power Clean + 1 Front Squat + 1 Push Jerk", liftKey:'powerClean', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
-    {text:"OLYMPIC LIFTING - SNATCH\n5 sets: 1 Snatch Deadlift + 1 Hang Power Snatch\nEach 2 min", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
-    {text:"OLYMPIC LIFTING - SNATCH\n6 sets x 3\nEach 2 min, progressive load", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
-    {text:"OLYMPIC LIFTING - CLEAN\n6 sets x 3\nEach 2 min, progressive load", liftKey:'powerClean', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
-    {text:"OLYMPIC LIFTING - COMPLEX (main bar)\n5 sets, each 2 min:\n1 Power Snatch + 1 Overhead Squat", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}}
+    {text:"OLYMPIC LIFTING - COMPLEX (main bar)\n5 sets, every 2 min:\n1 Power Clean + 1 Front Squat + 1 Push Jerk", liftKey:'powerClean', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - SNATCH\n5 sets: 1 Snatch Deadlift + 1 Hang Power Snatch\nEvery 2 min", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - SNATCH\n6 sets x 3\nEvery 2 min, progressive load", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - CLEAN\n6 sets x 3\nEvery 2 min, progressive load", liftKey:'powerClean', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - COMPLEX (main bar)\n5 sets, every 2 min:\n1 Power Snatch + 1 Overhead Squat", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}}
   ],
   accessory: [
     {text:"ACCESSORY (W-bar + KB)\n4 sets:\n10 W-bar curls\n10 W-bar skull crushers\n10/10 single arm KB row\nRest 1'", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
     {text:"ACCESSORY (KB)\n4 sets:\n10 single arm KB row each side\n10 KB Romanian deadlift\n20 bicycle crunches\nRest 1'", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
-    {text:"ACCESSORY\nBARBELL FLOOR PRESS\n4 x 8\nEach 2 min", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:2, totalRounds:4, label:'For X Cycles'}},
+    {text:"ACCESSORY\nBARBELL FLOOR PRESS\n4 x 8\nEvery 2 min", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:2, totalRounds:4, label:'For X Cycles'}},
     {text:"ACCESSORY SUPERSET x4:\n10 barbell floor press\n10 single arm KB row\nRest 1'", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
     {text:"ACCESSORY (KB)\n4 sets:\n8 renegade rows each side\n10 reverse lunges each leg\nRest 1'", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
-    {text:"ACCESSORY\nBARBELL FLOOR PRESS\n5-5-3-3-2-2\nEach 2 min", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}}
+    {text:"ACCESSORY\nBARBELL FLOOR PRESS\n5-5-3-3-2-2\nEvery 2 min", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}}
   ],
   conditioning: [
     {text:"ENDURANCE\nEMOM 8'\nOdd: 10 KB swings\nEven: 8 burpees", timer:{kind:'EMOM', minutes:8, alternate:['KB Swings','Burpees'], label:'Alternate Movements per Interval'}},
@@ -1012,19 +1004,19 @@ const SKILLS = {
 // (a wall/floor is assumed available, same as any standard bodyweight/travel workout)
 const SKILLS_BW = {
   strength: [
-    {text:"STRENGTH (bodyweight)\nWALKING LUNGES + PISTOL SQUAT PROGRESSION\n5 x 10 lunges each leg\n5 x 5 pistol progressions each leg\nEach 2 min"},
-    {text:"STRENGTH (bodyweight)\nPISTOL SQUAT PROGRESSION\n5 x 5 each leg (assisted as needed)\nEach 2 min"},
-    {text:"STRENGTH (bodyweight)\n5 sets:\n10 box step-ups each leg\n10 glute bridges\nEach 1:30"}
+    {text:"STRENGTH (bodyweight)\nWALKING LUNGES + PISTOL SQUAT PROGRESSION\n5 x 10 lunges each leg\n5 x 5 pistol progressions each leg\nEvery 2 min"},
+    {text:"STRENGTH (bodyweight)\nPISTOL SQUAT PROGRESSION\n5 x 5 each leg (assisted as needed)\nEvery 2 min"},
+    {text:"STRENGTH (bodyweight)\n5 sets:\n10 box step-ups each leg\n10 glute bridges\nEvery 1:30"}
   ],
   gymnastics: [
     {text:"GYMNASTIC (bodyweight)\nEMOM 10'\nOdd: 10 hollow rocks\nEven: 5-10 handstand hold (against wall)"},
-    {text:"GYMNASTIC (bodyweight)\n5 sets x 10 superman pulls\nEach 1:30"},
+    {text:"GYMNASTIC (bodyweight)\n5 sets x 10 superman pulls\nEvery 1:30"},
     {text:"GYMNASTIC (bodyweight)\nEMOM 10'\nOdd: 3 Wall Walks\nEven: 10 hollow rocks"}
   ],
   weightlifting: [
     {text:"EXPLOSIVE POWER (bodyweight)\nEMOM 10'\nOdd: 5 broad jumps\nEven: 5 jump squats"},
-    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets: 5 jump squats + 5 burpees\nEach 2 min"},
-    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets x 5 box jumps\nEach 1:30"}
+    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets: 5 jump squats + 5 burpees\nEvery 2 min"},
+    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets x 5 box jumps\nEvery 1:30"}
   ],
   accessory: [
     {text:"ACCESSORY (bodyweight)\n4 sets:\n12 push-ups\n12 superman pulls\n20 air squats\nRest 1'"},
@@ -1536,7 +1528,10 @@ const CORE = [
   {text:"Tabata 20\"/10\" x8\n1- Hollow hold\n2- Arch hold (alternate rounds)", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, alternate:['Hollow Hold','Arch Hold'], label:'Alternating Tabata'}},
   {text:"Tabata 20\"/10\" x8\nV-ups", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, label:'Standard Tabata'}},
   {text:"3 rds\n10 V-ups\n15 Russian twists (add a plate if you have one)\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
-  {text:"3 rds\n1' plank hold\n1' rest", timer:{kind:'COUNTDOWN', minutes:1}},
+  // a plain COUNTDOWN here would only ever run the first minute once, then mark the whole
+  // section done — this is really a 60s-work/60s-rest interval repeated 3 times, i.e. a Tabata
+  // with unusually long phases, so it needs the real alternating engine to cycle and complete correctly
+  {text:"3 rds\n1' plank hold\n1' rest", timer:{kind:'TABATA', workSec:60, restSec:60, rounds:3, label:'Standard Tabata'}},
   {text:"2' accumulate plank hold", timer:{kind:'COUNTDOWN', minutes:2}},
   {text:"20 leg raises\n20 flutter kicks\n20 mountain climbers", timer:null},
   {text:"3 rds\n30\" side plank each side\n10 superman", timer:{kind:'COUNTDOWN', minutes:0.5}},
@@ -1643,7 +1638,12 @@ function timerExplainer(spec){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
     return `${spec.rounds} efforts, each for time — rest ${spec.restSeconds}s between${capPart}. Every round is scored.`;
   }
-  if(spec.kind==='INTERVAL') return spec.totalRounds ? `Rest between sets — ${spec.totalRounds} sets total.` : `Rest between rounds — repeat as prescribed.`;
+  if(spec.kind==='INTERVAL'){
+    // 'X Rest Between Sets' is a literal rest countdown tapped between sets — everything else
+    // (e.g. 'For X Cycles') is a continuous running clock the lift happens inside of, not a rest
+    if(spec.label==='X Rest Between Sets') return spec.totalRounds ? `Rest between sets — ${spec.totalRounds} sets total.` : `Rest between rounds — repeat as prescribed.`;
+    return spec.totalRounds ? `Every ${fmtMinutesShort(spec.minutes)} — ${spec.totalRounds} sets total.` : `Every ${fmtMinutesShort(spec.minutes)} — repeat as prescribed.`;
+  }
   if(spec.kind==='COUNTDOWN') return `Go until the clock hits zero.`;
   return '';
 }
@@ -1850,12 +1850,26 @@ function estimateTimerMinutes(spec){
     default: return 5;
   }
 }
+// neither of these shows up in any single section's own timer, so a raw sum of section timers
+// always reads short next to how a session actually feels — this adds them back in
+const SECTION_TRANSITION_MIN = 2; // catching your breath / moving to the next section's setup
+const WEIGHT_ADJUST_MIN = 3; // loading and unloading plates between sets of a tracked barbell lift
 function estimateWorkoutMinutes(w){
   if(!w) return null;
   let total = 4; // warm-up has no formal timer to read — flat rough guess
-  if(w.skillTplText) total += estimateTimerMinutes(w.skillTimer);
+  let sectionCount = 1; // the warm-up itself
+  if(w.skillTplText){
+    total += estimateTimerMinutes(w.skillTimer);
+    sectionCount++;
+    if(w.skillLiftKey) total += WEIGHT_ADJUST_MIN;
+  }
   total += estimateTimerMinutes(w.wodTimerSpec || parseTimerFromText(w.format));
-  if(w.core) total += estimateTimerMinutes(w.coreTimer);
+  sectionCount++;
+  if(w.core){
+    total += estimateTimerMinutes(w.coreTimer);
+    sectionCount++;
+  }
+  total += (sectionCount - 1) * SECTION_TRANSITION_MIN;
   return Math.round(total);
 }
 // counts distinct known movements across the whole day (warm-up through core), not just the WOD —
@@ -1874,7 +1888,6 @@ let state = {
   history: [],
   currentType: 'strength',
   currentWorkout: null,
-  previousWorkout: null, // one-level undo for the "refresh this same workout" actions (see generateWorkout's isRefresh option)
   bodyweightOnly: false,
   timeAvailable: null,
   profile: {name:'', bodyweight:null, bodyweightUnit:'lb'},
@@ -2051,7 +2064,7 @@ function formatSetScheme(reps){
 }
 // rewrites just the scheme line inside the skill's prescription text so the description stays in
 // sync when sets are added, removed, or a rep value is edited — everything else in the text (lift
-// name, "Each 2 min") stays put
+// name, "Every 2 min") stays put
 function updateSkillSchemeText(text, newReps){
   if(!text) return text;
   const lines = text.split('\n');
@@ -2066,14 +2079,7 @@ function updateSkillSchemeText(text, newReps){
   return text;
 }
 
-// opts.isRefresh marks calls that replace the CURRENT workout with a new one for the same focus
-// (the header Refresh button, and the bodyweight/time-budget toggles that also regenerate) — those
-// keep the just-replaced workout around for one-level undo. Switching focus or the initial
-// "Generate Workout" isn't a "refresh" of anything, so those clear it — there's nothing sensible
-// to undo back to.
-function generateWorkout(type, opts){
-  opts = opts || {};
-  state.previousWorkout = (opts.isRefresh && state.currentWorkout) ? state.currentWorkout : null;
+function generateWorkout(type){
   state.currentType = type;
   const bw = state.bodyweightOnly;
   const alloc = allocateTime(state.timeAvailable);
@@ -2228,7 +2234,7 @@ const SECTION_START_LABELS = {warmup:'Warmup', skill:'Skill', wod:'WOD', core:'C
 const TIMER_KIND_NAMES = {AMRAP:'AMRAP', EMOM:'EMOM', TABATA:'Tabata', RFT:'Rounds for Time', LADDER:'For Time',
   FORTIME:'For Time', FORTIME_REPEATS:'For Time Repeats', INTERVAL:'Interval', COUNTDOWN:'Countdown'};
 // "1:30" for a fractional interval at or past a minute, "2 min" for a whole one, "30 sec" under
-// a minute — matches how the prescription text itself already phrases "Each 1:30" / "Each 2 min",
+// a minute — matches how the prescription text itself already phrases "Every 1:30" / "Every 2 min",
 // while staying in plain words (not "0:30") for anything under 60 seconds
 function fmtMinutesShort(minutes){
   const whole = Math.floor(minutes);
@@ -2615,8 +2621,7 @@ function renderHero(w){
   meta.textContent = `~${estimateWorkoutMinutes(w)} min · ${count} exercise${count===1?'':'s'}`;
 }
 // "swap the whole workout" — deliberately placed at the bottom of the actions block, after the
-// exercises, since that's when an athlete actually decides they don't want this one. Undo (one
-// level, back to whatever Refresh just replaced) only shows up right after a refresh.
+// exercises, since that's when an athlete actually decides they don't want this one.
 function renderRefreshRow(container, w){
   const row = document.createElement('div');
   row.className = 'gw-refresh-row';
@@ -2624,23 +2629,8 @@ function renderRefreshRow(container, w){
   refreshBtn.type = 'button';
   refreshBtn.className = 'gw-refresh-btn';
   refreshBtn.innerHTML = `${ICON_REFRESH}<span>Refresh Workout</span>`;
-  refreshBtn.onclick = ()=>{ generateWorkout(w.type, {isRefresh:true}); toast('Workout refreshed.'); };
+  refreshBtn.onclick = ()=>{ generateWorkout(w.type); toast('Workout refreshed.'); };
   row.appendChild(refreshBtn);
-  if(state.previousWorkout){
-    const undoBtn = document.createElement('button');
-    undoBtn.type = 'button';
-    undoBtn.className = 'gw-undo-btn';
-    undoBtn.title = 'Undo — go back to the previous workout';
-    undoBtn.setAttribute('aria-label', 'Undo — go back to the previous workout');
-    undoBtn.innerHTML = '<svg viewBox="0 0 256 256" fill="currentColor"><path d="M232,144a64.07,64.07,0,0,1-64,64H80a8,8,0,0,1,0-16h88a48,48,0,0,0,0-96H51.31l34.35,34.34a8,8,0,0,1-11.32,11.32l-48-48a8,8,0,0,1,0-11.32l48-48A8,8,0,0,1,85.66,45.66L51.31,80H168A64.07,64.07,0,0,1,232,144Z"/></svg>';
-    undoBtn.onclick = ()=>{
-      state.currentWorkout = state.previousWorkout;
-      state.previousWorkout = null;
-      render();
-      toast('Back to the previous workout.');
-    };
-    row.appendChild(undoBtn);
-  }
   container.appendChild(row);
 }
 
@@ -3432,7 +3422,10 @@ function focusUpdateDisplay(){
       const withinUnit = clamped - unit*cycle;
       displaySeconds = cycle - withinUnit;
       fraction = displaySeconds/cycle;
-      subEl.textContent = `Rest after set ${Math.min(unit+1, focusTimer.totalRounds)} of ${focusTimer.totalRounds}`;
+      // this branch is only ever reached by the continuous "For X Cycles" interval clock — the
+      // genuinely rest-based paced sets run through the separate COUNTDOWN/repeatKey engine below
+      // — so this is never a rest period, just the current lift's working interval
+      subEl.textContent = `Set ${Math.min(unit+1, focusTimer.totalRounds)} of ${focusTimer.totalRounds}`;
       if(nextPreviewEl) nextPreviewEl.textContent = unit+1 < focusTimer.totalRounds ? `Set ${unit+2}` : 'Finish';
       if(unit > focusTimer.lastBeepUnit && unit < focusTimer.totalRounds && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
       if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
@@ -3949,7 +3942,6 @@ async function logWorkout(){
     toast(prMessage || ('Logged. Next ' + DAY_TYPES.find(d=>d.key===w.type).label + ' session will build on this.'));
     focusStopTicking();
     state.currentWorkout = null;
-    state.previousWorkout = null; // it's logged now — nothing left to undo back to
     document.getElementById('gw-timebanner').style.display = 'none';
     render();
   }catch(err){
@@ -3986,7 +3978,7 @@ document.getElementById('gw-equip-select').onchange = async (e)=>{
   state.bodyweightOnly = e.target.value === 'bodyweight';
   document.getElementById('gw-controls').classList.toggle('gw-travel-on', state.bodyweightOnly);
   await savePrefs();
-  if(state.currentType) generateWorkout(state.currentType, {isRefresh:true});
+  if(state.currentType) generateWorkout(state.currentType);
   toast(state.bodyweightOnly ? '✓ Bodyweight mode ON — workout refreshed for zero equipment.' : '✓ Bodyweight mode OFF — workout refreshed.');
 };
 // the dropdown options are just Default/Shorter/Longer, no numbers to pick blind from — the closed
@@ -4005,7 +3997,7 @@ async function applyTimeChange(newValue){
   state.timeAvailable = newValue;
   document.getElementById('gw-time-select').value = newValue || '';
   await savePrefs();
-  if(state.currentType) generateWorkout(state.currentType, {isRefresh:true});
+  if(state.currentType) generateWorkout(state.currentType);
   toast(state.timeAvailable ? `✓ Time budget set to ~${state.timeAvailable} min — workout refreshed.` : '✓ Time budget cleared — workout refreshed.');
 }
 document.getElementById('gw-time-select').onchange = (e)=>{
@@ -4512,13 +4504,15 @@ function buildLogCalendar(container){
   }
 
   if(!state.logCalExpanded){
+    // the day-of-week header above (built from ['SU','MO',...]) is Sunday-first — this row of
+    // cells has to start from the same Sunday, not Monday, or every date lands one column off
+    // from its own weekday label (this week's Thursday rendering under the Wednesday header, etc.)
     const dow = today.getDay();
-    const diffToMonday = (dow===0 ? -6 : 1-dow);
-    const monday = new Date(today);
-    monday.setDate(today.getDate()+diffToMonday);
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - dow);
     for(let i=0;i<7;i++){
-      const d = new Date(monday);
-      d.setDate(monday.getDate()+i);
+      const d = new Date(sunday);
+      d.setDate(sunday.getDate()+i);
       grid.appendChild(makeCell(d, false));
     }
   } else {
@@ -4805,7 +4799,7 @@ function parseTimerFromText(text){
   // "5 x 5" / "4 x 8-10" etc — used to bound the rest-interval timer below at the right number of sets
   const setCountMatch = text.match(/(\d+)\s*x\s*\d+/i);
   const setCount = setCountMatch ? Number(setCountMatch[1]) : null;
-  if(m = text.match(/each\s+(\d+)\s*min/i)) return {kind:'INTERVAL', minutes:Number(m[1]), totalRounds:setCount};
+  if(m = text.match(/every\s+(\d+)\s*min/i)) return {kind:'INTERVAL', minutes:Number(m[1]), totalRounds:setCount};
   if(m = text.match(/rest\s+(\d+)\s*sec/i)) return {kind:'INTERVAL', minutes:Number(m[1])/60, totalRounds:setCount};
   return null;
 }
