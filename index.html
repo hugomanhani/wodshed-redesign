@@ -1523,21 +1523,32 @@ async function recordBenchmarkResult(benchmark, perf){
 
 // anti-extension/rotation/bracing work leads by default — spinal flexion (sit-ups, V-ups) stays in
 // the mix but at moderate, not high, rep counts
+// entries shaped "3 rds\n<rep-based move(s)>\n...\nRest 30"" use the SAME tap-per-round paced-rest
+// engine as the skill/accessory 'X Rest Between Sets' timers (see isPacedRestSpec/openPacedRestSet):
+// the reps (and any stated hold) are self-paced, off the clock — the app only actively counts down
+// the one thing worth automating, the 30" rest — then requires a fresh tap to start the next round,
+// so the section only completes after all 3 rounds instead of stopping after a single countdown.
+// each core entry gets its own fresh timer object (not a shared reference) — nothing in this
+// codebase mutates a workout's coreTimer in place today, but a shared object would silently break
+// that invariant for whoever touches this next, for a cost of nothing
+function corePacedRest(){ return {kind:'INTERVAL', minutes:0.5, totalRounds:3, label:'X Rest Between Sets'}; }
 const CORE = [
-  {text:"3 rds\n12 sit-ups\n20 flutter kicks\n30\" plank hold\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"3 rds\n12 sit-ups\n20 flutter kicks\n30\" plank hold\nRest 30\"", timer:corePacedRest()},
   {text:"Tabata 20\"/10\" x8\n1- Hollow hold\n2- Arch hold (alternate rounds)", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, alternate:['Hollow Hold','Arch Hold'], label:'Alternating Tabata'}},
   {text:"Tabata 20\"/10\" x8\nV-ups", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, label:'Standard Tabata'}},
-  {text:"3 rds\n10 V-ups\n15 Russian twists (add a plate if you have one)\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"3 rds\n10 V-ups\n15 Russian twists (add a plate if you have one)\nRest 30\"", timer:corePacedRest()},
   // a plain COUNTDOWN here would only ever run the first minute once, then mark the whole
   // section done — this is really a 60s-work/60s-rest interval repeated 3 times, i.e. a Tabata
   // with unusually long phases, so it needs the real alternating engine to cycle and complete correctly
   {text:"3 rds\n1' plank hold\n1' rest", timer:{kind:'TABATA', workSec:60, restSec:60, rounds:3, label:'Standard Tabata'}},
   {text:"2' accumulate plank hold", timer:{kind:'COUNTDOWN', minutes:2}},
   {text:"20 leg raises\n20 flutter kicks\n20 mountain climbers", timer:null},
-  {text:"3 rds\n30\" side plank each side\n10 superman", timer:{kind:'COUNTDOWN', minutes:0.5}},
-  {text:"3 rds\n10 hollow rocks\n20\" side plank each side\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  // no "Rest" phrase here at all — both the hold and the reps are self-paced, so this gets no
+  // timer, just the plain tap-to-advance round counter (same as the untimed entry above)
+  {text:"3 rds\n30\" side plank each side\n10 superman", timer:null},
+  {text:"3 rds\n10 hollow rocks\n20\" side plank each side\nRest 30\"", timer:corePacedRest()},
   {text:"Tabata 20\"/10\" x8\nMountain Climbers", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, label:'Standard Tabata'}},
-  {text:"3 rds\n15 bicycle crunches\n20\" hollow hold\nRest 30\"", timer:{kind:'COUNTDOWN', minutes:0.5}},
+  {text:"3 rds\n15 bicycle crunches\n20\" hollow hold\nRest 30\"", timer:corePacedRest()},
   {text:"2' accumulate hollow hold", timer:{kind:'COUNTDOWN', minutes:2}}
 ];
 
