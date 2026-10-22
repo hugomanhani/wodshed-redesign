@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>WODshed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>WODSHED</title>
 <meta name="description" content="Garage gym workout generator with progressive overload tracking.">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d1b2a">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="WODshed">
+<meta name="apple-mobile-web-app-title" content="WODSHED">
 <style>html,body{margin:0; background:#0d1b2a;}</style>
 </head>
 <body>
@@ -43,6 +45,9 @@
      strings) truncates with an ellipsis instead via the specific overflow rules below */
   button{white-space:nowrap;}
   html, body{
+    /* no double-tap-to-zoom on a screen full of rapid taps (round counters, +/- steppers) — taps
+       stay taps instead of zooming the page */
+    touch-action:manipulation;
     font-family:var(--font-body);
     background:var(--bg);
     color:var(--text);
@@ -145,6 +150,9 @@
     align-items:flex-end; justify-content:center;
   }
   #gw-daytabs-menu.show, #gw-rate-drawer-backdrop.show, #gw-profile-drawer-backdrop.show{display:flex;}
+  /* the rating sheet opens the instant a timer finishes — it has to sit above the timer drawer (210),
+     not under it, or a rating that opens while that drawer is still mid-close is simply invisible */
+  #gw-rate-drawer-backdrop{z-index:230;}
   .gw-daytabs-sheet{
     width:100%; max-width:480px; background:var(--surface); border-radius:20px 20px 0 0;
     padding:10px 10px calc(20px + env(safe-area-inset-bottom, 0px)); max-height:70vh; overflow-y:auto;
@@ -305,6 +313,8 @@
     text-transform:none; letter-spacing:0; cursor:pointer;
   }
   .gw-section-start-btn:hover{background:var(--coral-dark);}
+  .gw-section-start-btn:disabled{background:var(--surface-2); color:var(--muted); border:1px solid var(--line-strong); cursor:not-allowed;}
+  .gw-section-start-btn:disabled:hover{background:var(--surface-2);}
   .gw-section-start-btn svg{width:16px; height:16px; flex:none;}
   .gw-section-start-btn span{overflow:hidden; text-overflow:ellipsis; min-width:0;}
   /* minimized timer's live progress — a dark fill that grows left-to-right under the label as
@@ -357,6 +367,7 @@
   .gw-setlist-row-done{opacity:0.45;}
   .gw-setlist-done-badge{color:var(--good); display:flex; flex:none; margin-left:auto;}
   .gw-setlist-num{color:var(--muted); font-weight:700; flex:none; width:52px;}
+  .gw-load-name{flex:1; min-width:0; color:var(--text); font-weight:600; font-size:13.5px;}
   .gw-setlist-reps{display:flex; align-items:center; gap:5px; flex:1;}
   .gw-setlist-weight{display:flex; align-items:center; gap:5px; flex:none;}
   .gw-setlist-reps input, .gw-setlist-weight input{
@@ -720,7 +731,20 @@
     color:var(--coral); font-size:20px; font-weight:900; cursor:pointer; font-family:var(--font-body);
   }
   .gw-amreps-btn:hover{background:var(--surface-raised);}
-  .gw-amreps-total{font-family:var(--font-mono); font-weight:700; font-size:34px; color:#fff; min-width:90px; text-align:center;}
+  .gw-amreps-total{
+    font-family:var(--font-mono); font-weight:700; font-size:34px; color:#fff; width:110px; text-align:center;
+    background:none; border:none; border-bottom:1px solid var(--line-strong); padding:0 0 2px; border-radius:0;
+    -moz-appearance:textfield; appearance:textfield;
+  }
+  .gw-amreps-total::-webkit-outer-spin-button, .gw-amreps-total::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  .gw-amreps-total:focus{outline:none; border-bottom-color:var(--coral);}
+  .gw-amreps-quick{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
+  .gw-amreps-chip{
+    min-width:64px; height:40px; padding:0 14px; border-radius:20px; background:var(--surface-2);
+    border:1px solid var(--line-strong); color:var(--coral); font-family:var(--font-body); font-weight:800;
+    font-size:14px; cursor:pointer;
+  }
+  .gw-amreps-chip:hover{background:var(--surface-raised);}
   .gw-splitlog-row{
     display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line);
     font-family:var(--font-body); font-weight:700; font-size:13.5px; color:#fff;
@@ -926,7 +950,7 @@ function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
 const WARMUPS = {
   strength: ["2X:\n30\" high knees\n10 PVC pass-throughs (2nd bar)\n10 air squats\n10 hollow rocks",
              "2X:\n15 walking lunges each leg\n10 good mornings (2nd bar)\n10 hollow rocks",
-             "2X:\n10 box step-ups each leg\n10 glute bridges\n10 hollow rocks",
+             "2X:\n10 reverse lunges each leg\n10 glute bridges\n10 hollow rocks",
              "2X:\n20\" high knees\n10 walking lunges each leg\n10 PVC pass-throughs (2nd bar)"],
   gymnastics: ["2X:\n10 scap pull-ups\n10 hollow rocks\n10 superman\n30 single unders",
                "2X:\n60 single unders\n10 scap pull-ups\n10 superman",
@@ -948,7 +972,7 @@ const WARMUPS = {
 // bodyweight-only alternates for the two day types whose default warm-ups touch the barbell
 const WARMUPS_BW = {
   strength: ["2X:\n30\" high knees\n10 air squats\n10 walking lunges each leg\n10 hollow rocks",
-             "2X:\n10 box step-ups each leg\n10 glute bridges\n10 hollow rocks"],
+             "2X:\n10 reverse lunges each leg\n10 glute bridges\n10 hollow rocks"],
   gymnastics: ["2X:\n10 hollow rocks\n10 superman\n30\" high knees\n10 plank shoulder taps",
                "2X:\n10 inchworms\n10 scap pull-ups\n10 superman"],
   weightlifting: ["2X:\n10 broad jumps\n10 jump squats\n10 hollow rocks",
@@ -996,7 +1020,7 @@ const SKILLS = {
     {text:"ENDURANCE\n4 sets: 100 single unders + max effort burpees\nRest 1' between sets", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
     {text:"ENDURANCE\nEMOM 10'\nOdd: 12 KB swings\nEven: 10 jumping lunges", timer:{kind:'EMOM', minutes:10, alternate:['KB Swings','Jumping Lunges'], label:'Alternate Movements per Interval'}},
     {text:"ENDURANCE\nEMOM — go until you can't hold the pace\nEach minute: 15 Burpees", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}},
-    {text:"ENDURANCE\nEMOM 12'\nOdd: 12 KB swings\nEven: 10 box jumps", timer:{kind:'EMOM', minutes:12, alternate:['KB Swings','Box Jumps'], label:'Alternate Movements per Interval'}},
+    {text:"ENDURANCE\nEMOM 12'\nOdd: 12 KB swings\nEven: 10 jump squats", timer:{kind:'EMOM', minutes:12, alternate:['KB Swings','Jump Squats'], label:'Alternate Movements per Interval'}},
     {text:"ENDURANCE\n4 sets: 30 bear crawl steps + max effort mountain climbers\nRest 1' between sets", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}}
   ]
 };
@@ -1006,7 +1030,7 @@ const SKILLS_BW = {
   strength: [
     {text:"STRENGTH (bodyweight)\nWALKING LUNGES + PISTOL SQUAT PROGRESSION\n5 x 10 lunges each leg\n5 x 5 pistol progressions each leg\nEvery 2 min"},
     {text:"STRENGTH (bodyweight)\nPISTOL SQUAT PROGRESSION\n5 x 5 each leg (assisted as needed)\nEvery 2 min"},
-    {text:"STRENGTH (bodyweight)\n5 sets:\n10 box step-ups each leg\n10 glute bridges\nEvery 1:30"}
+    {text:"STRENGTH (bodyweight)\n5 sets:\n10 reverse lunges each leg\n10 glute bridges\nEvery 1:30"}
   ],
   gymnastics: [
     {text:"GYMNASTIC (bodyweight)\nEMOM 10'\nOdd: 10 hollow rocks\nEven: 5-10 handstand hold (against wall)"},
@@ -1016,7 +1040,7 @@ const SKILLS_BW = {
   weightlifting: [
     {text:"EXPLOSIVE POWER (bodyweight)\nEMOM 10'\nOdd: 5 broad jumps\nEven: 5 jump squats"},
     {text:"EXPLOSIVE POWER (bodyweight)\n5 sets: 5 jump squats + 5 burpees\nEvery 2 min"},
-    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets x 5 box jumps\nEvery 1:30"}
+    {text:"EXPLOSIVE POWER (bodyweight)\n5 sets x 5 broad jumps\nEvery 1:30"}
   ],
   accessory: [
     {text:"ACCESSORY (bodyweight)\n4 sets:\n12 push-ups\n12 superman pulls\n20 air squats\nRest 1'"},
@@ -1042,10 +1066,8 @@ const MOVEMENT_LIB = {
     {name:'Push-Ups', range:[10,20], step:2, equip:'none'},
     {name:'Walking Lunges', range:[16,24], step:4, equip:'none'},
     {name:'Glute Bridges', range:[15,25], step:5, equip:'none'},
-    {name:'Box Step-Ups', range:[16,24], step:4, equip:'none'},
     {name:'Hollow Rocks', range:[15,25], step:5, equip:'none'},
     {name:'Ring Dips', range:[5,12], step:1, equip:'rings'},
-    {name:'Box Jumps', range:[8,15], step:1, equip:'none'},
     {name:'Overhead Squat', range:[8,15], step:1, equip:'barbell'},
     {name:'Pistol Squats', range:[4,10], step:2, equip:'none'},
     {name:'Good Mornings', range:[8,15], step:1, equip:'barbell'},
@@ -1093,7 +1115,6 @@ const MOVEMENT_LIB = {
     {name:'KB Snatch', range:[8,12], step:1, equip:'kb'},
     {name:'KB Clean & Press', range:[6,10], step:1, equip:'kb'},
     {name:'Sumo Deadlift High Pulls', range:[10,15], step:5, equip:'kb'},
-    {name:'Box Jumps', range:[8,15], step:1, equip:'none'},
     {name:'Push Press', range:[6,12], step:1, equip:'barbell'},
     {name:'Push Jerk', range:[5,10], step:1, equip:'barbell'},
     {name:'Hang Power Clean', range:[5,10], step:1, equip:'barbell'},
@@ -1137,11 +1158,8 @@ const MOVEMENT_LIB = {
     {name:'Mountain Climbers', range:[20,30], step:5, equip:'none'},
     {name:'High Knees', range:[30,50], step:10, equip:'none'},
     {name:'Jumping Jacks', range:[20,40], step:10, equip:'none'},
-    {name:'Box Jumps', range:[8,15], step:1, equip:'none'},
     {name:'Bear Crawl', range:[20,30], step:5, equip:'none'},
     {name:'Russian Twists', range:[20,30], step:5, equip:'none'},
-    {name:'Box Step-Ups', range:[16,24], step:4, equip:'none'},
-    {name:'Burpee Box Jump Overs', range:[6,12], step:2, equip:'none'},
     {name:'KB Thrusters', range:[10,18], step:2, equip:'kb'},
     {name:'Pistol Squats', range:[4,10], step:2, equip:'none'},
     {name:'Broad Jumps', range:[8,12], step:2, equip:'none'},
@@ -1165,8 +1183,8 @@ const MOVEMENT_PATTERNS = {
   'Mountain Climbers':'monostructural', 'Barbell Floor Press':'push', 'Diamond Push-Ups':'push',
   'Bicycle Crunches':'core', 'Double Unders':'monostructural', 'Sit-Ups':'core',
   'Jumping Lunges':'lunge', 'High Knees':'monostructural', 'Jumping Jacks':'monostructural',
-  'Box Step-Ups':'lunge', 'Hollow Rocks':'core', 'V-ups':'core', 'Russian Twists':'core',
-  'Ring Dips':'push', 'Box Jumps':'jump', 'KB Snatch':'hinge', 'KB Clean & Press':'push',
+  'Hollow Rocks':'core', 'V-ups':'core', 'Russian Twists':'core',
+  'Ring Dips':'push', 'KB Snatch':'hinge', 'KB Clean & Press':'push',
   'Wall Walks':'push', 'Reverse Lunges':'lunge', 'KB Farmer Carry':'carry',
   'Handstand Push-Ups':'push', 'Sumo Deadlift High Pulls':'hinge', 'Renegade Rows':'pull',
   'Bear Crawl':'monostructural', 'Overhead Squat':'squat', 'Pistol Squats':'squat',
@@ -1174,7 +1192,7 @@ const MOVEMENT_PATTERNS = {
   'Chest-to-Bar Pull-Ups':'pull', 'Push Press':'push', 'Push Jerk':'push',
   'Hang Power Clean':'hinge', 'Hang Power Snatch':'hinge', 'KB Deadlifts':'hinge',
   'KB Romanian Deadlift':'hinge', 'Single-Arm KB Push Press':'push',
-  'Burpee Box Jump Overs':'jump', 'KB Thrusters':'squat', 'Back Squat':'squat',
+  'KB Thrusters':'squat', 'Back Squat':'squat',
   'Front Squat':'squat', 'Strict Press':'push', 'Plank Up-Downs':'push',
   'Bar Muscle-Ups':'pull', 'Ring Muscle-Ups':'pull', 'Handstand Walk':'push',
   'Superman Pulls':'pull', 'Squat Clean':'hinge', 'Squat Snatch':'hinge',
@@ -1278,7 +1296,7 @@ function pickOne(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 // count is genuinely ambiguous (10 total, or 10 each?). Movements whose own description already
 // says "switch arms/sides between sets" (KB Snatch, KB Clean & Press, Renegade Rows) are left out
 // on purpose — that phrasing already tells you the count is a total split across the switch.
-const UNILATERAL_LEG_MOVEMENTS = new Set(['Pistol Squats', 'Reverse Lunges', 'Walking Lunges', 'Box Step-Ups', 'Barbell Walking Lunges']);
+const UNILATERAL_LEG_MOVEMENTS = new Set(['Pistol Squats', 'Reverse Lunges', 'Walking Lunges', 'Barbell Walking Lunges']);
 const UNILATERAL_ARM_MOVEMENTS = new Set(['Turkish Get-Ups', 'Single-Arm KB Push Press']);
 function repsSuffixFor(name){
   if(UNILATERAL_LEG_MOVEMENTS.has(name)) return ' each leg';
@@ -1523,17 +1541,16 @@ async function recordBenchmarkResult(benchmark, perf){
 
 // anti-extension/rotation/bracing work leads by default — spinal flexion (sit-ups, V-ups) stays in
 // the mix but at moderate, not high, rep counts
-// entries shaped "3 rds\n<rep-based move(s)>\n...\nRest 30"" use the SAME tap-per-round paced-rest
-// engine as the skill/accessory 'X Rest Between Sets' timers (see isPacedRestSpec/openPacedRestSet):
-// the reps (and any stated hold) are self-paced, off the clock — the app only actively counts down
-// the one thing worth automating, the 30" rest — then requires a fresh tap to start the next round,
-// so the section only completes after all 3 rounds instead of stopping after a single countdown.
+// rep-only rounds with a stated rest (no timed hold) use the tap-per-round paced-rest engine shared
+// with the skill/accessory 'X Rest Between Sets' timers (see isPacedRestSpec/openPacedRestSet): the
+// reps are self-paced, the app counts down the 30" rest, and a fresh tap starts each next round.
+// Rounds that include a timed HOLD instead use a TABATA with explicit `phases` (hold, rest, ...).
 // each core entry gets its own fresh timer object (not a shared reference) — nothing in this
 // codebase mutates a workout's coreTimer in place today, but a shared object would silently break
 // that invariant for whoever touches this next, for a cost of nothing
 function corePacedRest(){ return {kind:'INTERVAL', minutes:0.5, totalRounds:3, label:'X Rest Between Sets'}; }
 const CORE = [
-  {text:"3 rds\n12 sit-ups\n20 flutter kicks\n30\" plank hold\nRest 30\"", timer:corePacedRest()},
+  {text:"3 rds\n12 sit-ups\n20 flutter kicks\n30\" plank hold\nRest 30\"", timer:{kind:'TABATA', rounds:3, label:'Hold and Rest', phases:[{label:'Plank Hold', sec:30}, {label:'Rest', sec:30, rest:true}]}},
   {text:"Tabata 20\"/10\" x8\n1- Hollow hold\n2- Arch hold (alternate rounds)", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, alternate:['Hollow Hold','Arch Hold'], label:'Alternating Tabata'}},
   {text:"Tabata 20\"/10\" x8\nV-ups", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, label:'Standard Tabata'}},
   {text:"3 rds\n10 V-ups\n15 Russian twists (add a plate if you have one)\nRest 30\"", timer:corePacedRest()},
@@ -1543,12 +1560,13 @@ const CORE = [
   {text:"3 rds\n1' plank hold\n1' rest", timer:{kind:'TABATA', workSec:60, restSec:60, rounds:3, label:'Standard Tabata'}},
   {text:"2' accumulate plank hold", timer:{kind:'COUNTDOWN', minutes:2}},
   {text:"20 leg raises\n20 flutter kicks\n20 mountain climbers", timer:null},
-  // no "Rest" phrase here at all — both the hold and the reps are self-paced, so this gets no
-  // timer, just the plain tap-to-advance round counter (same as the untimed entry above)
-  {text:"3 rds\n30\" side plank each side\n10 superman", timer:null},
-  {text:"3 rds\n10 hollow rocks\n20\" side plank each side\nRest 30\"", timer:corePacedRest()},
+  // timed holds run on the clock as phases (see tabataRoundSec / the `phases` branch of the TABATA
+  // display); the stated reps stay self-paced. This one has no rest prescribed, so the superman
+  // reps get their own short phase as the only breather between rounds
+  {text:"3 rds\n30\" side plank each side\n10 superman", timer:{kind:'TABATA', rounds:3, label:'Hold and Rest', phases:[{label:'Left Side Plank', sec:30}, {label:'Right Side Plank', sec:30}, {label:'Superman', sec:20, rest:true}]}},
+  {text:"3 rds\n10 hollow rocks\n20\" side plank each side\nRest 30\"", timer:{kind:'TABATA', rounds:3, label:'Hold and Rest', phases:[{label:'Left Side Plank', sec:20}, {label:'Right Side Plank', sec:20}, {label:'Rest', sec:30, rest:true}]}},
   {text:"Tabata 20\"/10\" x8\nMountain Climbers", timer:{kind:'TABATA', workSec:20, restSec:10, rounds:8, label:'Standard Tabata'}},
-  {text:"3 rds\n15 bicycle crunches\n20\" hollow hold\nRest 30\"", timer:corePacedRest()},
+  {text:"3 rds\n15 bicycle crunches\n20\" hollow hold\nRest 30\"", timer:{kind:'TABATA', rounds:3, label:'Hold and Rest', phases:[{label:'Hollow Hold', sec:20}, {label:'Rest', sec:30, rest:true}]}},
   {text:"2' accumulate hollow hold", timer:{kind:'COUNTDOWN', minutes:2}}
 ];
 
@@ -1628,6 +1646,7 @@ function timerExplainer(spec){
     return `New minute starts, do the work, rest till next minute. ${spec.minutes} times.`;
   }
   if(spec.kind==='TABATA'){
+    if(spec.phases) return `${spec.phases.map(ph=>`${ph.sec}s ${ph.label.toLowerCase()}`).join(' → ')}. ${spec.rounds} rounds.`;
     if(spec.alternate) return `${spec.workSec}s ${spec.alternate[0]} / ${spec.workSec}s ${spec.alternate[1]}, ${spec.restSec}s rest between. ${spec.rounds} rounds total.`;
     return `${spec.workSec} sec work, ${spec.restSec} sec rest. ${spec.rounds} rounds.`;
   }
@@ -1725,8 +1744,6 @@ const EXERCISE_INFO = {
   "Handstand Hold": {desc: "Kick up into a handstand against a wall for support, arms locked out and body as straight as you can hold, and hold the position.", url: "https://www.crossfit.com/essentials/the-freestanding-handstand"},
   "Pistol Squat Progression": {desc: "Working toward a single-leg squat — use a wall, a slow controlled descent, or partial range of motion on one leg at a time until you can do a full pistol.", url: "https://www.crossfit.com/essentials/the-single-leg-squat"},
   "KB Romanian Deadlift": {desc: "Holding a kettlebell in front of your thighs, push your hips back and lower it down your legs keeping a flat back and slight knee bend, then squeeze your glutes to stand back up."},
-  "Box Step-Ups": {desc: "Step one foot fully onto a box or sturdy surface, drive through that heel to stand tall on top, then step back down under control. Alternate legs."},
-  "Box Jumps": {desc: "Jump both feet onto a box or sturdy platform, standing fully tall at the top, then step (don't jump) back down.", url: "https://www.crossfit.com/essentials/the-box-jump"},
   "KB Snatch": {desc: "Hike the kettlebell back like a swing, then pull it explosively overhead in one motion, punching your hand through at the top so the bell rests on your forearm. Switch arms between sets.", url: "https://www.crossfit.com/essentials/the-kettlebell-snatch"},
   "KB Clean & Press": {desc: "Hike the bell back, pull it up and rotate your hand through to catch it racked at your shoulder, then press it overhead. Switch arms between sets."},
   "Wall Walks": {desc: "Start in a plank with feet against a wall, walk your feet up the wall while walking your hands in until your chest is close to the wall, then reverse back down."},
@@ -1742,7 +1759,6 @@ const EXERCISE_INFO = {
   "Push Press": {desc: "Dip slightly at the knees and hips, then drive explosively through your legs to help press the bar overhead to lockout.", url: "https://www.crossfit.com/essentials/the-push-press"},
   "Hang Power Clean": {desc: "Starting with the bar at the hang (around knee height, not the floor), pull explosively and drop under it to catch on your shoulders in a quarter-squat, then stand.", url: "https://www.crossfit.com/essentials/the-hang-power-clean"},
   "Single-Arm KB Push Press": {desc: "Rack the kettlebell at your shoulder, dip slightly, then drive through your legs to press it overhead. Switch arms between sets."},
-  "Burpee Box Jump Overs": {desc: "Burpee on the floor, then jump onto the box and immediately step or jump off the other side — the box crossing replaces the standing jump of a normal burpee."},
   "KB Thrusters": {desc: "Hold the kettlebell racked at your shoulder or in a goblet grip, squat down, then drive up and press it overhead in one motion as your legs finish extending."},
   "Squat Clean": {desc: "Pull the bar from the floor explosively and drop into a full squat to catch it racked on your shoulders, then stand up to finish the lift.", url: "https://www.crossfit.com/essentials/the-squat-clean"},
   "Squat Snatch": {desc: "Pull the bar from the floor in one explosive motion and drop into a full squat to catch it locked out overhead, then stand up to finish the lift.", url: "https://www.crossfit.com/essentials/the-squat-snatch"},
@@ -1846,12 +1862,17 @@ function allocateTime(total){
 }
 // rough per-section minutes for whichever timer a section actually has — used to show a real total
 // even when no time budget was chosen (allocateTime has nothing to go on in that case)
+// one TABATA round's length — either the classic work+rest pair, or the sum of an explicit
+// `phases` list (e.g. hold / hold / rest) for rounds that aren't a simple work-then-rest
+function tabataRoundSec(spec){
+  return spec.phases ? spec.phases.reduce((a,ph)=>a+ph.sec, 0) : spec.workSec + spec.restSec;
+}
 function estimateTimerMinutes(spec){
   if(!spec) return 5;
   switch(spec.kind){
     case 'AMRAP': return spec.cycles ? spec.cycles*(spec.minutes+(spec.restMinutes||0)) : spec.minutes;
     case 'EMOM': return spec.minutes || 10;
-    case 'TABATA': return Math.ceil(spec.rounds*(spec.workSec+spec.restSec)/60);
+    case 'TABATA': return Math.ceil(spec.rounds*tabataRoundSec(spec)/60);
     case 'RFT': return spec.cap || spec.rounds*3;
     case 'LADDER': return spec.cap || 12;
     case 'FORTIME': return spec.cap || 10;
@@ -2052,14 +2073,44 @@ function parseSetScheme(text){
 // repeated-sets timer (INTERVAL), or a lift whose weight is worth adjusting set by set. An EMOM
 // (or similar) with no lift and no explicit "N x R" text is minute-by-minute work, not discrete
 // sets — there's nothing meaningful to edit reps/weight for, so it gets no editor at all.
+// a block-style prescription ("4 sets:" / "SUPERSET x4:" followed by several movements, each with its
+// own rep count in the text) has no single "reps per set" number — so its sets carry null reps
+// (the set rows show just "Set N" and a done check) instead of an invented default that
+// contradicts the text
+function parseBlockSetCount(text){
+  if(!text) return null;
+  for(const line of text.split('\n')){
+    const t = line.trim();
+    let m = t.match(/^(\d+)\s*sets?\b/i) || t.match(/superset\s*x\s*(\d+)/i);
+    if(m) return Number(m[1]);
+  }
+  return null;
+}
 function buildSkillSetReps(skillTplText, skillTimer, hasLiftKey){
   const scheme = parseSetScheme(skillTplText);
   if(scheme) return scheme;
+  const blockN = parseBlockSetCount(skillTplText);
+  if(blockN && (hasLiftKey || (skillTimer && skillTimer.kind==='INTERVAL'))) return Array(blockN).fill(null);
   if(hasLiftKey || (skillTimer && skillTimer.kind==='INTERVAL')){
     const n = (skillTimer && skillTimer.totalRounds) || 3;
-    return Array(n).fill(5);
+    return Array(n).fill(null);
   }
   return [];
+}
+// the weight(s) to use for a skill's loaded movements that aren't a tracked barbell lift — one number
+// per movement, remembered from the last time it was logged
+const SKILL_LOAD_DEFS = [
+  {re:/W-bar curls/i, key:'wbarCurl', label:'W-bar curls', def:25},
+  {re:/W-bar skull crushers/i, key:'wbarSkull', label:'W-bar skull crushers', def:25},
+  {re:/single arm KB row/i, key:'kbRow', label:'Single-arm KB row', def:35},
+  {re:/KB Romanian deadlift/i, key:'kbRdl', label:'KB Romanian deadlift', def:35},
+  {re:/renegade rows/i, key:'kbRenegade', label:'Renegade rows (per KB)', def:25},
+  {re:/KB goblet squats/i, key:'kbGoblet', label:'KB goblet squats', def:35},
+];
+function buildSkillLoads(text){
+  return SKILL_LOAD_DEFS.filter(d=>d.re.test(text||'')).map(d=>({
+    key:d.key, label:d.label, load: state.weights['load:'+d.key] ?? d.def
+  }));
 }
 function buildSkillSetWeights(n, suggestedLoad){
   return Array(n).fill(suggestedLoad || 0);
@@ -2078,6 +2129,11 @@ function formatSetScheme(reps){
 // name, "Every 2 min") stays put
 function updateSkillSchemeText(text, newReps){
   if(!text) return text;
+  if(newReps.some(r=>r===null)){
+    // block-style sets: only the set COUNT is in the text ("4 sets:" / "SUPERSET x4:")
+    const n = newReps.length;
+    return text.replace(/^(\d+)(\s*sets?\b)/im, `${n}$2`).replace(/(superset\s*x\s*)\d+/i, `$1${n}`);
+  }
   const lines = text.split('\n');
   const newLine = formatSetScheme(newReps);
   for(let i=0;i<lines.length;i++){
@@ -2187,6 +2243,7 @@ function generateWorkout(type){
     type, warmup, skillTplText, skillLiftKey, suggestedLoad, deload, skillTimer,
     skillSetReps: initSkillSetReps,
     skillSetWeights: buildSkillSetWeights(initSkillSetReps.length, suggestedLoad),
+    skillLoads: (skillTplText && !bw) ? buildSkillLoads(skillTplText) : [],
     formatId, format, wodMovements, movements: wodMovements.map(m=>m.name), wodTimerSpec,
     core, coreTimer, rpe: null, wodRpe: null, bw,
     volumeUsed: effectiveVolume, coachNotes, isBenchmark, benchmarkName,
@@ -2331,6 +2388,23 @@ function buildInlineRoundCounter(key, w, stepData){
 function isPacedRestSpec(spec){
   return !!(spec && spec.kind==='INTERVAL' && spec.totalRounds && spec.label==='X Rest Between Sets');
 }
+// only one timer can be live at a time. If a DIFFERENT section's timer is minimized in the background,
+// returns that section's name so starting another one can be refused (instead of silently throwing
+// the running one away); null when nothing else is running.
+const SECTION_NAMES = {warmup:'Warm-Up', skill:'Skill', wod:'WOD', core:'Extra Core'};
+function otherRunningTimerName(key){
+  if(focusTimer && !focusTimer.doneBeeped && focusTimer.sectionKey && focusTimer.sectionKey!==key){
+    return SECTION_NAMES[focusTimer.sectionKey] || 'other';
+  }
+  return null;
+}
+function blockedStartButton(name){
+  const btn = document.createElement('button');
+  btn.className = 'gw-section-start-btn';
+  btn.disabled = true;
+  btn.innerHTML = `${ICON_TIMER}<span>Finish the ${name} timer first</span>`;
+  return btn;
+}
 function addStartSectionButton(node, key){
   const w = state.currentWorkout;
   const stepData = w && getSectionFocusData(w, key);
@@ -2353,6 +2427,8 @@ function addStartSectionButton(node, key){
     btn.onclick = ()=>resumeSectionFocus(key);
     node.bodyEl.appendChild(btn);
     updateMinimizedProgress();
+  } else if((isPacedRest || stepData.timerSpec) && otherRunningTimerName(key)){
+    node.bodyEl.appendChild(blockedStartButton(otherRunningTimerName(key)));
   } else if(isPacedRest){
     // one rest at a time: each tap opens a single, simple countdown for whichever set is next.
     // When it finishes (or is skipped) the drawer closes on its own and that set gets marked done
@@ -2396,6 +2472,8 @@ function renderSectionNode(key, w, opts){
       timerSpec: w.skillTimer,
       setsList: w.skillSetReps,
       setsWeights: w.skillLiftKey ? w.skillSetWeights : null,
+      loads: w.skillLoads,
+      onLoadChange: opts.simple ? null : (idx, val)=>{ w.skillLoads[idx].load = val; },
       doneCount: isPacedRestSpec(w.skillTimer) ? ((w.roundCounts && w.roundCounts.skill) || 0) : 0,
       onWeightChange: opts.simple ? null : (idx, val)=>{
         for(let i=idx; i<w.skillSetWeights.length; i++) w.skillSetWeights[i] = val;
@@ -2465,7 +2543,7 @@ function openRateDrawer(kind){
       closeRateDrawer();
       render();
     }));
-    document.getElementById('gw-rate-drawer-backdrop').classList.add('show');
+    rateDrawerOpenedAt = Date.now(); document.getElementById('gw-rate-drawer-backdrop').classList.add('show');
     return;
   }
 
@@ -2566,12 +2644,17 @@ function openRateDrawer(kind){
   doneBtn.style.cssText = 'margin-top:16px; width:100%; padding:16px;';
   content.appendChild(doneBtn);
 
-  document.getElementById('gw-rate-drawer-backdrop').classList.add('show');
+  rateDrawerOpenedAt = Date.now(); document.getElementById('gw-rate-drawer-backdrop').classList.add('show');
 }
 function closeRateDrawer(){
   document.getElementById('gw-rate-drawer-backdrop').classList.remove('show');
 }
-document.getElementById('gw-rate-drawer-backdrop').onclick = (e)=>{ if(e.target.id==='gw-rate-drawer-backdrop') closeRateDrawer(); };
+// a tap that was meant for the timer drawer (e.g. the Skip that just finished the last set) can land
+// on this backdrop as it appears — ignore dismissals for a beat after it opens
+let rateDrawerOpenedAt = 0;
+document.getElementById('gw-rate-drawer-backdrop').onclick = (e)=>{
+  if(e.target.id==='gw-rate-drawer-backdrop' && Date.now() - rateDrawerOpenedAt > 600) closeRateDrawer();
+};
 // call right after a section flips to done — opens the matching rate drawer if that rating is still missing
 function maybePromptRating(w, key){
   if(!w || !w.sectionsDone || !w.sectionsDone[key]) return;
@@ -2701,8 +2784,8 @@ function getSectionFocusData(w, key){
 }
 function openSectionFocus(key){
   if(!state.currentWorkout) return;
-  // a different section's timer minimized in the background gets abandoned when starting a fresh one —
-  // only one timer session can run at a time
+  const busy = otherRunningTimerName(key);
+  if(busy){ toast(`Finish or cancel the ${busy} timer first.`); return; }
   if(focusTimer && focusTimer.sectionKey!==key){
     focusStopTicking();
     focusTimer = null;
@@ -2726,6 +2809,8 @@ function openPacedRestSet(key){
   const stepData = getSectionFocusData(state.currentWorkout, key);
   const baseSpec = stepData && stepData.timerSpec;
   if(!isPacedRestSpec(baseSpec)) return;
+  const busy = otherRunningTimerName(key);
+  if(busy){ toast(`Finish or cancel the ${busy} timer first.`); return; }
   if(focusTimer && focusTimer.sectionKey!==key){
     focusStopTicking();
     focusTimer = null;
@@ -2900,9 +2985,10 @@ function renderSectionFocus(overrideSpec){
       </div>
       <div class="gw-amreps-row" id="gw-floatcard-amreps" style="display:none;">
         <button class="gw-amreps-btn" id="gw-amreps-minus" type="button">−</button>
-        <div class="gw-amreps-total" id="gw-amreps-total">0</div>
+        <input class="gw-amreps-total" id="gw-amreps-total" type="number" inputmode="numeric" min="0" value="0" aria-label="Total reps">
         <button class="gw-amreps-btn" id="gw-amreps-plus" type="button">+</button>
       </div>
+      <div class="gw-amreps-quick" id="gw-amreps-quick" style="display:none;"></div>
       <button class="gw-stage-round" id="gw-focus-plus" style="display:none;">
         <span class="gw-stage-round-badge" id="gw-focus-roundsbadge">0</span>
         <span class="gw-stage-round-label"><span id="gw-focus-plus-label">Round</span> <span class="gw-round-target" id="gw-focus-round-target"></span></span>
@@ -2919,10 +3005,28 @@ function renderSectionFocus(overrideSpec){
       weightRow.style.display = '';
       const valueEl = document.getElementById('gw-weight-value');
       const platesEl = document.getElementById('gw-weight-plates');
-      const paint = ()=>{ valueEl.textContent = w.suggestedLoad; platesEl.textContent = plateBreakdown(w.suggestedLoad); };
+      // the weight shown (and changed) here is the CURRENT set's, and a change carries forward to the
+      // sets still to come — same rule as editing a set's weight on the main screen — so the main
+      // screen's set rows stay in step with what the timer says instead of drifting apart
+      const currentSetIdx = ()=>{
+        const last = w.skillSetWeights.length - 1;
+        if(isPacedRestSpec(w.skillTimer)) return Math.min(last, (w.roundCounts && w.roundCounts.skill) || 0);
+        if(focusTimer && focusTimer.kind==='INTERVAL' && focusTimer.minutes) return Math.min(last, Math.floor(focusCurrentElapsed() / (focusTimer.minutes*60)));
+        return 0;
+      };
+      const shown = ()=> w.skillSetWeights[currentSetIdx()] ?? w.suggestedLoad;
+      const paint = ()=>{ valueEl.textContent = shown(); platesEl.textContent = plateBreakdown(shown()); };
       paint();
-      document.getElementById('gw-weight-minus').onclick = ()=>{ w.suggestedLoad = Math.max(0, w.suggestedLoad-5); paint(); vibrate(10); };
-      document.getElementById('gw-weight-plus').onclick = ()=>{ w.suggestedLoad += 5; paint(); vibrate(10); };
+      const nudge = (delta)=>{
+        const idx = currentSetIdx();
+        const val = Math.max(0, shown() + delta);
+        for(let i=idx; i<w.skillSetWeights.length; i++) w.skillSetWeights[i] = val;
+        w.suggestedLoad = w.skillSetWeights[w.skillSetWeights.length-1];
+        paint(); vibrate(10);
+        render(); // refresh the main screen's set rows behind the drawer
+      };
+      document.getElementById('gw-weight-minus').onclick = ()=>nudge(-5);
+      document.getElementById('gw-weight-plus').onclick = ()=>nudge(5);
     }
 
     const isAmreps = kind==='AMRAP' && spec.mode==='reps';
@@ -2998,15 +3102,32 @@ function renderSectionFocus(overrideSpec){
     document.getElementById('gw-floatcard-close').onclick = requestCloseFloatCard;
     if(isAmreps){
       if(!isResume) state.focusAmrepsTotal = 0;
-      document.getElementById('gw-amreps-total').textContent = state.focusAmrepsTotal || 0;
-      const bump = (delta)=>{
-        state.focusAmrepsTotal = Math.max(0, (state.focusAmrepsTotal||0) + delta);
-        document.getElementById('gw-amreps-total').textContent = state.focusAmrepsTotal;
+      const totalEl = document.getElementById('gw-amreps-total');
+      totalEl.value = state.focusAmrepsTotal || 0;
+      const setTotal = (val)=>{
+        state.focusAmrepsTotal = Math.max(0, Math.round(val) || 0);
+        totalEl.value = state.focusAmrepsTotal;
         if(key==='wod'){ if(!w.wodPerformance) w.wodPerformance = {}; w.wodPerformance.extraReps = state.focusAmrepsTotal; }
-        vibrate(10);
       };
+      const bump = (delta)=>{ setTotal((state.focusAmrepsTotal||0) + delta); vibrate(10); };
       document.getElementById('gw-amreps-plus').onclick = ()=>bump(1);
       document.getElementById('gw-amreps-minus').onclick = ()=>bump(-1);
+      // type the exact count straight in — no need to tap once per rep
+      totalEl.onfocus = ()=>totalEl.select();
+      totalEl.onchange = ()=>setTotal(Number(totalEl.value));
+      // one tap adds a chunk: a fixed 5 and 10, plus one full set of the movement's own rep count
+      // (e.g. 15 for "Barbell Floor Press 15 reps") — whichever fit how people actually count
+      const quick = document.getElementById('gw-amreps-quick');
+      quick.style.display = 'flex';
+      const m0 = key==='wod' && w.wodMovements && w.wodMovements[0];
+      const steps = [5, 10];
+      if(m0 && typeof m0.reps==='number' && !steps.includes(m0.reps)) steps.push(m0.reps);
+      steps.sort((a,b)=>a-b).forEach(n=>{
+        const chip = document.createElement('button');
+        chip.type = 'button'; chip.className = 'gw-amreps-chip'; chip.textContent = `+${n}`;
+        chip.onclick = ()=>bump(n);
+        quick.appendChild(chip);
+      });
     }
 
     // RFT / LADDER / uncapped FOR TIME / open-ended EMOM end on the athlete's own judgment — swipe locks it in
@@ -3230,7 +3351,7 @@ function minimizedTimerReadout(){
     return {text:`${fmtClock(Math.max(0,total-elapsed))} left`, fraction: growing(total)};
   }
   if(k==='TABATA'){
-    const total = (focusTimer.workSec+focusTimer.restSec)*focusTimer.rounds;
+    const total = tabataRoundSec(focusTimer)*focusTimer.rounds;
     return {text:`${fmtClock(Math.max(0,total-elapsed))} left`, fraction: growing(total)};
   }
   if(k==='INTERVAL'){
@@ -3456,19 +3577,33 @@ function focusUpdateDisplay(){
     setRing(fraction);
 
   } else if(focusTimer.kind==='TABATA'){
-    const cycle = focusTimer.workSec + focusTimer.restSec;
+    const cycle = tabataRoundSec(focusTimer);
     const totalDuration = cycle*focusTimer.rounds;
     const clamped = Math.min(elapsed, totalDuration);
     const roundIdx = Math.min(Math.floor(clamped/cycle), focusTimer.rounds-1);
     const withinCycle = clamped - roundIdx*cycle;
-    isRest = withinCycle >= focusTimer.workSec;
-    const phaseSecTotal = isRest ? focusTimer.restSec : focusTimer.workSec;
-    const phaseElapsed = isRest ? withinCycle - focusTimer.workSec : withinCycle;
+    let phaseSecTotal, phaseElapsed, phaseId, phaseWord;
+    if(focusTimer.phases){
+      let acc = 0, pi = 0;
+      for(; pi<focusTimer.phases.length-1; pi++){
+        if(withinCycle < acc + focusTimer.phases[pi].sec) break;
+        acc += focusTimer.phases[pi].sec;
+      }
+      const ph = focusTimer.phases[pi];
+      isRest = !!ph.rest; phaseSecTotal = ph.sec; phaseElapsed = withinCycle - acc;
+      phaseId = pi; phaseWord = ph.label.toUpperCase();
+    } else {
+      isRest = withinCycle >= focusTimer.workSec;
+      phaseSecTotal = isRest ? focusTimer.restSec : focusTimer.workSec;
+      phaseElapsed = isRest ? withinCycle - focusTimer.workSec : withinCycle;
+      phaseId = isRest ? 'rest' : 'work';
+      phaseWord = isRest ? 'REST' : (focusTimer.alternate ? focusTimer.alternate[roundIdx % 2] : 'WORK');
+    }
     displaySeconds = phaseSecTotal - phaseElapsed;
     fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0;
-    const phaseKey = roundIdx+'-'+(isRest?'rest':'work');
+    const phaseKey = roundIdx+'-'+phaseId;
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
-    phaseEl.textContent = isRest ? 'REST' : (focusTimer.alternate ? focusTimer.alternate[roundIdx % 2] : 'WORK');
+    phaseEl.textContent = phaseWord;
     phaseEl.classList.toggle('rest', isRest);
     phaseWordUsed = true;
     subEl.textContent = `Round ${roundIdx+1} of ${focusTimer.rounds}`;
@@ -3654,6 +3789,30 @@ function sectionWithChips(title, body, tag, opts){
     detailEl.textContent = detail;
     bodyEl.appendChild(detailEl);
   }
+  if(opts.loads && opts.loads.length){
+    const loadWrap = document.createElement('div');
+    loadWrap.className = 'gw-setlist';
+    opts.loads.forEach((item, idx)=>{
+      const row = document.createElement('div');
+      row.className = 'gw-setlist-row';
+      const name = document.createElement('span');
+      name.className = 'gw-load-name';
+      name.textContent = item.label;
+      row.appendChild(name);
+      const weightWrap = document.createElement('span');
+      weightWrap.className = 'gw-setlist-weight';
+      const input = document.createElement('input');
+      input.type = 'number'; input.step = '5'; input.value = item.load;
+      input.onchange = ()=>{ const val = Number(input.value)||0; input.value = val; opts.onLoadChange && opts.onLoadChange(idx, val); };
+      weightWrap.appendChild(input);
+      const unit = document.createElement('span');
+      unit.textContent = 'lb';
+      weightWrap.appendChild(unit);
+      row.appendChild(weightWrap);
+      loadWrap.appendChild(row);
+    });
+    bodyEl.appendChild(loadWrap);
+  }
   if(opts.setsList && opts.setsList.length){
     const listWrap = document.createElement('div');
     listWrap.className = 'gw-setlist';
@@ -3670,6 +3829,7 @@ function sectionWithChips(title, body, tag, opts){
       const repsWrap = document.createElement('span');
       repsWrap.className = 'gw-setlist-reps';
       const repsInput = document.createElement('input');
+      if(reps === null) repsInput.style.display = 'none';
       repsInput.type = 'text'; repsInput.inputMode = 'numeric'; repsInput.value = reps;
       repsInput.disabled = isDone;
       // reps can be a range like "8-10" straight from the prescription — editing just narrows/overrides
@@ -3681,7 +3841,7 @@ function sectionWithChips(title, body, tag, opts){
       };
       repsWrap.appendChild(repsInput);
       const repsUnit = document.createElement('span');
-      repsUnit.textContent = 'reps';
+      repsUnit.textContent = reps === null ? '' : 'reps';
       repsWrap.appendChild(repsUnit);
       row.appendChild(num); row.appendChild(repsWrap);
       if(isDone){
@@ -3851,6 +4011,7 @@ function rerollSection(section){
       w.suggestedLoad = result.load; w.deload = result.deload;
     } else { w.suggestedLoad = null; w.deload = false; }
     w.skillSetWeights = buildSkillSetWeights(w.skillSetReps.length, w.suggestedLoad);
+    w.skillLoads = bw ? [] : buildSkillLoads(w.skillTplText);
     w.rpe = null;
   } else if(section==='wod'){
     let movementPool = MOVEMENT_LIB[w.type];
@@ -3890,7 +4051,8 @@ function adjustSets(section, delta){
   if(section==='skill' && w.skillSetReps){
     if(!w.skillSetWeights) w.skillSetWeights = buildSkillSetWeights(w.skillSetReps.length, w.suggestedLoad);
     if(delta>0 && w.skillSetReps.length<12){
-      w.skillSetReps.push(w.skillSetReps[w.skillSetReps.length-1] ?? 5);
+      const lastReps = w.skillSetReps[w.skillSetReps.length-1];
+      w.skillSetReps.push(lastReps === undefined ? null : lastReps);
       w.skillSetWeights.push(w.skillSetWeights[w.skillSetWeights.length-1] ?? w.suggestedLoad ?? 0);
     } else if(delta<0 && w.skillSetReps.length>1){
       w.skillSetReps.pop();
@@ -3922,8 +4084,9 @@ async function logWorkout(){
   try{
     if(w.skillLiftKey && w.suggestedLoad){
       state.weights[w.skillLiftKey] = w.suggestedLoad;
-      await saveWeights();
     }
+    (w.skillLoads || []).forEach(item=>{ state.weights['load:'+item.key] = item.load; });
+    if((w.skillLiftKey && w.suggestedLoad) || (w.skillLoads && w.skillLoads.length)) await saveWeights();
     if(w.wodRpe && !w.isBenchmark){
       const adj = VOLUME_ADJUST[w.wodRpe] ?? 0;
       state.volume[w.type] = clamp((state.volume[w.type] || 1.0) + adj, 0.7, 1.4);
@@ -4826,6 +4989,9 @@ document.getElementById('gw-timerstop-ok').onclick = cancelTimerAndClose;
 updateFocusCloseButton();
 document.getElementById('gw-focus-close').onclick = requestExitFocus;
 document.getElementById('gw-timer-drawer-backdrop').onclick = (e)=>{ if(e.target.id==='gw-timer-drawer-backdrop') requestExitFocus(); };
+
+// iOS Safari ignores user-scalable=no for pinch gestures — this is the part that actually stops them
+['gesturestart','gesturechange','gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
 
 loadState();
 })();

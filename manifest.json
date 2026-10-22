@@ -1,6 +1,6 @@
 {
-  "name": "Garage WOD",
-  "short_name": "Garage WOD",
+  "name": "WODSHED",
+  "short_name": "WODSHED",
   "description": "Garage gym workout generator with progressive overload tracking.",
   "start_url": "./index.html",
   "scope": "./",
