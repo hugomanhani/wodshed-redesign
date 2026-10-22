@@ -1,4 +1,4 @@
-const CACHE = "garage-wod-v45";
+const CACHE = "garage-wod-v46";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon-32.png"];
 
 self.addEventListener("install", e => {
@@ -20,7 +20,9 @@ self.addEventListener("fetch", e => {
     (e.request.method === "GET" && (e.request.headers.get("accept") || "").includes("text/html"));
   if (isNavigation) {
     e.respondWith(
-      fetch(e.request).then(res => {
+      // 'no-cache' = always revalidate with the server, so GitHub Pages' 10-minute max-age can't
+      // hand back a stale copy of the app right after a deploy
+      fetch(e.request, {cache: "no-cache"}).then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
         return res;

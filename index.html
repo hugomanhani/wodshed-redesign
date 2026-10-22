@@ -4438,7 +4438,8 @@ function renderProfilePage(){
   [
     {key:'equipment', label:'Equipment'},
     {key:'skills', label:'Skills'},
-    {key:'benchmarks', label:'Benchmarks'}
+    {key:'benchmarks', label:'Benchmarks'},
+    {key:'backup', label:'Backup & Restore'}
   ].forEach(item=>{
     const row = document.createElement('div');
     row.className = 'gw-profile-list-row';
@@ -4560,7 +4561,60 @@ function renderBenchmarksDrawer(content){
   note.textContent = `Retested automatically about every ${BENCHMARK_RETEST_DAYS} days as part of a Conditioning day.`;
   content.appendChild(note);
 }
+// everything this app saves lives on this device only (localStorage, under 'garage-wod-*'). That's
+// what survives app updates, but it does NOT survive deleting the Home Screen app or moving to a
+// new phone/browser — a copy-paste backup is the way across.
+async function buildBackup(){
+  const listing = await window.storage.list('garage-wod-');
+  const data = {};
+  for(const k of (listing && listing.keys) || []){
+    const item = await window.storage.get(k);
+    if(item && item.value != null) data[k] = item.value;
+  }
+  return JSON.stringify({app:'wodshed', version:1, exportedAt:new Date().toISOString(), data});
+}
+function renderBackupDrawer(content){
+  const intro = document.createElement('div');
+  intro.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.6; margin-bottom:14px;';
+  intro.textContent = 'Your history, weights and profile are saved on this device only. Copy a backup before deleting the app or switching phones, then paste it on the other side and restore.';
+  content.appendChild(intro);
+
+  const out = document.createElement('textarea');
+  out.className = 'gw-activity-notes'; out.readOnly = true; out.style.marginBottom = '10px';
+  out.placeholder = 'Tap "Copy backup" to generate one';
+  out.onfocus = ()=>out.select();
+  const copyBtn = mkBtn('Copy backup', 'gw-teal', async ()=>{
+    const json = await buildBackup();
+    out.value = json;
+    try{ await navigator.clipboard.writeText(json); toast('Backup copied.'); }
+    catch(e){ out.focus(); out.select(); toast('Select the text and copy it.'); }
+  });
+  copyBtn.style.cssText = 'width:100%; padding:14px; margin-bottom:10px;';
+  content.appendChild(copyBtn);
+  content.appendChild(out);
+
+  const inLabel = document.createElement('div');
+  inLabel.style.cssText = 'font-size:11px; color:var(--muted); font-weight:900; letter-spacing:0.04em; text-transform:uppercase; margin:18px 0 8px;';
+  inLabel.textContent = 'Restore from a backup';
+  content.appendChild(inLabel);
+  const inp = document.createElement('textarea');
+  inp.className = 'gw-activity-notes'; inp.placeholder = 'Paste a backup here';
+  content.appendChild(inp);
+  const restoreBtn = mkBtn('Restore (replaces current data)', 'gw-btn', async ()=>{
+    let parsed;
+    try{ parsed = JSON.parse(inp.value.trim()); }catch(e){ toast("That doesn't look like a backup."); return; }
+    const entries = parsed && parsed.app==='wodshed' && parsed.data && typeof parsed.data==='object' ? Object.entries(parsed.data).filter(([k])=>k.startsWith('garage-wod-')) : [];
+    if(!entries.length){ toast("That doesn't look like a backup."); return; }
+    if(!window.confirm('Replace the data on this device with the backup?')) return;
+    for(const [k, v] of entries) await window.storage.set(k, v);
+    toast('Restored.');
+    setTimeout(()=>location.reload(), 600);
+  });
+  restoreBtn.style.cssText = 'width:100%; padding:14px; margin-top:10px;';
+  content.appendChild(restoreBtn);
+}
 const PROFILE_DRAWERS = {
+  backup: {title:'Backup & Restore', render:renderBackupDrawer},
   equipment: {title:'Equipment', render:renderEquipmentDrawer},
   skills: {title:'Skills', render:renderSkillsDrawer},
   benchmarks: {title:'Benchmarks', render:renderBenchmarksDrawer}
@@ -4999,7 +5053,23 @@ loadState();
 
 <script>
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+  // a Home Screen app stays alive in memory between uses and never reloads on its own, so a new deploy
+  // can sit unseen for days — check for one whenever the app comes back to the front, and when a new
+  // version takes over offer a one-tap reload (never an automatic one: that would drop a workout or
+  // timer in progress). Saved logs live in localStorage and are untouched either way.
+  const hadController = !!navigator.serviceWorker.controller;
+  let swReg = null;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if(!hadController || document.getElementById("gw-update-banner")) return;
+    const bar = document.createElement("div");
+    bar.id = "gw-update-banner";
+    bar.style.cssText = "position:fixed; left:12px; right:12px; top:calc(10px + env(safe-area-inset-top, 0px)); z-index:300; background:#fff; color:#0c1420; border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; font:800 13px Inter,-apple-system,sans-serif; box-shadow:0 8px 24px rgba(0,0,0,0.4);";
+    bar.innerHTML = '<span style="flex:1">New version ready</span><button type="button" style="background:#ff6b6b; color:#0c1420; border:none; border-radius:10px; padding:9px 14px; font:800 13px Inter,-apple-system,sans-serif;">Reload</button>';
+    bar.querySelector("button").onclick = () => location.reload();
+    document.body.appendChild(bar);
+  });
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").then(reg => { swReg = reg; reg.update(); }).catch(()=>{}));
+  document.addEventListener("visibilitychange", () => { if(!document.hidden && swReg) swReg.update().catch(()=>{}); });
 }
 </script>
 </body>
