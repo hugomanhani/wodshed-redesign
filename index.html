@@ -282,11 +282,12 @@
     font-size:12.5px; color:var(--muted); background:none; border:none;
     padding:0 0 14px; margin-bottom:0; display:none; font-weight:600;
   }
+  /* coach notes live in the intro, on the same gradient and in the same voice as the line above them */
   #gw-coachnotes{
-    font-size:12.5px; color:#fff; background:var(--surface); border-left:3px solid var(--coral);
-    border-radius:8px; padding:12px 14px; margin-bottom:16px; display:none; line-height:1.55;
+    font-size:13.5px; color:#b9c6da; font-weight:500; line-height:1.5;
+    margin:0 20px; padding:14px 0 0; border-top:1px solid var(--line-strong); display:none;
   }
-  #gw-coachnotes strong{color:var(--coral);}
+  #gw-coachnotes strong{color:var(--coral); font-weight:800;}
 
   /* ---- workout board / cards ---- */
   #gw-board{ display:flex; flex-direction:column; gap:22px; margin-bottom:20px; }
@@ -808,13 +809,13 @@
         <svg class="gw-select-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
       </label>
     </div>
+    <div id="gw-coachnotes"></div>
     </div>
 
     <div id="gw-sheet">
     <div id="gw-focusline"></div>
     <div id="gw-daytabs"></div>
     <div id="gw-timebanner"></div>
-    <div id="gw-coachnotes"></div>
     <div id="gw-board"></div>
     <div id="gw-actions"></div>
     </div>
