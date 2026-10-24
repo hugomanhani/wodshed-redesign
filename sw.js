@@ -1,4 +1,4 @@
-const CACHE = "garage-wod-v46";
+const CACHE = "garage-wod-v47";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon-32.png"];
 
 self.addEventListener("install", e => {

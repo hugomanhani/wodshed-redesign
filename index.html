@@ -17,7 +17,7 @@
 </head>
 <body>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,500;1,600&family=Big+Shoulders+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap');
 
   :root{
     --bg:#0c1420;
@@ -35,10 +35,11 @@
     --danger:#ff6b6b;
     --good:#5fd0a3;
     --warn:#f5b350;
-    --font-display:'Big Shoulders Display', Impact, 'Arial Narrow', sans-serif;
-    --font-hero:'Fraunces', Georgia, serif;
+    --font-num:'Big Shoulders Display', Impact, 'Arial Narrow', sans-serif;
     --font-body:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono:'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    --font-display:var(--font-body); /* all lettering is Inter; only numerals keep --font-num / --font-mono */
+    --btn-h:48px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   /* no button label ever wraps to a second line — long dynamic text (timer names, movement+load
@@ -81,13 +82,21 @@
 
   .gw-btn{
     background:var(--surface); color:#fff; border:1px solid var(--line-strong);
-    padding:10px 16px; border-radius:8px; cursor:pointer; font-size:12px;
+    padding:0 16px; border-radius:8px; cursor:pointer; font-size:12px;
     font-weight:800; letter-spacing:0.03em; text-transform:uppercase; font-family:var(--font-body);
   }
+  /* one height for every button (start / round / completed / refresh / set controls / primary actions) */
+  .gw-btn, .gw-section-start-btn, .gw-section-round-btn, .gw-section-refresh-btn, .gw-starttimer-btn,
+  .gw-timer-full, .gw-setlist-controls button, #gw-actions > .gw-btn-hero, #gw-actions > .gw-btn-secondary{
+    box-sizing:border-box; min-height:var(--btn-h); padding-top:0; padding-bottom:0;
+    display:inline-flex; align-items:center; justify-content:center; line-height:1.2;
+  }
+  .gw-section-start-btn, .gw-section-round-btn, .gw-section-refresh-btn, .gw-starttimer-btn, .gw-timer-full,
+  #gw-actions > .gw-btn-hero, #gw-actions > .gw-btn-secondary{display:flex;}
   .gw-btn:hover{background:var(--surface-raised);}
-  .gw-btn.gw-primary{background:var(--coral); color:var(--bg); border:none; font-family:var(--font-display); font-size:16px; letter-spacing:0;}
+  .gw-btn.gw-primary{background:var(--coral); color:var(--bg); border:none; font-family:var(--font-body); font-size:14px; letter-spacing:0.02em;}
   .gw-btn.gw-primary:hover{background:var(--coral-dark);}
-  .gw-btn.gw-teal{background:var(--coral); color:var(--bg); border:none; font-family:var(--font-display); font-size:16px; letter-spacing:0;}
+  .gw-btn.gw-teal{background:var(--coral); color:var(--bg); border:none; font-family:var(--font-body); font-size:14px; letter-spacing:0.02em;}
   .gw-btn.gw-teal:hover{background:var(--coral-dark);}
   .gw-btn:disabled{opacity:0.35; cursor:not-allowed;}
   .gw-btn-row{display:flex; gap:8px; flex-wrap:wrap;}
@@ -95,8 +104,8 @@
   /* ---- hero: today's workout, styled after a plan-card (name + meta + pills) ---- */
   #gw-hero{padding:10px 20px 4px;}
   .gw-hero-title{
-    font-family:var(--font-hero); font-style:italic; font-weight:600; font-size:34px;
-    color:#fff; line-height:1.05; letter-spacing:-0.01em;
+    font-family:var(--font-body); font-weight:800; font-size:32px;
+    color:#fff; line-height:1.08; letter-spacing:-0.02em;
   }
   .gw-hero-title-btn{
     display:flex; align-items:center; gap:6px; background:none; border:none; padding:0; cursor:pointer; text-align:left;
@@ -104,18 +113,6 @@
   .gw-hero-title-btn svg{width:20px; height:20px; stroke:var(--muted); fill:none; stroke-width:2.4; flex:none; margin-top:4px;}
   .gw-hero-title-btn:hover svg{stroke:var(--coral);}
   .gw-hero-meta{color:var(--muted); font-size:13px; margin-top:6px; font-weight:500;}
-  /* "swap the whole workout" lives at the bottom of the page, after the exercises, since that's
-     when an athlete actually decides they don't want this one — not up by the title before
-     they've even read it. */
-  .gw-refresh-row{display:flex; align-items:center; gap:8px;}
-  .gw-refresh-btn{
-    flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
-    background:none; color:var(--muted); border:1px solid var(--line-strong); border-radius:10px;
-    padding:14px; font-family:var(--font-body); font-weight:800; font-size:13px; cursor:pointer;
-  }
-  .gw-refresh-btn:hover{color:#fff; border-color:var(--coral);}
-  .gw-refresh-btn svg{width:15px; height:15px; flex:none;}
-
   #gw-controls{
     display:flex; align-items:center; gap:8px; flex-wrap:wrap;
     padding:14px 20px 18px; font-size:12px;
@@ -221,7 +218,7 @@
   /* ---- LOG "last trained" chips ---- */
   .gw-lasttrained-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;}
   .gw-lasttrained-chip{background:var(--surface-2); border-radius:12px; padding:12px 4px; text-align:center;}
-  .gw-lasttrained-num{font-family:var(--font-display); font-weight:900; font-size:20px; color:var(--coral); line-height:1;}
+  .gw-lasttrained-num{font-family:var(--font-num); font-weight:900; font-size:20px; color:var(--coral); line-height:1;}
   .gw-lasttrained-chip.never .gw-lasttrained-num{color:var(--muted);}
   .gw-lasttrained-chip.stale .gw-lasttrained-num{color:var(--warn);}
   .gw-lasttrained-label{font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.02em; font-weight:800; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -243,11 +240,11 @@
   .gw-timeline-badge.badge-scaled{color:var(--muted); background:var(--surface-2);}
   .gw-timeline-badge.badge-pr{color:var(--warn); background:rgba(245,179,80,0.16); display:inline-flex; align-items:center; gap:3px;}
   .gw-timeline-badge.badge-pr svg{width:10px; height:10px; flex:none;}
-  .gw-timeline-result{font-family:var(--font-display); font-weight:900; font-size:24px; color:var(--coral); margin-top:10px;}
+  .gw-timeline-result{font-family:var(--font-num); font-weight:900; font-size:24px; color:var(--coral); margin-top:10px;}
   .gw-timeline-result-sub{font-size:11px; color:var(--muted); font-weight:700; margin-top:1px;}
   .gw-timeline-stats{display:flex; gap:8px; margin-top:12px;}
   .gw-timeline-stat{flex:1 1 120px; max-width:160px; min-width:0; background:var(--surface-2); border-radius:10px; padding:8px; text-align:center;}
-  .gw-timeline-stat-num{font-family:var(--font-display); font-weight:900; font-size:14px; color:var(--coral); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .gw-timeline-stat-num{font-family:var(--font-num); font-weight:900; font-size:14px; color:var(--coral); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .gw-timeline-stat-label{font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:800; margin-top:2px;}
   .gw-timeline-meta{color:var(--muted); font-size:12px; margin-top:10px; line-height:1.5;}
   /* --muted-2 only measures ~3:1 against this dark card background, below the 4.5:1 small-text
@@ -279,21 +276,33 @@
   #gw-coachnotes strong{color:var(--coral);}
 
   /* ---- workout board / cards ---- */
-  #gw-board{ display:flex; flex-direction:column; gap:14px; margin-bottom:20px; }
-  .gw-section{ border-radius:18px; overflow:hidden; background:var(--surface); border:1px solid var(--line); }
-  .gw-section.gw-section-done{opacity:0.68;}
-  .gw-section-head{
-    padding:16px 16px 4px; box-sizing:border-box;
-    display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+  #gw-board{ display:flex; flex-direction:column; gap:22px; margin-bottom:20px; }
+  /* a section is a TITLE (with a check-off circle in front) sitting above a CARD that holds only the
+     workout itself */
+  .gw-section{ }
+  .gw-section-titlerow{display:flex; align-items:center; gap:12px; padding:0 2px 10px;}
+  .gw-section-title{font-family:var(--font-body); font-weight:800; font-size:16px; color:#fff; letter-spacing:0;}
+  .gw-section-card{border-radius:18px; overflow:hidden; background:var(--surface); border:1px solid var(--line);}
+  .gw-section.gw-section-done .gw-section-body > *:not(.gw-section-round-btn){opacity:0.68;}
+  .gw-radio{
+    width:26px; height:26px; border-radius:50%; border:2px solid var(--line-strong); background:none; padding:0;
+    display:inline-flex; align-items:center; justify-content:center; flex:none; cursor:pointer; color:transparent;
   }
-  .gw-section-head .gw-section-title{
-    font-family:var(--font-body); font-weight:800; font-size:16px; color:#fff; text-transform:none; letter-spacing:0;
-  }
-  .gw-section-headmeta{color:var(--muted); font-size:12px; font-weight:600; margin-top:3px;}
-  .gw-section-head .gw-tag{
+  .gw-radio svg{width:13px; height:13px; display:block;}
+  .gw-radio:hover{border-color:var(--coral);}
+  .gw-radio.is-done{background:var(--good); border-color:var(--good); color:var(--bg);}
+  .gw-tag{
     color:var(--coral); font-size:10px; font-weight:900; letter-spacing:0.04em;
     background:var(--coral-wash); padding:4px 10px; border-radius:999px; text-transform:uppercase;
   }
+  /* refresh for just this section — sits under the start/round button, quiet so it never competes with it */
+  .gw-section-refresh-btn{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:-2px;
+    background:none; color:var(--muted); border:1px solid var(--line-strong); border-radius:10px;
+    padding:0 12px; font-family:var(--font-body); font-weight:800; font-size:13.5px; cursor:pointer;
+  }
+  .gw-section-refresh-btn:hover{color:#fff; border-color:var(--coral);}
+  .gw-section-refresh-btn svg{width:15px; height:15px; flex:none;}
   .gw-timer-inline-btn{
     background:none; color:var(--bg); border:1px solid var(--coral); border-radius:999px;
     font-size:11px; font-weight:900; letter-spacing:0.02em; padding:8px 14px; cursor:pointer;
@@ -301,14 +310,14 @@
   }
   .gw-timer-inline-btn:hover{background:rgba(255,107,107,0.1);}
   .gw-timer-full{
-    display:block; width:100%; text-align:center; border-radius:8px; padding:20px; box-sizing:border-box;
-    font-family:var(--font-display); font-size:24px; font-weight:900; text-transform:none;
+    display:block; width:100%; text-align:center; border-radius:8px; padding:0 20px; box-sizing:border-box;
+    font-family:var(--font-body); font-size:18px; font-weight:900; text-transform:none;
     background:none; border:1px solid var(--coral); color:var(--coral); cursor:pointer;
   }
   .gw-timer-full:hover{background:rgba(255,107,107,0.08);}
   .gw-section-start-btn{
     width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-    background:var(--coral); border:none; border-radius:12px; padding:14px; margin-top:14px;
+    background:var(--coral); border:none; border-radius:12px; padding:0 14px; margin-top:14px;
     color:var(--bg); font-family:var(--font-body); font-weight:800; font-size:13.5px;
     text-transform:none; letter-spacing:0; cursor:pointer;
   }
@@ -354,8 +363,16 @@
     padding:9px 0; border-bottom:1px solid var(--line);
   }
   .gw-movement-row:last-child{border-bottom:none;}
-  .gw-movement-main{display:flex; flex-direction:column; gap:2px; min-width:0;}
-  .gw-movement-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .gw-movement-main{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;}
+  .gw-movement-name{overflow-wrap:anywhere;}
+  .gw-movement-tappable{cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .gw-movement-tappable .gw-movement-name::after{
+    content:'i'; display:inline-block; box-sizing:border-box; width:12px; height:12px; margin-left:6px; vertical-align:1px;
+    border-radius:50%; background:var(--line-strong); color:var(--muted);
+    font:800 8px/12px var(--font-body); font-style:normal; text-align:center;
+  }
+  .gw-movement-tappable:active .gw-movement-name{color:var(--coral);}
+  .gw-movement-tappable:focus-visible{outline:2px solid var(--coral); outline-offset:2px; border-radius:6px;}
   .gw-movement-reps{color:var(--muted); font-size:12px; font-weight:600;}
 
   .gw-setlist{display:flex; flex-direction:column; width:100%;}
@@ -380,29 +397,23 @@
   .gw-setlist-controls{display:flex; gap:8px; margin-top:4px;}
   .gw-setlist-controls button{
     flex:1; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px;
-    padding:10px; font-family:var(--font-body); font-weight:700; font-size:12.5px; cursor:pointer;
+    padding:0 10px; font-family:var(--font-body); font-weight:700; font-size:13px; cursor:pointer;
   }
   .gw-setlist-controls button:hover{border-color:var(--coral); color:var(--coral);}
   .gw-setlist-controls button:disabled{opacity:0.4; cursor:default;}
 
   .gw-drawer-handle{width:36px; height:4px; border-radius:4px; background:var(--line-strong); margin:6px auto 16px;}
 
-  .gw-info-links{display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-family:var(--font-body); font-weight:700; font-size:11px; color:var(--muted);}
-  .gw-info-links .gw-info-label{font-weight:900;}
-  .gw-info-links a, .gw-info-links span.gw-info-link{color:var(--muted); text-decoration:underline; cursor:pointer;}
-  .gw-info-links span.gw-info-link:hover{color:#fff;}
-
   #gw-empty{ text-align:center; padding:60px 20px; color:var(--muted); }
   #gw-empty .gw-btn{margin-top:14px;}
   .gw-plates{font-size:12px; color:#fff; font-weight:700;}
-  .gw-chips{display:none;} /* replaced by gw-info-links */
 
   #gw-actions{display:flex; flex-direction:column; gap:12px; margin-bottom:20px;}
   #gw-actions .gw-btn-row{width:100%;}
   #gw-actions > .gw-btn-hero{
     width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
     background:var(--coral); color:var(--bg); border:none; border-radius:999px;
-    padding:19px; font-family:var(--font-body); font-size:15.5px; font-weight:800; text-transform:none; letter-spacing:0;
+    padding:0 19px; font-family:var(--font-body); font-size:15px; font-weight:800; text-transform:none; letter-spacing:0;
     box-shadow:0 10px 28px rgba(255,107,107,0.28);
     margin-bottom:10px;
   }
@@ -411,14 +422,14 @@
   #gw-actions > .gw-btn-secondary{
     width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
     background:none; color:var(--muted); border:1px solid var(--line-strong); border-radius:10px;
-    padding:14px; font-family:var(--font-body); font-size:13px; font-weight:800; letter-spacing:0.02em;
+    padding:0 14px; font-family:var(--font-body); font-size:13px; font-weight:800; letter-spacing:0.02em;
   }
   #gw-actions > .gw-btn-secondary:hover{color:#fff; border-color:var(--coral);}
   #gw-actions > .gw-btn-secondary svg{width:15px; height:15px;}
   .gw-btn-with-icon{display:inline-flex; align-items:center; gap:8px;}
   .gw-btn-with-icon svg{flex-shrink:0;}
   .gw-icon-btn svg{width:16px; height:16px; display:block;}
-  #gw-actions .gw-btn.gw-primary, #gw-actions .gw-btn.gw-teal{width:100%; padding:20px;}
+  #gw-actions .gw-btn.gw-primary, #gw-actions .gw-btn.gw-teal{width:100%;}
   .gw-rate-block{background:var(--surface); border:1px solid var(--line-strong); border-radius:8px; padding:16px; width:100%;}
   .gw-rate-block .gw-rate-label{font-size:11px; font-weight:900; color:#fff; letter-spacing:0.02em; text-transform:uppercase; margin-bottom:12px; font-family:var(--font-body);}
   .gw-rate-options{display:flex; gap:8px;}
@@ -452,7 +463,8 @@
   }
   .gw-stats-row{display:flex; gap:10px; margin-top:16px;}
   .gw-stat-tile{flex:1; min-width:0; background:var(--surface-2); border-radius:12px; padding:12px 8px; text-align:center;}
-  .gw-stat-num{font-family:var(--font-display); font-weight:900; font-size:17px; color:var(--coral); line-height:1.15; overflow-wrap:break-word;}
+  .gw-txt{font-family:var(--font-body) !important; font-weight:800 !important;} /* a value slot that holds words, not digits */
+  .gw-stat-num{font-family:var(--font-num); font-weight:900; font-size:17px; color:var(--coral); line-height:1.15; overflow-wrap:break-word;}
   .gw-stat-label{font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-top:4px;}
   .gw-profile-list{background:var(--surface); border-radius:16px; overflow:hidden; margin-bottom:20px;}
   .gw-profile-list-row{
@@ -581,22 +593,22 @@
 
   .gw-starttimer-btn{
     width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-    background:var(--coral); border:none; border-radius:14px; padding:18px;
-    color:var(--bg); font-family:var(--font-display); font-weight:900; font-size:16px;
+    background:var(--coral); border:none; border-radius:14px; padding:0 18px;
+    color:var(--bg); font-family:var(--font-body); font-weight:900; font-size:15px;
     text-transform:uppercase; letter-spacing:0.02em; cursor:pointer;
   }
   .gw-starttimer-btn:hover{background:var(--coral-dark);}
   .gw-starttimer-btn svg{width:20px; height:20px;}
   .gw-section-round-btn{
     width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-    background:var(--coral); border:none; border-radius:12px; padding:14px; margin-top:14px;
+    background:var(--coral); border:none; border-radius:12px; padding:0 14px; margin-top:14px;
     color:var(--bg); font-family:var(--font-body); font-weight:800; font-size:13.5px;
     text-transform:none; letter-spacing:0; cursor:pointer;
   }
   .gw-section-round-btn:hover{background:var(--coral-dark);}
   .gw-section-round-btn span:not(.gw-round-target):not(.gw-navmid-badge){overflow:hidden; text-overflow:ellipsis; min-width:0;}
   .gw-round-target{opacity:0.7; font-size:13px;}
-  .gw-section-round-btn:disabled{background:var(--surface); color:var(--coral); cursor:default;}
+  .gw-section-round-btn:disabled{background:var(--good); color:var(--bg); cursor:default;}
   .gw-section-round-btn:disabled svg{width:18px; height:18px;}
   .gw-navmid-badge{
     width:22px; height:22px; border-radius:50%; background:var(--bg); color:var(--coral);
@@ -909,6 +921,8 @@ const ICON_EQUIP_PLACEHOLDER = '<svg viewBox="0 0 256 256" fill="currentColor" w
 // a icon-font lookup, since none of these have a dedicated Phosphor icon. Swap for real artwork
 // via EQUIPMENT_ICONS whenever it's ready; each is a self-contained inline SVG so no assets to add.
 const ICON_PULLUP_BAR = '<svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="48" y1="72" x2="48" y2="200"/><line x1="208" y1="72" x2="208" y2="200"/><line x1="48" y1="72" x2="208" y2="72"/></svg>';
+// a pipe, drawn as a rotated outlined pill
+const ICON_PVC = '<svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="106" y="14" width="44" height="228" rx="22" transform="rotate(45 128 128)"/></svg>';
 const ICON_RINGS = '<svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" width="20" height="20"><line x1="50" y1="32" x2="206" y2="32"/><line x1="76" y1="32" x2="76" y2="118"/><line x1="180" y1="32" x2="180" y2="118"/><circle cx="76" cy="160" r="42"/><circle cx="180" cy="160" r="42"/></svg>';
 const ICON_KETTLEBELL = '<svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M96 130 L96 90 A32 32 0 0 1 160 90 L160 130"/><circle cx="128" cy="168" r="62" fill="currentColor" stroke="none"/></svg>';
 const ICON_JUMP_ROPE = '<svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" width="20" height="20"><line x1="36" y1="40" x2="36" y2="88"/><line x1="220" y1="40" x2="220" y2="88"/><path d="M36 88 Q128 224 220 88"/></svg>';
@@ -948,17 +962,17 @@ function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
 
 // ---------- WARM-UPS ----------
 const WARMUPS = {
-  strength: ["2X:\n30\" high knees\n10 PVC pass-throughs (2nd bar)\n10 air squats\n10 hollow rocks",
+  strength: ["2X:\n30\" high knees\n10 PVC pass-throughs\n10 air squats\n10 hollow rocks",
              "2X:\n15 walking lunges each leg\n10 good mornings (2nd bar)\n10 hollow rocks",
              "2X:\n10 reverse lunges each leg\n10 glute bridges\n10 hollow rocks",
-             "2X:\n20\" high knees\n10 walking lunges each leg\n10 PVC pass-throughs (2nd bar)"],
+             "2X:\n20\" high knees\n10 walking lunges each leg\n10 PVC pass-throughs"],
   gymnastics: ["2X:\n10 scap pull-ups\n10 hollow rocks\n10 superman\n30 single unders",
                "2X:\n60 single unders\n10 scap pull-ups\n10 superman",
                "2X:\n10 inchworms\n10 plank shoulder taps\n20\" high knees",
                "2X:\n10 dislocates (W-bar)\n10 scap pull-ups\n10 superman"],
-  weightlifting: ["2X (empty 2nd bar):\n10 OHS\n10 good mornings\n10 strict press",
-                  "2X (empty 2nd bar):\n10 muscle snatch\n10 OHS\n10 snatch grip good mornings",
-                  "2X (empty 2nd bar):\n10 hang power snatch\n10 OHS\n10 good mornings",
+  weightlifting: ["2X (empty barbell):\n10 OHS\n10 good mornings\n10 strict press",
+                  "2X (empty barbell):\n10 muscle snatch\n10 OHS\n10 snatch grip good mornings",
+                  "2X (empty barbell):\n10 hang power snatch\n10 OHS\n10 good mornings",
                   "2X:\n10 KB swings\n10 air squats\n10 arm circles each way"],
   accessory: ["2X:\n10 KB deadlifts\n10 push-ups\n10 walking lunges each leg",
               "2X:\n10 push-ups\n10 walking lunges each leg\n10 dislocates (W-bar)",
@@ -1658,11 +1672,11 @@ function timerExplainer(spec){
   }
   if(spec.kind==='LADDER'){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
-    return `For Time — ${spec.rungs.join('-')}, finish as fast as you can${capPart}.`;
+    return `Finish as fast as you can${capPart}.`;
   }
   if(spec.kind==='FORTIME'){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
-    return `For Time — one round through, finish as fast as you can${capPart}.`;
+    return `One round through, finish as fast as you can${capPart}.`;
   }
   if(spec.kind==='FORTIME_REPEATS'){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
@@ -1671,7 +1685,7 @@ function timerExplainer(spec){
   if(spec.kind==='INTERVAL'){
     // 'X Rest Between Sets' is a literal rest countdown tapped between sets — everything else
     // (e.g. 'For X Cycles') is a continuous running clock the lift happens inside of, not a rest
-    if(spec.label==='X Rest Between Sets') return spec.totalRounds ? `Rest between sets — ${spec.totalRounds} sets total.` : `Rest between rounds — repeat as prescribed.`;
+    if(spec.label==='X Rest Between Sets') return 'Rest between sets.';
     return spec.totalRounds ? `Every ${fmtMinutesShort(spec.minutes)} — ${spec.totalRounds} sets total.` : `Every ${fmtMinutesShort(spec.minutes)} — repeat as prescribed.`;
   }
   if(spec.kind==='COUNTDOWN') return `Go until the clock hits zero.`;
@@ -2063,7 +2077,9 @@ function parseSetScheme(text){
     if(dashMatch) return trimmed.split('-').map(Number);
     const xMatch = trimmed.match(SET_SCHEME_X_RE);
     if(xMatch){
-      const reps = /^\d+$/.test(xMatch[2]) ? Number(xMatch[2]) : xMatch[2];
+      // a prescribed range ("5-8") starts at its top — the field holds one number, and starting
+      // at the ceiling means a mid-workout drop is a deliberate edit rather than a blank to fill in
+      const reps = Number(xMatch[2].split('-').pop());
       return Array(Number(xMatch[1])).fill(reps);
     }
   }
@@ -2139,7 +2155,8 @@ function updateSkillSchemeText(text, newReps){
   for(let i=0;i<lines.length;i++){
     const trimmed = lines[i].trim();
     if(/^\d+(?:-\d+){1,}$/.test(trimmed) || SET_SCHEME_X_RE.test(trimmed) || trimmed.includes(' / ')){
-      lines[i] = newLine;
+      const suffix = SET_SCHEME_X_RE.test(trimmed) ? trimmed.replace(SET_SCHEME_X_RE, '') : '';
+      lines[i] = newLine + suffix;
       return lines.join('\n');
     }
   }
@@ -2244,6 +2261,7 @@ function generateWorkout(type){
     skillSetReps: initSkillSetReps,
     skillSetWeights: buildSkillSetWeights(initSkillSetReps.length, suggestedLoad),
     skillLoads: (skillTplText && !bw) ? buildSkillLoads(skillTplText) : [],
+    skillRepsCascade: initSkillSetReps.every(r=>r===initSkillSetReps[0]),
     formatId, format, wodMovements, movements: wodMovements.map(m=>m.name), wodTimerSpec,
     core, coreTimer, rpe: null, wodRpe: null, bw,
     volumeUsed: effectiveVolume, coachNotes, isBenchmark, benchmarkName,
@@ -2304,6 +2322,14 @@ const TIMER_KIND_NAMES = {AMRAP:'AMRAP', EMOM:'EMOM', TABATA:'Tabata', RFT:'Roun
 // "1:30" for a fractional interval at or past a minute, "2 min" for a whole one, "30 sec" under
 // a minute — matches how the prescription text itself already phrases "Every 1:30" / "Every 2 min",
 // while staying in plain words (not "0:30") for anything under 60 seconds
+// "2 minutes", "1 minute", "1 min 30 sec", "30 seconds" — for the spoken-style "Every …:" line
+function everyPhrase(minutes){
+  const whole = Math.floor(minutes);
+  const sec = Math.round((minutes - whole) * 60);
+  if(!whole) return `${sec} seconds`;
+  if(!sec) return whole === 1 ? 'minute' : `${whole} minutes`;
+  return `${whole} min ${sec} sec`;
+}
 function fmtMinutesShort(minutes){
   const whole = Math.floor(minutes);
   const sec = Math.round((minutes - whole) * 60);
@@ -2406,6 +2432,12 @@ function blockedStartButton(name){
   return btn;
 }
 function addStartSectionButton(node, key){
+  addStartButtonCore(node, key);
+  // a finished section has nothing left to swap — it just reads "Completed"
+  const w = state.currentWorkout;
+  if(!(w && w.sectionsDone && w.sectionsDone[key])) appendSectionRefresh(node);
+}
+function addStartButtonCore(node, key){
   const w = state.currentWorkout;
   const stepData = w && getSectionFocusData(w, key);
   if(!stepData) return;
@@ -2436,7 +2468,12 @@ function addStartSectionButton(node, key){
     // never "set N of M" — that progress shows on the set rows themselves instead.
     const btn = document.createElement('button');
     btn.className = 'gw-section-start-btn';
-    btn.innerHTML = `${ICON_TIMER}<span>Start ${fmtMinutesShort(stepData.timerSpec.minutes)} Rest</span>`;
+    // progress normally shows on the set rows — when those are hidden (block workouts, core), it
+    // goes on the button instead so "which set am I on" is never lost
+    const rowsHidden = key==='core' || (key==='skill' && w.skillSetReps && w.skillSetReps.every(r=>r===null) && !w.skillLiftKey);
+    const doneSets = (w.roundCounts && w.roundCounts[key]) || 0;
+    const progress = rowsHidden && stepData.timerSpec.totalRounds > 1 ? ` · Set ${Math.min(doneSets+1, stepData.timerSpec.totalRounds)} of ${stepData.timerSpec.totalRounds}` : '';
+    btn.innerHTML = `${ICON_TIMER}<span>Start ${fmtMinutesShort(stepData.timerSpec.minutes)} Rest${progress}</span>`;
     btn.onclick = ()=>openPacedRestSet(key);
     node.bodyEl.appendChild(btn);
   } else if(stepData.timerSpec){
@@ -2454,7 +2491,7 @@ function renderSectionNode(key, w, opts){
   opts = opts || {};
   if(key==='warmup'){
     if(!w.warmup) return null;
-    const node = sectionWithChips('Warm-Up', w.warmup, DAY_TYPES.find(d=>d.key===w.type).label, {
+    const node = sectionWithChips('Warm-Up', w.warmup, '', {
       onReroll: opts.simple ? null : ()=>rerollSection('warmup'),
       onDone: opts.simple ? null : ()=>toggleSectionDone(w, 'warmup'),
       isDone: !!w.sectionsDone.warmup
@@ -2465,7 +2502,7 @@ function renderSectionNode(key, w, opts){
   }
   if(key==='skill'){
     if(!w.skillTplText) return null;
-    const node = sectionWithChips('Skill', w.skillTplText, w.deload ? 'DELOAD' : (w.bw ? 'BODYWEIGHT' : ''), {
+    const node = sectionWithChips('Skill', w.skillTplText, w.deload ? 'DELOAD' : '', {
       onReroll: opts.simple ? null : ()=>rerollSection('skill'),
       onDone: opts.simple ? null : ()=>toggleSectionDone(w, 'skill'),
       isDone: !!w.sectionsDone.skill,
@@ -2479,10 +2516,14 @@ function renderSectionNode(key, w, opts){
         for(let i=idx; i<w.skillSetWeights.length; i++) w.skillSetWeights[i] = val;
         w.suggestedLoad = w.skillSetWeights[w.skillSetWeights.length-1]; // logged/progression value tracks the last set
       },
-      // reps don't cascade like weight does — a prescribed range (e.g. "8-10") or a ladder is
-      // often intentionally different set to set, so editing one set only touches that set
+      // like weight, a rep change carries forward into the sets still to come — every time, so
+      // dropping reps mid-workout and again later both stick. The exception is a prescribed ladder
+      // (5-5-3-3-2-2), which is intentionally different set to set: there an edit only touches
+      // that one set (skillRepsCascade is decided once, when the workout is generated)
       onRepsChange: opts.simple ? null : (idx, val)=>{
-        w.skillSetReps[idx] = val;
+        const num = /^\d+$/.test(String(val)) ? Number(val) : val;
+        if(w.skillRepsCascade !== false){ for(let i=idx; i<w.skillSetReps.length; i++) w.skillSetReps[i] = num; }
+        else w.skillSetReps[idx] = num;
         w.skillTplText = updateSkillSchemeText(w.skillTplText, w.skillSetReps);
         render();
       },
@@ -2641,7 +2682,7 @@ function openRateDrawer(kind){
   content.appendChild(notesInput);
 
   const doneBtn = mkBtn('Done', 'gw-teal', ()=>{ closeRateDrawer(); render(); });
-  doneBtn.style.cssText = 'margin-top:16px; width:100%; padding:16px;';
+  doneBtn.style.cssText = 'margin-top:16px; width:100%;';
   content.appendChild(doneBtn);
 
   rateDrawerOpenedAt = Date.now(); document.getElementById('gw-rate-drawer-backdrop').classList.add('show');
@@ -2714,20 +2755,6 @@ function renderHero(w){
   const count = countWorkoutExercises(w);
   meta.textContent = `~${estimateWorkoutMinutes(w)} min · ${count} exercise${count===1?'':'s'}`;
 }
-// "swap the whole workout" — deliberately placed at the bottom of the actions block, after the
-// exercises, since that's when an athlete actually decides they don't want this one.
-function renderRefreshRow(container, w){
-  const row = document.createElement('div');
-  row.className = 'gw-refresh-row';
-  const refreshBtn = document.createElement('button');
-  refreshBtn.type = 'button';
-  refreshBtn.className = 'gw-refresh-btn';
-  refreshBtn.innerHTML = `${ICON_REFRESH}<span>Refresh Workout</span>`;
-  refreshBtn.onclick = ()=>{ generateWorkout(w.type); toast('Workout refreshed.'); };
-  row.appendChild(refreshBtn);
-  container.appendChild(row);
-}
-
 function render(){
   const w0 = state.currentWorkout;
   renderHero(w0);
@@ -2757,7 +2784,6 @@ function render(){
   });
 
   actions.innerHTML = '';
-  renderRefreshRow(actions, w);
   renderRatingAndLogBlock(actions, w, render);
 
   // the timer drawer floats above this homepage — re-render its contents in place if it's open,
@@ -3683,99 +3709,251 @@ function focusUpdateDisplay(){
   }
 }
 
-function splitHeadline(body){
-  const lines = body.split('\n');
-  const first = (lines[0] || '').trim();
-  const rest = lines.slice(1).join('\n');
-  const repeatMatch = first.match(/^(\d+)\s*X:?$/i);
-  if(repeatMatch) return {headline: 'REPEAT ' + repeatMatch[1] + 'X', detail: rest};
-  return {headline: first.replace(/:$/,''), detail: rest};
+// ---- section text -> a headline plus one row per exercise ----
+// Workout text is authored as plain lines ("10 walking lunges each leg"); a card shows each exercise
+// on its own line, name first with the quantity underneath, the same way the WOD card does.
+const SECTION_CATEGORY_RE = /^(ACCESSORY SUPERSET|OLYMPIC LIFTING|EXPLOSIVE POWER|STRENGTH|GYMNASTIC|ACCESSORY|ENDURANCE)\b\s*(.*)$/;
+const NAME_FIXES = [[/\bKb\b/g,'KB'], [/\bOhs\b/g,'OHS'], [/\bW-Bar\b/g,'W-bar'], [/\bV-Ups\b/g,'V-ups'], [/\bPvc\b/g,'PVC'],
+  [/ (To|Or|And|Of|Per) /g, m=>m.toLowerCase()]];
+function niceName(str){
+  let t = str.trim();
+  const parens = [];
+  t = t.replace(/\([^)]*\)/g, ph=>{ parens.push(ph); return `\u0001${parens.length-1}\u0001`; });
+  if(t === t.toUpperCase() && /[A-Z]/.test(t)) t = t.toLowerCase();
+  t = t.replace(/(^|[\s\/+-])([a-z])/g, (m,pre,c)=>pre+c.toUpperCase());
+  NAME_FIXES.forEach(([re,rep])=>{ t = t.replace(re, rep); });
+  return t.replace(/\u0001(\d+)\u0001/g, (m,i)=>parens[i]).trim();
 }
+const EACH_RE = /\b(each (?:leg|side|arm|way|hand))\b/i;
+function qtyWord(num, mark){ return mark==='"' ? `${num} sec` : (mark==="'" ? `${num} min` : `${num} ${String(num)==='1' ? 'rep' : 'reps'}`); }
+// one authored line -> zero or more items: {kind:'exercise'|'scheme'|'every'|'rest', raw, name, qty, paren}
+function parseSectionLine(line){
+  let s = line.trim();
+  if(!s) return [];
+  let tag = '';
+  const oe = s.match(/^(Odd|Even):\s*(.*)$/i);
+  if(oe){ tag = oe[1].toLowerCase()==='odd' ? 'odd minutes' : 'even minutes'; s = oe[2]; }
+  s = s.replace(/^(?:Each|Every) minute:\s*/i, '').replace(/^\d+-\s+/, '');
 
-function appendInfoAndTimer(bodyEl, fullText){
-  const known = findKnownMovements(fullText);
-  if(known.length){
-    const info = document.createElement('div');
-    info.className = 'gw-info-links';
-    const infoLabel = document.createElement('span');
-    infoLabel.className = 'gw-info-label';
-    infoLabel.textContent = 'INFO:';
-    info.appendChild(infoLabel);
-    known.forEach(name=>{
-      const link = document.createElement('span');
-      link.className = 'gw-info-link';
-      link.textContent = name;
-      link.onclick = ()=>showModal(name, EXERCISE_INFO[name].desc, EXERCISE_INFO[name].url);
-      info.appendChild(link);
-    });
-    bodyEl.appendChild(info);
+  // "5 x 5", "5 sets x 8-10 (strict or banded)", "5 x 10 lunges each leg"
+  let m = s.match(/^(\d+)\s*(?:sets?\s*)?[x×]\s*(\d+(?:-\d+)?)\s*(.*)$/i);
+  if(m){
+    const tail = m[3];
+    const each = (tail.match(EACH_RE) || [])[1] || '';
+    const paren = (tail.match(/\(([^)]*)\)/) || [])[1] || '';
+    const nameText = tail.replace(/\([^)]*\)/g,'').replace(EACH_RE,'').trim();
+    const qty = `${m[1]} × ${m[2]}${each ? ' '+each : ''}`;
+    if(nameText) return [{kind:'exercise', raw:s, name:niceName(nameText + (paren ? ` (${paren})` : '')), qty}];
+    return [{kind:'scheme', raw:s, qty, paren}];
   }
+  // a bare rep ladder: "5-5-3-3-2-2"
+  if(/^\d+(?:-\d+){1,}$/.test(s)) return [{kind:'scheme', raw:s, qty:s + ' reps', paren:''}];
+  // "5 sets:" on its own is just a count (the explainer says it); "5 sets: 100 single unders + …" has content
+  m = s.match(/^\d+\s*sets?\b([^:]*)(?::\s*(.*))?$/i);
+  if(m){ if(!m[2]) return []; s = m[2]; }
+  if(/^every\s+\d/i.test(s)) return [{kind:'every', raw:s, name:s, qty:''}];
+  m = s.match(/^rest\s+(\d+)(["'])?\s*(.*)$/i);
+  if(m) return [{kind:'rest', raw:s, name:'Rest', qty:`${qtyWord(m[1], m[2]||'"').replace(' reps',' sec')}${m[3] ? ' '+m[3] : ''}`}];
+
+  const parts = /[()]/.test(s) ? [s] : s.split(/\s\+\s/);
+  return parts.map(part=>{
+    const nm = part.trim().match(/^(\d+(?:\/\d+)?(?:-\d+)?)(["'])?\s+(.+)$/);
+    if(nm && /^rest$/i.test(nm[3].trim())) return {kind:'rest', raw:part, name:'Rest', qty:qtyWord(nm[1], nm[2]||'"')};
+    if(!nm) return {kind:'exercise', raw:part, name:niceName(part.replace(/:$/,'')), qty:tag};
+    const each = (nm[3].match(EACH_RE) || [])[1] || '';
+    const name = niceName(nm[3].replace(EACH_RE,'').replace(/\s+/g,' '));
+    const qty = qtyWord(nm[1], nm[2]) + (each ? ' '+each : '') + (tag ? ` · ${tag}` : '');
+    return {kind:'exercise', raw:part, name, qty};
+  });
+}
+function parseSectionText(body){
+  const lines = body.split('\n').map(l=>l.trim()).filter(Boolean);
+  const first = lines.shift() || '';
+  let headline = '', m, dashRow = false;
+  if((m = first.match(/^(\d+)\s*X\b\s*(\(.*\))?:?$/i))) headline = `${m[1]} rounds${m[2] ? ' '+m[2] : ''}`;
+  else if((m = first.match(/^(\d+)\s*rds?\b/i))) headline = `${m[1]} rounds`;
+  else if(/^(Tabata|EMOM|AMRAP)\b/i.test(first)) headline = first.replace(/:$/,'');
+  else if((m = first.match(SECTION_CATEGORY_RE))){
+    const remainder = m[2].replace(/:$/,'').trim();
+    if(m[1]==='ACCESSORY SUPERSET') headline = 'Superset';
+    else {
+      const dash = remainder.match(/^-\s*(.+)$/);
+      if(dash){
+        if(/^complex\b/i.test(dash[1])) headline = niceName(dash[1]);
+        else { lines.unshift(dash[1]); dashRow = true; }
+      }
+      // anything else after the category ("(KB)", "(bodyweight)", "(W-bar + KB)") is equipment the
+      // exercise lines already make obvious
+    }
+  } else lines.unshift(first);
+  if(!headline && lines.length && /^(EMOM|AMRAP|Tabata)\b/i.test(lines[0])) headline = lines.shift().replace(/:$/,'');
+  const items = [];
+  lines.forEach(l=>parseSectionLine(l).forEach(it=>items.push(it)));
+  // "OLYMPIC LIFTING - SNATCH" followed by its own list of movements names the group; followed by a
+  // set scheme ("6 sets x 3") it IS the movement
+  if(dashRow && items.length > 1 && items[1].kind==='exercise'){ headline = items[0].name; items.shift(); }
+  return {headline, items};
 }
 
-function markDoneBtn(isDone, onToggle){
+// tapping an exercise line opens its how-to; the row's own name wins, the full text of its line is the
+// fallback, and the most specific (longest) known movement is the one shown
+// a numeric slot keeps the number face only while it actually holds a number
+function numCls(v){ return /\d/.test(String(v==null ? '' : v)) ? '' : ' gw-txt'; }
+function infoKeyFor(name, raw){
+  const best = list=>list.sort((a,b)=>b.length-a.length)[0] || null;
+  return best(findKnownMovements(name || '')) || best(findKnownMovements(raw || ''));
+}
+function makeRowTappable(row, key){
+  if(!key) return;
+  row.classList.add('gw-movement-tappable');
+  row.setAttribute('role', 'button');
+  row.tabIndex = 0;
+  row.setAttribute('aria-label', `${key} — how to`);
+  const open = ()=>showModal(key, EXERCISE_INFO[key].desc, EXERCISE_INFO[key].url);
+  row.onclick = (e)=>{ if(e.target.closest('input')) return; open(); };
+  row.onkeydown = (e)=>{ if((e.key==='Enter' || e.key===' ') && !e.target.closest('input')){ e.preventDefault(); open(); } };
+}
+
+// ---- section layout: the section's name sits OUTSIDE the card as a title with a check-off circle in
+// front of it; the card holds only the workout itself, then the start button, then a refresh button
+// for just that section ----
+function radioBtn(isDone, onToggle, name){
   const btn = document.createElement('button');
-  btn.className = 'gw-icon-btn gw-done-btn' + (isDone ? ' is-done' : '');
-  btn.innerHTML = ICON_CHECK;
+  btn.type = 'button';
+  btn.className = 'gw-radio' + (isDone ? ' is-done' : '');
+  btn.setAttribute('role', 'checkbox');
+  btn.setAttribute('aria-checked', isDone ? 'true' : 'false');
+  btn.setAttribute('aria-label', `${name} done`);
   btn.title = isDone ? 'Mark not done' : 'Mark as done';
+  btn.innerHTML = ICON_CHECK;
   btn.onclick = onToggle;
   return btn;
+}
+function sectionShell(title, isDone, onDone, onReroll){
+  const wrap = document.createElement('div');
+  wrap.className = 'gw-section' + (isDone ? ' gw-section-done' : '');
+  const titleRow = document.createElement('div');
+  titleRow.className = 'gw-section-titlerow';
+  if(onDone) titleRow.appendChild(radioBtn(isDone, onDone, title));
+  const t = document.createElement('span');
+  t.className = 'gw-section-title';
+  t.textContent = title;
+  titleRow.appendChild(t);
+  wrap.appendChild(titleRow);
+  const card = document.createElement('div');
+  card.className = 'gw-section-card';
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'gw-section-body';
+  card.appendChild(bodyEl);
+  wrap.appendChild(card);
+  wrap.bodyEl = bodyEl;
+  wrap.onReroll = onReroll || null;
+  wrap.sectionTitle = title;
+  return wrap;
+}
+function appendSectionRefresh(node){
+  if(!node.onReroll) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'gw-section-refresh-btn';
+  btn.setAttribute('aria-label', `Refresh ${node.sectionTitle}`);
+  btn.innerHTML = `${ICON_REFRESH}<span>Refresh</span>`;
+  btn.onclick = node.onReroll;
+  node.bodyEl.appendChild(btn);
+}
+// one exercise: name on top, quantity underneath; a loaded movement's weight sits at the right edge
+function exerciseRow(item, loadItem, onLoadChange, loadIdx){
+  const row = document.createElement('div');
+  row.className = 'gw-movement-row';
+  const main = document.createElement('div');
+  main.className = 'gw-movement-main';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'gw-movement-name';
+  nameEl.textContent = item.name;
+  main.appendChild(nameEl);
+  if(item.qty){
+    const qtyEl = document.createElement('span');
+    qtyEl.className = 'gw-movement-reps';
+    qtyEl.textContent = item.qty;
+    main.appendChild(qtyEl);
+  }
+  row.appendChild(main);
+  makeRowTappable(row, infoKeyFor(item.name, item.raw));
+  if(loadItem){
+    const weightWrap = document.createElement('span');
+    weightWrap.className = 'gw-setlist-weight';
+    const input = document.createElement('input');
+    input.type = 'number'; input.step = '5'; input.value = loadItem.load;
+    input.setAttribute('aria-label', `${item.name} weight in pounds`);
+    input.onchange = ()=>{ const val = Number(input.value)||0; input.value = val; onLoadChange && onLoadChange(loadIdx, val); };
+    weightWrap.appendChild(input);
+    const unit = document.createElement('span');
+    unit.textContent = 'lb';
+    weightWrap.appendChild(unit);
+    row.appendChild(weightWrap);
+  }
+  return row;
 }
 
 function sectionWithChips(title, body, tag, opts){
   opts = opts || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'gw-section' + (opts.isDone ? ' gw-section-done' : '');
-  const head = document.createElement('div');
-  head.className = 'gw-section-head';
-  const titleCol = document.createElement('div');
-  const titleWrap = document.createElement('span');
-  titleWrap.className = 'gw-section-title';
-  titleWrap.textContent = title;
-  titleCol.appendChild(titleWrap);
-  if(opts.meta){
-    const metaEl = document.createElement('div');
-    metaEl.className = 'gw-section-headmeta';
-    metaEl.textContent = opts.meta;
-    titleCol.appendChild(metaEl);
-  }
-  head.appendChild(titleCol);
+  const wrap = sectionShell(title, !!opts.isDone, opts.onDone, opts.onReroll);
+  const bodyEl = wrap.bodyEl;
 
-  const rightWrap = document.createElement('span');
-  rightWrap.style.cssText = 'display:flex; align-items:center; gap:8px; flex-shrink:0;';
-  if(opts.onReroll){
-    const rBtn = document.createElement('button');
-    rBtn.className = 'gw-icon-btn';
-    rBtn.innerHTML = ICON_REFRESH;
-    rBtn.title = 'Swap this section';
-    rBtn.onclick = opts.onReroll;
-    rightWrap.appendChild(rBtn);
-  }
-  if(opts.onDone) rightWrap.appendChild(markDoneBtn(opts.isDone, opts.onDone));
-  head.appendChild(rightWrap);
-
-  const bodyEl = document.createElement('div');
-  bodyEl.className = 'gw-section-body';
-
-  const {headline, detail} = splitHeadline(body);
-  const headlineRow = document.createElement('div');
-  headlineRow.className = 'gw-headline-row';
-  const headEl = document.createElement('div');
-  headEl.className = 'gw-section-headline';
-  headEl.textContent = headline;
-  headlineRow.appendChild(headEl);
-  if(tag){
-    const tagEl = document.createElement('span');
-    tagEl.className = 'gw-tag';
-    tagEl.textContent = tag;
-    headlineRow.appendChild(tagEl);
-  }
-  bodyEl.appendChild(headlineRow);
   const timerSpecForExplainer = opts.timerSpec || parseTimerFromText(body);
+  const hasSetRows = !!(opts.setsList && opts.setsList.length && !(opts.setsList.every(r=>r===null) && !opts.setsWeights));
+  const parsed = parseSectionText(body);
+  const items = parsed.items;
+
   let explainerText = timerExplainer(timerSpecForExplainer);
-  if(!explainerText && !/^REPEAT/i.test(headline)){
-    // no formal timer for this section (e.g. travel-mode skill work) — still surface the round count, like warmup does
-    const roundTarget = parseRoundTarget(body);
-    if(roundTarget > 1) explainerText = `Repeat ${roundTarget} rounds.`;
+  // every card leads with a title: the workout type (EMOM, Tabata, Every 2 min…) or the number of
+  // rounds. When the text didn't supply one, it comes from the timer; the explainer then only says
+  // what the title doesn't
+  const sp = timerSpecForExplainer;
+  let headline = parsed.headline;
+  const everyItem = parsed.items.find(it=>it.kind==='every');
+  // an interval skill leads with its set count ("5 Sets"); the cadence ("Every 2 minutes:") is the
+  // supporting line under it. A group name ("Complex (main bar)", "Snatch", "Superset") that used to be
+  // the title becomes the first exercise line instead
+  const groupRows = [];
+  const setsTitle = n=>`${n} ${n===1 ? 'Set' : 'Sets'}`;
+  if(sp && sp.kind==='INTERVAL' && sp.totalRounds && !(headline && /^\s*(\d+\s*rounds?|tabata|emom|amrap|for time|countdown)/i.test(headline))){
+    const paced = sp.label==='X Rest Between Sets';
+    if(headline && !/^every\b/i.test(headline)){
+      groupRows.push({name:headline, qty:'', raw:headline});
+      if(headline==='Superset') groupRows.pop();
+    }
+    headline = setsTitle(sp.totalRounds);
+    explainerText = paced ? 'Rest between sets.' : `Every ${everyPhrase(sp.minutes)}:`;
+  } else if(!headline){
+    if(sp && sp.kind==='INTERVAL'){
+      const paced = sp.label==='X Rest Between Sets';
+      headline = paced ? 'Rest between sets' : `Every ${everyPhrase(sp.minutes)}`;
+      explainerText = '';
+    }
+    else if(sp && sp.kind==='COUNTDOWN') headline = `Countdown · ${fmtMinutesShort(sp.minutes)}`;
+    else if(sp && sp.kind==='TABATA') headline = `Tabata · ${sp.rounds} Rounds`;
+    else if(everyItem) headline = everyItem.name;
+    else { const rt = parseRoundTarget(body); headline = `${rt} ${rt===1 ? 'Round' : 'Rounds'}`; }
+  }
+
+  if(headline) headline = headline.replace(/(\d+\s+)(rounds?|sets?)\b/gi, (m, n, w)=>n + w[0].toUpperCase() + w.slice(1).toLowerCase());
+  if(headline || tag){
+    const headlineRow = document.createElement('div');
+    headlineRow.className = 'gw-headline-row';
+    if(headline){
+      const headEl = document.createElement('div');
+      headEl.className = 'gw-section-headline';
+      headEl.textContent = headline;
+      headlineRow.appendChild(headEl);
+    }
+    if(tag){
+      const tagEl = document.createElement('span');
+      tagEl.className = 'gw-tag';
+      tagEl.textContent = tag;
+      headlineRow.appendChild(tagEl);
+    }
+    bodyEl.appendChild(headlineRow);
   }
   if(explainerText){
     const explainEl = document.createElement('div');
@@ -3783,43 +3961,48 @@ function sectionWithChips(title, body, tag, opts){
     explainEl.textContent = explainerText;
     bodyEl.appendChild(explainEl);
   }
-  if(detail.trim()){
-    const detailEl = document.createElement('div');
-    detailEl.className = 'gw-section-detail';
-    detailEl.textContent = detail;
-    bodyEl.appendChild(detailEl);
-  }
-  if(opts.loads && opts.loads.length){
-    const loadWrap = document.createElement('div');
-    loadWrap.className = 'gw-setlist';
-    opts.loads.forEach((item, idx)=>{
-      const row = document.createElement('div');
-      row.className = 'gw-setlist-row';
-      const name = document.createElement('span');
-      name.className = 'gw-load-name';
-      name.textContent = item.label;
-      row.appendChild(name);
-      const weightWrap = document.createElement('span');
-      weightWrap.className = 'gw-setlist-weight';
-      const input = document.createElement('input');
-      input.type = 'number'; input.step = '5'; input.value = item.load;
-      input.onchange = ()=>{ const val = Number(input.value)||0; input.value = val; opts.onLoadChange && opts.onLoadChange(idx, val); };
-      weightWrap.appendChild(input);
-      const unit = document.createElement('span');
-      unit.textContent = 'lb';
-      weightWrap.appendChild(unit);
-      row.appendChild(weightWrap);
-      loadWrap.appendChild(row);
+
+  // drop what's already said elsewhere on the card: "Every 2 min" lives in the explainer, a "Rest 1'"
+  // line lives in the timer, and a bare "5 x 5" scheme is the set rows themselves
+  const rows = groupRows.slice();
+  items.forEach(it=>{
+    if(it.kind==='every'){ if(!/every/i.test((explainerText || '') + ' ' + headline) && it !== everyItem) rows.push({name:it.name, qty:'', raw:it.raw}); return; }
+    if(it.kind==='rest'){ if(!timerSpecForExplainer) rows.push({name:it.name, qty:it.qty, raw:it.raw}); return; }
+    if(it.kind==='scheme'){
+      const prev = rows[rows.length-1];
+      if(prev){
+        if(it.paren) prev.name += ` (${it.paren})`;
+        if(!hasSetRows && !prev.qty) prev.qty = it.qty;
+      } else if(!hasSetRows) rows.push({name:'', qty:it.qty, raw:it.raw});
+      return;
+    }
+    rows.push({name:it.name, qty:it.qty, raw:it.raw});
+  });
+  const loads = opts.loads || [];
+  const usedLoads = new Set();
+  if(rows.length || loads.length){
+    const listEl = document.createElement('div');
+    listEl.className = 'gw-movement-list';
+    rows.forEach(r=>{
+      const li = loads.findIndex((l, i)=>{ const def = SKILL_LOAD_DEFS.find(d=>d.key===l.key); return !usedLoads.has(i) && def && def.re.test(r.raw); });
+      if(li >= 0) usedLoads.add(li);
+      listEl.appendChild(exerciseRow(r, li >= 0 ? loads[li] : null, opts.onLoadChange, li));
     });
-    bodyEl.appendChild(loadWrap);
+    loads.forEach((l, i)=>{ if(!usedLoads.has(i)) listEl.appendChild(exerciseRow({name:l.label, qty:''}, l, opts.onLoadChange, i)); });
+    bodyEl.appendChild(listEl);
   }
+
   if(opts.setsList && opts.setsList.length){
     const listWrap = document.createElement('div');
     listWrap.className = 'gw-setlist';
     const weightInputs = [];
+    // rows exist to edit reps/weight set by set — a block workout (several movements per set, each
+    // with its own rep count in the text) with no tracked lift has neither, so a column of empty
+    // "Set 1 / Set 2 / …" lines would just be noise; only the add/remove-set controls remain
+    const showRows = !(opts.setsList.every(r=>r===null) && !opts.setsWeights);
     // for a paced-rest skill, each set row shows done/not — checked off as its rest completes
     // (see advancePacedRestRound()), not editable at that point since the set's already logged
-    opts.setsList.forEach((reps, idx)=>{
+    (showRows ? opts.setsList : []).forEach((reps, idx)=>{
       const isDone = opts.doneCount && idx < opts.doneCount;
       const row = document.createElement('div');
       row.className = 'gw-setlist-row' + (isDone ? ' gw-setlist-row-done' : '');
@@ -3871,7 +4054,7 @@ function sectionWithChips(title, body, tag, opts){
       }
       listWrap.appendChild(row);
     });
-    bodyEl.appendChild(listWrap);
+    if(showRows) bodyEl.appendChild(listWrap);
     if(opts.onSetsDelta){
       const ctrlRow = document.createElement('div');
       ctrlRow.className = 'gw-setlist-controls';
@@ -3887,68 +4070,30 @@ function sectionWithChips(title, body, tag, opts){
     }
   }
 
-  wrap.appendChild(head); wrap.appendChild(bodyEl);
-  wrap.bodyEl = bodyEl;
-  wrap.finalize = ()=>{
-    appendInfoAndTimer(bodyEl, body);
-  };
+  wrap.finalize = ()=>{};
   return wrap;
 }
 
 function renderWodSection(w){
   w.wodText = buildWodText(w.format, w.wodMovements);
   const isDone = !!(w.sectionsDone && w.sectionsDone.wod);
-  const wrap = document.createElement('div');
-  wrap.className = 'gw-section' + (isDone ? ' gw-section-done' : '');
-  const head = document.createElement('div');
-  head.className = 'gw-section-head';
-  const titleCol = document.createElement('div');
-  const titleWrap = document.createElement('span');
-  titleWrap.className = 'gw-section-title';
-  titleWrap.textContent = 'WOD';
-  titleCol.appendChild(titleWrap);
-  const metaEl = document.createElement('div');
-  metaEl.className = 'gw-section-headmeta';
-  metaEl.textContent = `${w.wodMovements.length} movement${w.wodMovements.length===1?'':'s'}`;
-  titleCol.appendChild(metaEl);
-  head.appendChild(titleCol);
-
-  const rightWrap = document.createElement('span');
-  rightWrap.style.cssText = 'display:flex; align-items:center; gap:8px; flex-shrink:0;';
-  if(!w.isBenchmark){
-    const rBtn = document.createElement('button');
-    rBtn.className = 'gw-icon-btn';
-    rBtn.innerHTML = ICON_REFRESH;
-    rBtn.title = 'Swap the whole WOD';
-    rBtn.onclick = ()=>rerollSection('wod');
-    rightWrap.appendChild(rBtn);
-  }
-  rightWrap.appendChild(markDoneBtn(isDone, ()=>toggleSectionDone(w, 'wod')));
-  head.appendChild(rightWrap);
-
-  const bodyEl = document.createElement('div');
-  bodyEl.className = 'gw-section-body';
+  // a benchmark is a fixed named workout — it can't be swapped out
+  const wrap = sectionShell('WOD', isDone, ()=>toggleSectionDone(w, 'wod'), w.isBenchmark ? null : ()=>rerollSection('wod'));
+  const bodyEl = wrap.bodyEl;
+  const wodTimerSpec = w.wodTimerSpec || parseTimerFromText(w.format);
+  // the format line ("AMRAP 10'") is the headline; the timer's own label would only repeat it, so the
+  // only tag left is a benchmark's name
   const headlineRow = document.createElement('div');
   headlineRow.className = 'gw-headline-row';
   const formatLine = document.createElement('div');
   formatLine.className = 'gw-section-headline';
-  formatLine.textContent = w.format;
+  // a rep ladder ("15-12-9") is a scheme, not a format — lead with what kind of workout it is
+  formatLine.textContent = (wodTimerSpec && wodTimerSpec.kind==='LADDER') ? `For Time · ${w.format}` : w.format;
   headlineRow.appendChild(formatLine);
-  const wodTimerSpec = w.wodTimerSpec || parseTimerFromText(w.format);
   if(w.isBenchmark){
     const tagEl = document.createElement('span');
     tagEl.className = 'gw-tag';
     tagEl.textContent = 'BENCHMARK: ' + w.benchmarkName.toUpperCase();
-    headlineRow.appendChild(tagEl);
-  } else if(w.bw){
-    const tagEl = document.createElement('span');
-    tagEl.className = 'gw-tag';
-    tagEl.textContent = 'BODYWEIGHT';
-    headlineRow.appendChild(tagEl);
-  } else if(wodTimerSpec && wodTimerSpec.label){
-    const tagEl = document.createElement('span');
-    tagEl.className = 'gw-tag';
-    tagEl.textContent = wodTimerSpec.label;
     headlineRow.appendChild(tagEl);
   }
   bodyEl.appendChild(headlineRow);
@@ -3975,14 +4120,11 @@ function renderWodSection(w){
     repsEl.textContent = `${m.reps} reps${repsSuffixFor(m.name)}${m.tag ? ' · '+m.tag : ''}`;
     main.appendChild(nameEl); main.appendChild(repsEl);
     row.appendChild(main);
+    makeRowTappable(row, infoKeyFor(wodMovementDisplayName(m.name), m.name));
     listEl.appendChild(row);
   });
   bodyEl.appendChild(listEl);
 
-  wrap.appendChild(head); wrap.appendChild(bodyEl);
-  wrap.bodyEl = bodyEl;
-
-  appendInfoAndTimer(bodyEl, w.wodText);
   addStartSectionButton(wrap, 'wod');
   return wrap;
 }
@@ -3991,6 +4133,7 @@ function rerollSection(section){
   const w = state.currentWorkout;
   if(!w) return;
   const bw = w.bw;
+  if(focusTimer && focusTimer.sectionKey===section) closeTimerDrawer();
   if(w.roundCounts) w.roundCounts[section] = 0;
   if(w.sectionsDone) w.sectionsDone[section] = false;
   if(section==='warmup'){
@@ -4012,6 +4155,7 @@ function rerollSection(section){
     } else { w.suggestedLoad = null; w.deload = false; }
     w.skillSetWeights = buildSkillSetWeights(w.skillSetReps.length, w.suggestedLoad);
     w.skillLoads = bw ? [] : buildSkillLoads(w.skillTplText);
+    w.skillRepsCascade = w.skillSetReps.every(r=>r===w.skillSetReps[0]);
     w.rpe = null;
   } else if(section==='wod'){
     let movementPool = MOVEMENT_LIB[w.type];
@@ -4303,7 +4447,7 @@ function renderActivityForm(container){
 
   const needsExercise = activityDraft.activity==='Sally Up Sally Down' && !activityDraft.exercise;
   const saveBtn = mkBtn('Save Activity', 'gw-teal', saveActivity);
-  saveBtn.style.cssText = 'margin-top:10px; width:100%; padding:20px;';
+  saveBtn.style.cssText = 'margin-top:10px; width:100%;';
   if(!activityDraft.intensity || needsExercise) saveBtn.disabled = true;
   container.appendChild(saveBtn);
   if(!activityDraft.intensity || needsExercise){
@@ -4369,7 +4513,8 @@ const MY_GYM_EQUIPMENT = [
   {key:'bar', name:'Pull-Up Bar'},
   {key:'rings', name:'Rings'},
   {key:'kb', name:'Kettlebell'},
-  {key:'rope', name:'Jump Rope'}
+  {key:'rope', name:'Jump Rope'},
+  {key:'pvc', name:'PVC Pipe'} // gym-mode warm-ups use it (pass-throughs); bodyweight mode never does
 ];
 // real artwork lands here later — every card's icon comes from this map keyed by MY_GYM_EQUIPMENT's
 // `key`, so dropping in custom icons per item is a one-line change, no markup to touch
@@ -4378,7 +4523,8 @@ const EQUIPMENT_ICONS = {
   bar: ICON_PULLUP_BAR,
   rings: ICON_RINGS,
   kb: ICON_KETTLEBELL,
-  rope: ICON_JUMP_ROPE
+  rope: ICON_JUMP_ROPE,
+  pvc: ICON_PVC
 };
 function countWorkoutsTotal(){ return state.history.filter(h=>h.kind!=='external').length; }
 function countWorkoutsThisWeek(){
@@ -4589,7 +4735,7 @@ function renderBackupDrawer(content){
     try{ await navigator.clipboard.writeText(json); toast('Backup copied.'); }
     catch(e){ out.focus(); out.select(); toast('Select the text and copy it.'); }
   });
-  copyBtn.style.cssText = 'width:100%; padding:14px; margin-bottom:10px;';
+  copyBtn.style.cssText = 'width:100%; margin-bottom:10px;';
   content.appendChild(copyBtn);
   content.appendChild(out);
 
@@ -4610,7 +4756,7 @@ function renderBackupDrawer(content){
     toast('Restored.');
     setTimeout(()=>location.reload(), 600);
   });
-  restoreBtn.style.cssText = 'width:100%; padding:14px; margin-top:10px;';
+  restoreBtn.style.cssText = 'width:100%; margin-top:10px;';
   content.appendChild(restoreBtn);
 }
 const PROFILE_DRAWERS = {
@@ -4769,9 +4915,9 @@ function buildTimelineCard(h){
       </div>
       <div class="gw-timeline-badges"><span class="gw-timeline-badge">Outside Activity</span></div>
       <div class="gw-timeline-stats">
-        <div class="gw-timeline-stat"><div class="gw-timeline-stat-num">${h.duration || '—'}</div><div class="gw-timeline-stat-label">Minutes</div></div>
-        <div class="gw-timeline-stat"><div class="gw-timeline-stat-num">${RPE_LABELS[h.intensity]||'—'}</div><div class="gw-timeline-stat-label">Felt</div></div>
-        <div class="gw-timeline-stat"><div class="gw-timeline-stat-num">${mappedLabel||'—'}</div><div class="gw-timeline-stat-label">Counted As</div></div>
+        <div class="gw-timeline-stat"><div class="gw-timeline-stat-num${numCls(h.duration)}">${h.duration || '—'}</div><div class="gw-timeline-stat-label">Minutes</div></div>
+        <div class="gw-timeline-stat"><div class="gw-timeline-stat-num gw-txt">${RPE_LABELS[h.intensity]||'—'}</div><div class="gw-timeline-stat-label">Felt</div></div>
+        <div class="gw-timeline-stat"><div class="gw-timeline-stat-num gw-txt">${mappedLabel||'—'}</div><div class="gw-timeline-stat-label">Counted As</div></div>
       </div>
       ${h.notes ? `<div class="gw-timeline-notes">${h.notes}</div>` : ''}`;
     return card;
@@ -4813,10 +4959,10 @@ function buildTimelineCard(h){
       <span class="gw-timeline-time">${fmtTime(h.date)}</span>
     </div>
     ${badges.length ? `<div class="gw-timeline-badges">${badges.map(b=>`<span class="gw-timeline-badge ${b.cls||''}">${b.icon?ICON_TROPHY:''}${b.text}</span>`).join('')}</div>` : ''}
-    ${perfShort ? `<div class="gw-timeline-result">${perfShort}</div>${roundsBreakdown ? `<div class="gw-timeline-result-sub">${roundsBreakdown}</div>` : ''}` : ''}
+    ${perfShort ? `<div class="gw-timeline-result${numCls(perfShort)}">${perfShort}</div>${roundsBreakdown ? `<div class="gw-timeline-result-sub">${roundsBreakdown}</div>` : ''}` : ''}
     <div class="gw-timeline-stats">
       ${loadStat}
-      <div class="gw-timeline-stat"><div class="gw-timeline-stat-num">${feel}</div><div class="gw-timeline-stat-label">Felt</div></div>
+      <div class="gw-timeline-stat"><div class="gw-timeline-stat-num${numCls(feel)}">${feel}</div><div class="gw-timeline-stat-label">Felt</div></div>
     </div>
     <div class="gw-timeline-meta">${meta}</div>
     ${skipped.length ? `<div class="gw-timeline-caveat">Skipped ${skipped.join(', ')}</div>` : ''}
@@ -4867,7 +5013,7 @@ function renderLogPage(){
   ].forEach(s=>{
     const tile = document.createElement('div');
     tile.className = 'gw-stat-tile';
-    tile.innerHTML = `<div class="gw-stat-num">${s.num}</div><div class="gw-stat-label">${s.label}</div>`;
+    tile.innerHTML = `<div class="gw-stat-num${numCls(s.num)}">${s.num}</div><div class="gw-stat-label">${s.label}</div>`;
     statsRow.appendChild(tile);
   });
   container.appendChild(statsRow);
@@ -4879,7 +5025,7 @@ function renderLogPage(){
     state.showActivityForm = !state.showActivityForm;
     renderLogPage();
   });
-  actBtn.style.cssText = 'margin-top:16px; width:100%; padding:16px;';
+  actBtn.style.cssText = 'margin-top:16px; width:100%;';
   container.appendChild(actBtn);
   if(state.showActivityForm){
     const formWrap = document.createElement('div');
@@ -4936,7 +5082,7 @@ function renderLogPage(){
       const chip = document.createElement('div');
       chip.className = 'gw-lasttrained-chip' + (days===null ? ' never' : (days>14 ? ' stale' : ''));
       const numText = days===null ? '—' : (Math.round(days)===0 ? 'Today' : Math.round(days)+'d');
-      chip.innerHTML = `<div class="gw-lasttrained-num">${numText}</div><div class="gw-lasttrained-label">${label}</div>`;
+      chip.innerHTML = `<div class="gw-lasttrained-num${numCls(numText)}">${numText}</div><div class="gw-lasttrained-label">${label}</div>`;
       return chip;
     }
     DAY_TYPES.forEach(dt=>{
