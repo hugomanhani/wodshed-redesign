@@ -102,7 +102,19 @@
   .gw-btn-row{display:flex; gap:8px; flex-wrap:wrap;}
 
   /* ---- hero: today's workout, styled after a plan-card (name + meta + pills) ---- */
-  #gw-hero{padding:10px 20px 4px;}
+  /* the intro (title, a one-line read on today's focus, the two dropdowns) is the page's own full-bleed
+     background, running up under the status bar; the workout below is a sheet in the app's base colour
+     that slides up over it with rounded top corners */
+  #gw-page-wod.gw-page{padding-top:0; padding-bottom:0;}
+  #gw-intro{
+    margin:calc(-22px - env(safe-area-inset-top, 0px)) -20px 0; padding-bottom:40px;
+    background:radial-gradient(120% 90% at 0% 0%, rgba(255,107,107,0.16) 0%, rgba(255,107,107,0) 55%), linear-gradient(165deg, #22324f 0%, #182540 100%);
+  }
+  #gw-sheet{
+    position:relative; margin:-26px -20px 0; padding:28px 20px 20px; min-height:60vh;
+    background:var(--bg); border-radius:28px 28px 0 0; box-shadow:0 -12px 32px rgba(0,0,0,0.3);
+  }
+  #gw-hero{padding:calc(42px + env(safe-area-inset-top, 0px)) 20px 0;}
   .gw-hero-title{
     font-family:var(--font-body); font-weight:800; font-size:32px;
     color:#fff; line-height:1.08; letter-spacing:-0.02em;
@@ -112,10 +124,11 @@
   }
   .gw-hero-title-btn svg{width:20px; height:20px; stroke:var(--muted); fill:none; stroke-width:2.4; flex:none; margin-top:4px;}
   .gw-hero-title-btn:hover svg{stroke:var(--coral);}
-  .gw-hero-meta{color:var(--muted); font-size:13px; margin-top:6px; font-weight:500;}
+  .gw-hero-meta{color:#b9c6da; font-size:14.5px; line-height:1.45; margin-top:8px; font-weight:500; max-width:30ch;}
+  .gw-hero-meta b{color:var(--coral); font-weight:800;}
   #gw-controls{
     display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-    padding:14px 20px 18px; font-size:12px;
+    padding:16px 20px 20px; font-size:12px;
   }
   .gw-pill{
     display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line);
@@ -770,6 +783,7 @@
   </div>
 
   <div id="gw-page-wod" class="gw-page" style="margin-top:0;">
+    <div id="gw-intro">
     <div id="gw-hero">
       <button type="button" class="gw-hero-title gw-hero-title-btn" id="gw-hero-title">
         <span id="gw-hero-title-text">Workout</span>
@@ -794,13 +808,16 @@
         <svg class="gw-select-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
       </label>
     </div>
+    </div>
 
+    <div id="gw-sheet">
     <div id="gw-focusline"></div>
     <div id="gw-daytabs"></div>
     <div id="gw-timebanner"></div>
     <div id="gw-coachnotes"></div>
     <div id="gw-board"></div>
     <div id="gw-actions"></div>
+    </div>
   </div>
 
   <div id="gw-timer-drawer-backdrop">
@@ -2747,13 +2764,21 @@ function openDayTypeSheet(){ renderDayTypeSheet(); document.getElementById('gw-d
 function closeDayTypeSheet(){ document.getElementById('gw-daytabs-menu').classList.remove('show'); }
 document.getElementById('gw-hero-title').onclick = openDayTypeSheet;
 document.getElementById('gw-daytabs-menu').onclick = (e)=>{ if(e.target.id==='gw-daytabs-menu') closeDayTypeSheet(); };
+// finishes the sentence "Today's plan is N exercises of …" for each focus
+const INTRO_FOCUS = {
+  strength:'heavy, steady strength work',
+  gymnastics:'bodyweight skill and control',
+  weightlifting:'barbell technique and power',
+  accessory:'targeted work to shore up weak spots',
+  conditioning:'engine-building conditioning'
+};
 function renderHero(w){
   const title = document.getElementById('gw-hero-title-text');
   const meta = document.getElementById('gw-hero-meta');
   if(!w){ title.textContent = 'Workout'; meta.textContent = ''; return; }
   title.textContent = DAY_TYPES.find(d=>d.key===w.type).label;
   const count = countWorkoutExercises(w);
-  meta.textContent = `~${estimateWorkoutMinutes(w)} min · ${count} exercise${count===1?'':'s'}`;
+  meta.innerHTML = `Today's plan is <b>${count} exercise${count===1?'':'s'}</b> of ${INTRO_FOCUS[w.type] || 'focused training'}.`;
 }
 function render(){
   const w0 = state.currentWorkout;
