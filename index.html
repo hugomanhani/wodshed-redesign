@@ -86,12 +86,12 @@
     font-weight:800; letter-spacing:0.03em; text-transform:uppercase; font-family:var(--font-body);
   }
   /* one height for every button (start / round / completed / refresh / set controls / primary actions) */
-  .gw-btn, .gw-section-start-btn, .gw-section-round-btn, .gw-section-refresh-btn, .gw-starttimer-btn,
-  .gw-timer-full, .gw-setlist-controls button, #gw-actions > .gw-btn-hero, #gw-actions > .gw-btn-secondary{
+  .gw-btn, .gw-section-start-btn, .gw-section-round-btn, .gw-starttimer-btn,
+  .gw-timer-full, #gw-actions > .gw-btn-hero, #gw-actions > .gw-btn-secondary{
     box-sizing:border-box; min-height:var(--btn-h); padding-top:0; padding-bottom:0;
     display:inline-flex; align-items:center; justify-content:center; line-height:1.2;
   }
-  .gw-section-start-btn, .gw-section-round-btn, .gw-section-refresh-btn, .gw-starttimer-btn, .gw-timer-full,
+  .gw-section-start-btn, .gw-section-round-btn, .gw-starttimer-btn, .gw-timer-full,
   #gw-actions > .gw-btn-hero, #gw-actions > .gw-btn-secondary{display:flex;}
   .gw-btn:hover{background:var(--surface-raised);}
   .gw-btn.gw-primary{background:var(--coral); color:var(--bg); border:none; font-family:var(--font-body); font-size:14px; letter-spacing:0.02em;}
@@ -178,8 +178,8 @@
   /* ---- bottom floating nav ---- */
   #gw-pagetabs{
     display:flex; gap:4px; justify-content:space-between;
-    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom, 0px));
-    width:calc(100% - 40px); max-width:361px; z-index:100;
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(8px + env(safe-area-inset-bottom, 0px));
+    width:calc(100% - 16px); max-width:464px; z-index:100;
     background:rgba(13,27,42,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
     border:1px solid var(--line); border-radius:24px; padding:13px 20px;
     box-shadow:0 12px 24px rgba(0,0,0,0.45);
@@ -309,14 +309,8 @@
     color:var(--coral); font-size:10px; font-weight:900; letter-spacing:0.04em;
     background:var(--coral-wash); padding:4px 10px; border-radius:999px; text-transform:uppercase;
   }
-  /* refresh for just this section — sits under the start/round button, quiet so it never competes with it */
-  .gw-section-refresh-btn{
-    width:100%; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:-2px;
-    background:none; color:var(--muted); border:1px solid var(--line-strong); border-radius:10px;
-    padding:0 12px; font-family:var(--font-body); font-weight:800; font-size:13.5px; cursor:pointer;
-  }
-  .gw-section-refresh-btn:hover{color:#fff; border-color:var(--coral);}
-  .gw-section-refresh-btn svg{width:15px; height:15px; flex:none;}
+  /* swap out just this section — a quiet inline link under the start/round button, never competing with it */
+  .gw-section-suggest{display:block; margin:2px auto 0; text-align:center;}
   .gw-timer-inline-btn{
     background:none; color:var(--bg); border:1px solid var(--coral); border-radius:999px;
     font-size:11px; font-weight:900; letter-spacing:0.02em; padding:8px 14px; cursor:pointer;
@@ -361,6 +355,10 @@
   .gw-format-explainer{font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--muted); line-height:1.4;}
   .gw-roundlog{display:flex; flex-direction:column; gap:2px; width:100%;}
   .gw-roundlog:empty{display:none;}
+  /* in the timer drawer the rounds sit above the clock in a capped-height strip that scrolls on its own,
+     so a long AMRAP never pushes the clock or the controls off screen */
+  #gw-focus .gw-roundlog{max-height:min(22dvh, 132px); overflow-y:auto; overscroll-behavior:contain; flex:none;}
+  #gw-focus .gw-roundlog-row{padding:8px 2px; flex:none;}
   .gw-roundlog-row{
     display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line);
     font-family:var(--font-body); font-weight:700; font-size:14px; color:#fff;
@@ -389,32 +387,25 @@
   .gw-movement-tappable:focus-visible{outline:2px solid var(--coral); outline-offset:2px; border-radius:6px;}
   .gw-movement-reps{color:var(--muted); font-size:12px; font-weight:600;}
 
-  .gw-setlist{display:flex; flex-direction:column; width:100%;}
-  .gw-setlist-row{
-    display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);
-    font-family:var(--font-body); font-size:13.5px;
-  }
-  .gw-setlist-row:last-child{border-bottom:none;}
+  .gw-setlist{width:100%;}
   .gw-setlist-row-done{opacity:0.45;}
   .gw-setlist-done-badge{color:var(--good); display:flex; flex:none; margin-left:auto;}
-  .gw-setlist-num{color:var(--muted); font-weight:700; flex:none; width:52px;}
   .gw-load-name{flex:1; min-width:0; color:var(--text); font-weight:600; font-size:13.5px;}
-  .gw-setlist-reps{display:flex; align-items:center; gap:5px; flex:1;}
   .gw-setlist-weight{display:flex; align-items:center; gap:5px; flex:none;}
-  .gw-setlist-reps input, .gw-setlist-weight input{
+  .gw-setlist-weight input{
     height:34px; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff;
     border-radius:7px; text-align:center; font-size:13px; font-weight:800; font-family:var(--font-body);
   }
-  .gw-setlist-reps input{width:52px;}
   .gw-setlist-weight input{width:64px;}
-  .gw-setlist-reps span, .gw-setlist-weight span{font-size:11px; color:var(--muted); font-weight:700;}
-  .gw-setlist-controls{display:flex; gap:8px; margin-top:4px;}
-  .gw-setlist-controls button{
-    flex:1; background:var(--surface-2); border:1px solid var(--line-strong); color:#fff; border-radius:8px;
-    padding:0 10px; font-family:var(--font-body); font-weight:700; font-size:13px; cursor:pointer;
+  .gw-setlist-weight span{font-size:11px; color:var(--muted); font-weight:700;}
+  /* add / remove a set: plain inline links, a step quieter than the timer and refresh buttons */
+  .gw-setlist-links{display:flex; gap:18px; margin-top:-2px;}
+  .gw-inline-link{
+    background:none; border:none; padding:6px 0; cursor:pointer; font-family:var(--font-body); font-weight:700;
+    font-size:13px; color:var(--muted); text-decoration:underline; text-underline-offset:3px;
   }
-  .gw-setlist-controls button:hover{border-color:var(--coral); color:var(--coral);}
-  .gw-setlist-controls button:disabled{opacity:0.4; cursor:default;}
+  .gw-inline-link:hover{color:var(--coral);}
+  .gw-inline-link:disabled{opacity:0.4; cursor:default; text-decoration:none;}
 
   .gw-drawer-handle{width:36px; height:4px; border-radius:4px; background:var(--line-strong); margin:6px auto 16px;}
 
@@ -573,7 +564,7 @@
     box-shadow:0 -10px 40px rgba(0,0,0,0.5);
   }
   #gw-timer-drawer-scroll{overflow-y:auto; flex:1; padding:0 16px calc(18px + env(safe-area-inset-bottom, 0px));}
-  #gw-focus{display:flex; flex-direction:column; gap:18px; padding-bottom:12px;}
+  #gw-focus{display:flex; flex-direction:column; gap:18px; padding:10px 0 12px;}
   #gw-focus-header{
     display:flex; justify-content:space-between; align-items:center; flex:none;
     padding:8px 16px 4px;
@@ -629,25 +620,19 @@
     display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; font-family:var(--font-mono);
   }
 
-  /* ---- Timer: simple ring + digits, coral accent throughout — no extra card, it lives directly in the drawer ---- */
+  /* ---- Timer: big plain numbers (like the Apple stopwatch) and two big round controls under them —
+     the left one is whatever the workout needs (round counter / next set), the play button sits at the right ---- */
   .gw-stage{
-    display:flex; flex-direction:column; align-items:center; gap:12px;
-    padding:8px 4px 4px;
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    padding:4px 4px 4px;
   }
-  .gw-stage-headline{font-family:var(--font-body); font-weight:700; font-size:13px; color:var(--muted); text-align:center;}
-  .gw-dial-wrap{position:relative; width:72px; height:72px; display:grid; place-items:center;}
-  .gw-dial-wrap svg{grid-row:1; grid-column:1; width:100%; height:100%;}
-  .gw-dial-track{fill:none; stroke:var(--surface-2); stroke-width:4;}
-  .gw-dial-fill{fill:none; stroke:var(--coral); stroke-width:4; stroke-linecap:round; transition:stroke-dashoffset 0.2s linear, stroke 0.3s ease;}
-  .gw-dial-play{
-    grid-row:1; grid-column:1; width:48px; height:48px; border-radius:50%; background:var(--surface); border:none;
-    color:var(--coral); cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;
-  }
-  .gw-dial-play svg{width:22px; height:22px;}
-  .gw-dial-play:disabled{opacity:0.4; cursor:default;}
-  .gw-dial-clock{font-family:var(--font-mono); font-weight:700; font-size:56px; color:#fff; letter-spacing:-0.02em;}
+  .gw-dial{display:flex; justify-content:center; width:100%; padding:18px 0 6px;}
+  .gw-dial-center{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; width:100%; text-align:center;}
+  .gw-stage-headline{font-family:var(--font-body); font-weight:600; font-size:14px; color:var(--muted); text-align:center; min-height:18px;}
+  .gw-dial-clock{font-family:var(--font-mono); font-weight:700; font-size:76px; line-height:1.05; color:#fff; letter-spacing:-0.03em;}
   .gw-dial-clock.warn{color:var(--danger);}
-  .gw-dial-secondary{font-family:var(--font-body); font-weight:700; font-size:12px; color:var(--muted); text-align:center; min-height:14px;}
+  .gw-dial-secondary{font-family:var(--font-body); font-weight:600; font-size:12px; color:var(--muted); text-align:center; min-height:0;}
+  .gw-dial-secondary:empty{display:none;}
   .gw-stage-weight{display:flex; align-items:center; gap:16px; margin:2px 0;}
   .gw-stage-weight button{
     width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--line-strong);
@@ -659,25 +644,45 @@
   .gw-stage-weight-val span{font-family:var(--font-body); font-weight:700; font-size:11px; color:var(--muted); margin-left:4px;}
   .gw-stage-weight-plates{font-family:var(--font-body); font-weight:600; font-size:11px; color:var(--muted);}
 
-  .gw-stage-round{
-    display:flex; align-items:center; gap:8px; background:none; border:none; cursor:pointer;
-    color:#fff; font-family:var(--font-body); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.03em;
-    padding:0; -webkit-tap-highlight-color:transparent;
+  /* the control row: left = round counter / next, right = play-pause, both the same size */
+  .gw-ctl-row{display:flex; justify-content:space-between; align-items:center; width:100%; padding:2px 14px 0;}
+  .gw-ctl-slot{flex:1; min-width:0; height:84px; display:flex; align-items:center; justify-content:flex-start;}
+  .gw-ctl{
+    width:84px; height:84px; border-radius:50%; border:none; padding:0; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    background:var(--surface-raised); color:#fff; font-family:var(--font-body);
+    box-shadow:0 0 0 3px var(--surface), 0 0 0 4.5px var(--line-strong);
+    -webkit-tap-highlight-color:transparent; transition:background 0.12s ease;
   }
-  .gw-stage-round:disabled{opacity:0.5; cursor:default;}
-  .gw-stage-round-badge{
-    width:20px; height:20px; border-radius:50%; background:var(--coral); color:var(--bg);
-    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; font-family:var(--font-mono);
+  .gw-ctl:disabled{opacity:0.4; cursor:default;}
+  .gw-ctl.gw-tap-flash{background:var(--coral-wash);}
+  .gw-dial-play{background:var(--coral); color:var(--bg); box-shadow:0 0 0 3px var(--surface), 0 0 0 4.5px rgba(255,107,107,0.5);}
+  .gw-dial-play svg{width:30px; height:30px;}
+  .gw-dial-play.is-running{background:var(--coral-wash); color:var(--coral);}
+  .gw-stage-round-badge{font-family:var(--font-mono); font-weight:700; font-size:28px; line-height:1; color:#fff;}
+  .gw-stage-round-badge.gw-long{font-size:21px;}
+  .gw-stage-round-label{font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); line-height:1.1; text-align:center;}
+  /* what's being done now, and what's next (Tabata / alternating EMOM) */
+  .gw-nownext{flex-direction:column; justify-content:center; gap:10px; min-width:0; padding-right:12px;}
+  .gw-nn-block{display:flex; flex-direction:column; gap:1px; min-width:0;}
+  .gw-nn-label{font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted);}
+  .gw-nn-name{font-size:15px; font-weight:700; color:var(--muted); line-height:1.2; overflow-wrap:anywhere;}
+  .gw-nn-sub{font-size:13px; font-weight:600; color:var(--muted); line-height:1.2;}
+  .gw-nn-name.gw-nn-now{font-size:19px; font-weight:800; color:var(--coral);}
+  .gw-nn-name.gw-nn-now.rest{color:#fff;}
+  /* hold-to-finish: the ring around the circle fills while the press is held */
+  .gw-hold-finish{position:relative; -webkit-touch-callout:none; user-select:none; -webkit-user-select:none; touch-action:none; --p:0;}
+  .gw-hold-finish::before{
+    content:''; position:absolute; inset:-5px; border-radius:50%; pointer-events:none;
+    background:conic-gradient(var(--coral) calc(var(--p) * 360deg), transparent 0);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
   }
-  .gw-stage-round.gw-tap-flash .gw-stage-round-badge{background:var(--coral-dark);}
-  .gw-stage-round-label{font-size:11px; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);}
-  .gw-floatcard-next{display:flex; flex-direction:column; align-items:center; gap:4px;}
-  .gw-floatcard-next button{
-    display:flex; align-items:center; gap:4px; background:none; color:#fff; border:none;
-    cursor:pointer; font-family:var(--font-body); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.03em; padding:4px;
-  }
-  .gw-floatcard-next button svg{width:16px; height:16px;}
-  .gw-floatcard-nextpreview{font-size:12px; color:var(--muted); font-weight:700;}
+  .gw-hold-finish svg{width:24px; height:24px;}
+  .gw-hold-finish span{font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); line-height:1.15; text-align:center; max-width:58px; white-space:normal;}
+  .gw-floatcard-next{display:flex;}
+  .gw-floatcard-next .gw-ctl svg{width:24px; height:24px; color:#fff;}
+  .gw-floatcard-next .gw-ctl span{font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted);}
 
   .gw-showworkout-toggle{
     display:flex; align-items:center; gap:6px; justify-content:center; background:none; border:none;
@@ -686,24 +691,9 @@
   }
   .gw-showworkout-toggle:hover{color:var(--coral);}
 
-  .gw-focus-phaseword{font-family:var(--font-display); font-weight:900; font-size:22px; text-transform:uppercase; color:var(--coral); min-height:26px; letter-spacing:0.02em;}
+  .gw-focus-phaseword{font-family:var(--font-body); font-weight:800; font-size:13px; text-transform:uppercase; color:var(--coral); min-height:16px; letter-spacing:0.1em;}
+  .gw-focus-phaseword.rest{color:var(--muted);}
 
-  .gw-focus-swipezone{margin-top:4px; width:100%;}
-  .gw-focus-swipe-track{
-    position:relative; height:56px; border-radius:28px; background:var(--surface); border:1px solid var(--line-strong);
-    display:flex; align-items:center; justify-content:center; overflow:hidden; -webkit-tap-highlight-color:transparent;
-  }
-  .gw-focus-swipe-track span{position:relative; z-index:1; font-size:12px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:#fff; pointer-events:none;}
-  .gw-focus-swipe-fill{position:absolute; left:0; top:0; bottom:0; width:0; background:rgba(255,107,107,0.25); pointer-events:none;}
-  .gw-focus-swipe-thumb{
-    position:absolute; left:6px; top:6px; width:44px; height:44px; border-radius:50%;
-    background:var(--coral); display:flex; align-items:center; justify-content:center; color:var(--bg);
-    cursor:grab; z-index:2; touch-action:none; box-shadow:0 2px 10px rgba(0,0,0,0.35);
-  }
-  .gw-focus-swipe-thumb svg{width:16px; height:16px; margin-left:2px;}
-  .gw-focus-swipe-thumb:active{cursor:grabbing;}
-  .gw-focus-swipezone.gw-swipe-locked .gw-focus-swipe-track{opacity:0.45; pointer-events:none;}
-  .gw-focus-swipezone.gw-swipe-locked .gw-focus-swipe-track span::after{content:' — locked in';}
 
 
 
@@ -745,32 +735,6 @@
   .gw-buyin-text{flex:1;}
   .gw-buyin-label{font-size:10px; font-weight:900; letter-spacing:0.05em; text-transform:uppercase; color:var(--coral);}
   .gw-buyin-detail{font-size:13px; color:#fff; font-weight:600; margin-top:2px; white-space:pre-line;}
-  .gw-alt-row{display:flex; gap:8px;}
-  .gw-alt-chip{
-    flex:1; text-align:center; padding:10px 8px; border-radius:12px; border:1px solid var(--line-strong);
-    font-family:var(--font-body); font-weight:800; font-size:12.5px; color:var(--muted); background:var(--surface);
-  }
-  .gw-alt-chip.gw-alt-active{border-color:var(--coral); color:var(--coral); background:var(--coral-wash);}
-  .gw-amreps-row{display:flex; align-items:center; gap:10px; justify-content:center; padding:6px 0;}
-  .gw-amreps-btn{
-    width:52px; height:52px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line-strong);
-    color:var(--coral); font-size:20px; font-weight:900; cursor:pointer; font-family:var(--font-body);
-  }
-  .gw-amreps-btn:hover{background:var(--surface-raised);}
-  .gw-amreps-total{
-    font-family:var(--font-mono); font-weight:700; font-size:34px; color:#fff; width:110px; text-align:center;
-    background:none; border:none; border-bottom:1px solid var(--line-strong); padding:0 0 2px; border-radius:0;
-    -moz-appearance:textfield; appearance:textfield;
-  }
-  .gw-amreps-total::-webkit-outer-spin-button, .gw-amreps-total::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
-  .gw-amreps-total:focus{outline:none; border-bottom-color:var(--coral);}
-  .gw-amreps-quick{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
-  .gw-amreps-chip{
-    min-width:64px; height:40px; padding:0 14px; border-radius:20px; background:var(--surface-2);
-    border:1px solid var(--line-strong); color:var(--coral); font-family:var(--font-body); font-weight:800;
-    font-size:14px; cursor:pointer;
-  }
-  .gw-amreps-chip:hover{background:var(--surface-raised);}
   .gw-splitlog-row{
     display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line);
     font-family:var(--font-body); font-weight:700; font-size:13.5px; color:#fff;
@@ -922,6 +886,7 @@ const ICON_PLAY = '<svg viewBox="0 0 256 256" fill="currentColor" width="18" hei
 // Phosphor Icons "clock-countdown" (regular weight) — the section Start/Resume buttons open a
 // timer, so they get a timer glyph instead of a generic play triangle
 const ICON_TIMER = '<svg viewBox="0 0 256 256" fill="currentColor" width="16" height="16"><path d="M232,136.66A104.12,104.12,0,1,1,119.34,24,8,8,0,0,1,120.66,40,88.12,88.12,0,1,0,216,135.34,8,8,0,0,1,232,136.66ZM120,72v56a8,8,0,0,0,8,8h56a8,8,0,0,0,0-16H136V72a8,8,0,0,0-16,0Zm40-24a12,12,0,1,0-12-12A12,12,0,0,0,160,48Zm36,24a12,12,0,1,0-12-12A12,12,0,0,0,196,72Zm24,36a12,12,0,1,0-12-12A12,12,0,0,0,220,108Z"/></svg>';
+const ICON_SKIP = '<svg viewBox="0 0 256 256" fill="currentColor" width="24" height="24"><path d="M52,48V208a8,8,0,0,0,12.3,6.7L176,136a8,8,0,0,0,0-13.4L64.3,41.3A8,8,0,0,0,52,48Z"/><rect x="192" y="40" width="16" height="176" rx="8"/></svg>';
 const ICON_PAUSE = '<svg viewBox="0 0 256 256" fill="currentColor" width="18" height="18"><path d="M110,40H50A14,14,0,0,0,36,54V202a14,14,0,0,0,14,14h60a14,14,0,0,0,14-14V54A14,14,0,0,0,110,40Zm-2,160H52V56h56ZM206,40H146a14,14,0,0,0-14,14V202a14,14,0,0,0,14,14h60a14,14,0,0,0,14-14V54A14,14,0,0,0,206,40Zm-2,160H148V56h56Z"/></svg>';
 // Phosphor Icons "trophy" — marks a calendar day where a benchmark/hero WOD was tested
 const ICON_TROPHY = '<svg viewBox="0 0 256 256" fill="currentColor" width="11" height="11"><path d="M232,64H208V48a8,8,0,0,0-8-8H56a8,8,0,0,0-8,8V64H24A16,16,0,0,0,8,80V96a40,40,0,0,0,40,40h3.65A80.13,80.13,0,0,0,120,191.61V216H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V191.58c31.94-3.23,58.44-25.64,68.08-55.58H208a40,40,0,0,0,40-40V80A16,16,0,0,0,232,64ZM48,120A24,24,0,0,1,24,96V80H48v32q0,4,.39,8Zm144-8.9c0,35.52-29,64.64-64,64.9a64,64,0,0,1-64-64V56H192ZM232,96a24,24,0,0,1-24,24h-.5a81.81,81.81,0,0,0,.5-8.9V80h24Z"/></svg>';
@@ -1028,7 +993,7 @@ const SKILLS = {
     {text:"GYMNASTIC\nEMOM 10'\nOdd: 8-10 Toes to Bar\nEven: 20\" L-sit (bar or rings)", timer:{kind:'EMOM', minutes:10, alternate:['Toes to Bar','L-sit'], label:'Alternate Movements per Interval'}},
     {text:"GYMNASTIC - PULL-UPS\n5 sets x 8-10 (strict or banded)\nEvery 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}},
     {text:"GYMNASTIC\nEMOM 12'\n6-10 Toes to Bar", timer:{kind:'EMOM', minutes:12, label:'Multiple Movements per Interval'}},
-    {text:"GYMNASTIC\nEMOM — AMRAP each minute until you can't hit the rep target\nMax Pull-Ups every minute", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}},
+    {text:"GYMNASTIC\nEMOM + AMRAP\nMax Pull-Ups", timer:{kind:'EMOM', minutes:null, openEnded:true, amrap:true, label:'As Long As Possible'}},
     {text:"GYMNASTIC - RING DIPS\n5 sets x 5-8 (banded as needed)\nEvery 1:30", timer:{kind:'INTERVAL', minutes:1.5, totalRounds:5, label:'For X Cycles'}},
     {text:"GYMNASTIC\nEMOM 10'\nOdd: 3-5 Handstand Push-Ups (or hold)\nEven: 3 Wall Walks", timer:{kind:'EMOM', minutes:10, alternate:['Handstand Push-Ups','Wall Walks'], label:'Alternate Movements per Interval'}}
   ],
@@ -1051,7 +1016,7 @@ const SKILLS = {
     {text:"ENDURANCE\nEMOM 8'\nOdd: 10 KB swings\nEven: 8 burpees", timer:{kind:'EMOM', minutes:8, alternate:['KB Swings','Burpees'], label:'Alternate Movements per Interval'}},
     {text:"ENDURANCE\n4 sets: 100 single unders + max effort burpees\nRest 1' between sets", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}},
     {text:"ENDURANCE\nEMOM 10'\nOdd: 12 KB swings\nEven: 10 jumping lunges", timer:{kind:'EMOM', minutes:10, alternate:['KB Swings','Jumping Lunges'], label:'Alternate Movements per Interval'}},
-    {text:"ENDURANCE\nEMOM — go until you can't hold the pace\nEach minute: 15 Burpees", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}},
+    {text:"ENDURANCE\nEMOM\nEach minute: 15 Burpees", timer:{kind:'EMOM', minutes:null, openEnded:true, label:'As Long As Possible'}},
     {text:"ENDURANCE\nEMOM 12'\nOdd: 12 KB swings\nEven: 10 jump squats", timer:{kind:'EMOM', minutes:12, alternate:['KB Swings','Jump Squats'], label:'Alternate Movements per Interval'}},
     {text:"ENDURANCE\n4 sets: 30 bear crawl steps + max effort mountain climbers\nRest 1' between sets", timer:{kind:'INTERVAL', minutes:1, totalRounds:4, label:'X Rest Between Sets'}}
   ]
@@ -1660,7 +1625,7 @@ function logRoundTap(elapsedSeconds){
   const delta = (splitSeconds!=null && prevSplit!=null) ? splitSeconds - prevSplit : null;
   const entry = {round: roundNum, elapsedAtTap: elapsedSeconds, split: splitSeconds, delta};
   state.focusRoundLog.push(entry);
-  if(log) log.appendChild(buildRoundLogRow(entry));
+  if(log){ log.appendChild(buildRoundLogRow(entry)); log.scrollTop = log.scrollHeight; }
 }
 
 function timerExplainer(spec){
@@ -1668,12 +1633,12 @@ function timerExplainer(spec){
   if(spec.kind==='AMRAP'){
     const buyPart = spec.buyIn ? ` Buy-in first: ${spec.buyIn.text}.` : '';
     if(spec.cycles) return `${spec.cycles} x ${spec.minutes} min AMRAP, rest ${spec.restMinutes} min between.${buyPart}`;
-    if(spec.mode==='reps') return `${spec.minutes} minutes. Rack up as many total reps as you can.${buyPart}`;
-    if(spec.mode==='ascending') return `${spec.minutes} minutes. Reps go up by ${spec.increment} every round — keep going as long as you can.${buyPart}`;
-    return `${spec.minutes} minutes. Do as many rounds as you can.${buyPart}`;
+    if(spec.mode==='reps') return `Rack up as many total reps as you can.${buyPart}`;
+    if(spec.mode==='ascending') return `Reps go up by ${spec.increment} every round — keep going as long as you can.${buyPart}`;
+    return `Do as many rounds as you can.${buyPart}`;
   }
   if(spec.kind==='EMOM'){
-    if(spec.openEnded) return `Every minute on the minute — keep going until you can't hold the target.`;
+    if(spec.openEnded) return spec.amrap ? `Do as many reps as you can each minute. Keep going until you can't hit the rep target.` : `Start a new round every minute. Keep going until you can't hold the pace.`;
     if(spec.alternate) return `New minute starts, alternate ${spec.alternate[0]} / ${spec.alternate[1]}. ${spec.minutes} times.`;
     return `New minute starts, do the work, rest till next minute. ${spec.minutes} times.`;
   }
@@ -1874,11 +1839,9 @@ function platesForSide(sideTarget){
 function plateBreakdown(totalWeight){
   const sideTarget = Math.max(0, (totalWeight - 45) / 2);
   const {used, remaining} = platesForSide(sideTarget);
-  const actualTotal = 45 + used.reduce((a,b)=>a+b,0)*2;
-  let text = used.length ? used.join('+') + ' lb per side' : 'bar only (45 lb)';
-  text += `  →  ${actualTotal} lb total`;
-  if(remaining >= 5) text += ` (closest with your plates; ${remaining.toFixed(0)} lb/side short of exact target)`;
-  return text;
+  if(!used.length) return 'Empty bar';
+  // the weight is already on screen, so only the plates are named — and only when they can't hit it exactly
+  return `${used.join('+')} lb per side` + (remaining >= 5 ? ' · closest with your plates' : '');
 }
 // splits available minutes across warmup/skill/wod/core; trims skill/core first when time is tight
 function allocateTime(total){
@@ -2279,7 +2242,6 @@ function generateWorkout(type){
     skillSetReps: initSkillSetReps,
     skillSetWeights: buildSkillSetWeights(initSkillSetReps.length, suggestedLoad),
     skillLoads: (skillTplText && !bw) ? buildSkillLoads(skillTplText) : [],
-    skillRepsCascade: initSkillSetReps.every(r=>r===initSkillSetReps[0]),
     formatId, format, wodMovements, movements: wodMovements.map(m=>m.name), wodTimerSpec,
     core, coreTimer, rpe: null, wodRpe: null, bw,
     volumeUsed: effectiveVolume, coachNotes, isBenchmark, benchmarkName,
@@ -2434,10 +2396,11 @@ function isPacedRestSpec(spec){
 }
 // only one timer can be live at a time. If a DIFFERENT section's timer is minimized in the background,
 // returns that section's name so starting another one can be refused (instead of silently throwing
-// the running one away); null when nothing else is running.
+// the running one away); null when nothing else is running (or the other one was never started).
 const SECTION_NAMES = {warmup:'Warm-Up', skill:'Skill', wod:'WOD', core:'Extra Core'};
 function otherRunningTimerName(key){
-  if(focusTimer && !focusTimer.doneBeeped && focusTimer.sectionKey && focusTimer.sectionKey!==key){
+  // a timer that was opened but never started doesn't hold anything — only a started one blocks the others
+  if(focusTimer && !focusTimer.doneBeeped && focusTimer.sectionKey && focusTimer.sectionKey!==key && (focusTimer.running || focusTimer.leadIn || focusTimer.elapsedBefore>0)){
     return SECTION_NAMES[focusTimer.sectionKey] || 'other';
   }
   return null;
@@ -2534,17 +2497,6 @@ function renderSectionNode(key, w, opts){
         for(let i=idx; i<w.skillSetWeights.length; i++) w.skillSetWeights[i] = val;
         w.suggestedLoad = w.skillSetWeights[w.skillSetWeights.length-1]; // logged/progression value tracks the last set
       },
-      // like weight, a rep change carries forward into the sets still to come — every time, so
-      // dropping reps mid-workout and again later both stick. The exception is a prescribed ladder
-      // (5-5-3-3-2-2), which is intentionally different set to set: there an edit only touches
-      // that one set (skillRepsCascade is decided once, when the workout is generated)
-      onRepsChange: opts.simple ? null : (idx, val)=>{
-        const num = /^\d+$/.test(String(val)) ? Number(val) : val;
-        if(w.skillRepsCascade !== false){ for(let i=idx; i<w.skillSetReps.length; i++) w.skillSetReps[i] = num; }
-        else w.skillSetReps[idx] = num;
-        w.skillTplText = updateSkillSchemeText(w.skillTplText, w.skillSetReps);
-        render();
-      },
       onSetsDelta: opts.simple ? null : (d)=>adjustSets('skill', d)
     });
     const deloadNote = buildDeloadNote(w);
@@ -2640,7 +2592,7 @@ function openRateDrawer(kind){
   } else if(wodKind==='AMRAP' && (wodMode==='reps' || wodMode==='ascending')){
     const row = document.createElement('div');
     row.className = 'gw-setting-row';
-    row.innerHTML = '<span>Total Reps</span>';
+    row.innerHTML = '<span>Total Reps — edit if the count is off</span>';
     const repsInput = document.createElement('input');
     repsInput.type = 'number'; repsInput.min = '0'; repsInput.placeholder = '0';
     repsInput.value = perf.extraReps != null ? perf.extraReps : '';
@@ -2964,6 +2916,11 @@ function confirmExitFocus(){
 // overrideSpec is how openPacedRestSet() hands in a plain COUNTDOWN (tagged with repeatKey) in
 // place of the section's real "N sets, rest between them" spec — everything else about the
 // drawer (title, weight adjuster) still comes from stepData/key as normal
+// the exercise lines of a section's text ("Toes to Bar" / "6-10 reps") — what the timer names while it runs
+function focusExercises(text){
+  try{ return parseSectionText(text || '').items.filter(it=>it.kind==='exercise' && it.name).map(it=>({name:it.name, qty:it.qty})); }
+  catch(e){ return []; }
+}
 function renderSectionFocus(overrideSpec){
   const w = state.currentWorkout;
   const key = state.focusSectionKey;
@@ -2986,14 +2943,20 @@ function renderSectionFocus(overrideSpec){
   // Resuming reads the spec straight off the already-open focusTimer (it may be an overrideSpec
   // from an earlier openPacedRestSet() call that stepData.timerSpec knows nothing about).
   const spec = isResume ? focusTimer : (overrideSpec || stepData.timerSpec);
+  state.focusExercises = focusExercises(stepData.text);
 
   // live round-by-round log — built as rounds are logged, for AMRAP/RFT and non-timer round-based steps
+  let roundLogEl = null;
   if(key==='wod' || !stepData.timerSpec){
-    const roundLog = document.createElement('div');
-    roundLog.className = 'gw-roundlog';
-    roundLog.id = 'gw-roundlog';
-    container.appendChild(roundLog);
-    if(isResume) state.focusRoundLog.forEach(entry=>roundLog.appendChild(buildRoundLogRow(entry)));
+    roundLogEl = document.createElement('div');
+    roundLogEl.className = 'gw-roundlog';
+    roundLogEl.id = 'gw-roundlog';
+    if(isResume) state.focusRoundLog.forEach(entry=>roundLogEl.appendChild(buildRoundLogRow(entry)));
+    // the strip only exists when the timer has a round button to fill it
+    const k0 = spec && spec.kind;
+    const hasRoundBtn = stepData.timerSpec && ((k0==='AMRAP' && spec.mode!=='reps') || k0==='RFT' || k0==='LADDER' || k0==='FORTIME_REPEATS');
+    if(!stepData.timerSpec || hasRoundBtn) container.appendChild(roundLogEl);
+    if(isResume) roundLogEl.scrollTop = roundLogEl.scrollHeight;
   }
 
   if(stepData.timerSpec){
@@ -3004,20 +2967,13 @@ function renderSectionFocus(overrideSpec){
     card.id = 'gw-floatcard';
     card.innerHTML = `
       <div class="gw-cycle-badge" id="gw-focus-cyclebadge" style="display:none;"></div>
-      <div class="gw-focus-phaseword" id="gw-focus-phase"></div>
-      <div class="gw-stage-headline" id="gw-focus-sub"></div>
-      <div class="gw-dial-clock" id="gw-focus-number">00:00</div>
-      <div class="gw-dial-secondary" id="gw-focus-secondary"></div>
-      <div class="gw-alt-row" id="gw-focus-altrow" style="display:none; width:100%;">
-        <div class="gw-alt-chip" id="gw-focus-alt-a"></div>
-        <div class="gw-alt-chip" id="gw-focus-alt-b"></div>
-      </div>
-      <div class="gw-dial-wrap" id="gw-dial-wrap">
-        <svg viewBox="0 0 80 80">
-          <circle class="gw-dial-track" cx="40" cy="40" r="34" transform="rotate(-90 40 40)"/>
-          <circle class="gw-dial-fill" id="gw-focus-ring" cx="40" cy="40" r="34" stroke-dasharray="${2*Math.PI*34}" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
-        </svg>
-        <button class="gw-dial-play" id="gw-floatcard-playpause" aria-label="Play or pause">${ICON_PLAY}</button>
+      <div class="gw-dial" id="gw-dial">
+        <div class="gw-dial-center">
+          <div class="gw-focus-phaseword" id="gw-focus-phase"></div>
+          <div class="gw-dial-clock" id="gw-focus-number">00:00</div>
+          <div class="gw-stage-headline" id="gw-focus-sub"></div>
+          <div class="gw-dial-secondary" id="gw-focus-secondary"></div>
+        </div>
       </div>
       <div class="gw-stage-weight" id="gw-stage-weight" style="display:none;">
         <button type="button" id="gw-weight-minus" aria-label="Decrease weight">−</button>
@@ -3027,19 +2983,22 @@ function renderSectionFocus(overrideSpec){
         </div>
         <button type="button" id="gw-weight-plus" aria-label="Increase weight">+</button>
       </div>
-      <div class="gw-amreps-row" id="gw-floatcard-amreps" style="display:none;">
-        <button class="gw-amreps-btn" id="gw-amreps-minus" type="button">−</button>
-        <input class="gw-amreps-total" id="gw-amreps-total" type="number" inputmode="numeric" min="0" value="0" aria-label="Total reps">
-        <button class="gw-amreps-btn" id="gw-amreps-plus" type="button">+</button>
-      </div>
-      <div class="gw-amreps-quick" id="gw-amreps-quick" style="display:none;"></div>
-      <button class="gw-stage-round" id="gw-focus-plus" style="display:none;">
-        <span class="gw-stage-round-badge" id="gw-focus-roundsbadge">0</span>
-        <span class="gw-stage-round-label"><span id="gw-focus-plus-label">Round</span> <span class="gw-round-target" id="gw-focus-round-target"></span></span>
-      </button>
-      <div class="gw-floatcard-next" id="gw-floatcard-next" style="display:none;">
-        <button id="gw-focus-skipnext"><span>Next</span>${ICON_PLAY}</button>
-        <div class="gw-floatcard-nextpreview" id="gw-floatcard-nextpreview"></div>
+      <div class="gw-ctl-row">
+        <div class="gw-ctl-slot">
+          <div class="gw-nownext" id="gw-nownext" style="display:none;">
+            <div class="gw-nn-block"><span class="gw-nn-label">Now</span><span class="gw-nn-name gw-nn-now" id="gw-nn-now"></span><span class="gw-nn-sub" id="gw-nn-nowsub"></span></div>
+            <div class="gw-nn-block" id="gw-nn-nextblock"><span class="gw-nn-label">Next</span><span class="gw-nn-name" id="gw-nn-next"></span></div>
+          </div>
+          <button class="gw-ctl gw-hold-finish" id="gw-focus-hold" style="display:none;" type="button" aria-label="Hold to finish">${ICON_CHECK}<span>Hold to finish</span></button>
+          <button class="gw-ctl gw-stage-round" id="gw-focus-plus" style="display:none;" type="button">
+            <span class="gw-stage-round-badge" id="gw-focus-roundsbadge">0</span>
+            <span class="gw-stage-round-label" id="gw-focus-plus-label">Round</span>
+          </button>
+          <div class="gw-floatcard-next" id="gw-floatcard-next" style="display:none;">
+            <button class="gw-ctl" id="gw-focus-skipnext" type="button">${ICON_SKIP}<span>Next</span></button>
+          </div>
+        </div>
+        <button class="gw-ctl gw-dial-play" id="gw-floatcard-playpause" aria-label="Play or pause" type="button">${ICON_PLAY}</button>
       </div>
       <button class="gw-showworkout-toggle" id="gw-floatcard-close" type="button">Cancel timer</button>`;
     container.appendChild(card);
@@ -3075,42 +3034,56 @@ function renderSectionFocus(overrideSpec){
 
     const isAmreps = kind==='AMRAP' && spec.mode==='reps';
     const isAscending = kind==='AMRAP' && spec.mode==='ascending';
-    const isAlternate = (kind==='EMOM' || kind==='TABATA') && spec.alternate;
     // a plain COUNTDOWN opened via openPacedRestSet() carries repeatKey/repeatTotal — one single
     // rest, no round-tap button needed; "Skip" (the Next/skip-ahead slot, repurposed) is the only
     // way to end it early, same as letting it run out.
     const isRepeatCountdown = kind==='COUNTDOWN' && !!spec.repeatKey;
 
-    if((kind==='AMRAP' && !isAmreps) || kind==='RFT' || kind==='LADDER' || kind==='FORTIME_REPEATS'){
+    // the left circle: a round counter — or, for AMReps, a quick tally of reps (the exact total is asked for when it's done)
+    if(kind==='AMRAP' || kind==='RFT' || kind==='LADDER' || kind==='FORTIME_REPEATS'){
       card.querySelector('#gw-focus-plus').style.display = '';
     }
+    if(isAmreps) document.getElementById('gw-focus-plus-label').textContent = 'Reps';
     if(kind==='INTERVAL'){
       card.querySelector('#gw-floatcard-next').style.display = '';
     }
     if(isRepeatCountdown){
       card.querySelector('#gw-floatcard-next').style.display = '';
-      document.getElementById('gw-focus-skipnext').innerHTML = `<span>Skip</span>${ICON_PLAY}`;
+      document.getElementById('gw-focus-skipnext').innerHTML = `${ICON_SKIP}<span>Skip</span>`;
     }
     if(kind==='FORTIME_REPEATS') document.getElementById('gw-focus-plus-label').textContent = 'Round Done';
-    if(isAmreps){
-      card.querySelector('#gw-floatcard-amreps').style.display = '';
-    }
-    if(isAlternate){
-      const altRow = card.querySelector('#gw-focus-altrow');
-      altRow.style.display = 'flex';
-      card.querySelector('#gw-focus-alt-a').textContent = spec.alternate[0];
-      card.querySelector('#gw-focus-alt-b').textContent = spec.alternate[1];
+    // Tabata and EMOMs show what's being done (and what's coming) in the otherwise empty left slot
+    if(kind==='TABATA' || (kind==='EMOM' && !spec.openEnded && (spec.alternate || state.focusExercises.length))) card.querySelector('#gw-nownext').style.display = 'flex';
+    // plain For Time and open-ended EMOM end on the athlete's own call — hold the left circle to finish
+    const holdFinish = kind==='FORTIME' || (kind==='EMOM' && spec.openEnded);
+    if(holdFinish){
+      const holdBtn = card.querySelector('#gw-focus-hold');
+      holdBtn.style.display = '';
+      wireHoldToFinish(holdBtn, key);
     }
     if(isAscending) document.getElementById('gw-focus-plus-label').textContent = `+${spec.increment}`;
 
     const roundCap = (kind==='RFT') ? spec.rounds : (kind==='LADDER' ? spec.rungs.length : (kind==='FORTIME_REPEATS' ? spec.rounds : null));
-    if(roundCap) document.getElementById('gw-focus-round-target').textContent = `/ ${roundCap}`;
-    if(isResume){
-      document.getElementById('gw-focus-roundsbadge').textContent = isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount;
-      if(roundCap && state.focusTapCount >= roundCap) document.getElementById('gw-focus-plus').disabled = true;
-    }
+    if(isAmreps && !isResume) state.focusAmrepsTotal = 0;
+    // the circle reads "0/5" (done / prescribed) when there's a prescribed count, else just the number
+    const paintRound = ()=>{
+      const n = isAmreps ? (state.focusAmrepsTotal||0) : (isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount);
+      const badge = document.getElementById('gw-focus-roundsbadge');
+      badge.textContent = roundCap ? `${n}/${roundCap}` : n;
+      badge.classList.toggle('gw-long', badge.textContent.length > 4);
+    };
+    paintRound();
+    if(isResume && roundCap && state.focusTapCount >= roundCap) document.getElementById('gw-focus-plus').disabled = true;
 
     document.getElementById('gw-focus-plus').onclick = ()=>{
+      const plusEl = document.getElementById('gw-focus-plus');
+      if(isAmreps){
+        state.focusAmrepsTotal = (state.focusAmrepsTotal||0) + 1;
+        if(key==='wod'){ if(!w.wodPerformance) w.wodPerformance = {}; w.wodPerformance.extraReps = state.focusAmrepsTotal; }
+        paintRound(); vibrate(10);
+        plusEl.classList.add('gw-tap-flash'); setTimeout(()=>plusEl.classList.remove('gw-tap-flash'), 90);
+        return;
+      }
       if(roundCap && state.focusTapCount >= roundCap) return;
       state.focusTapCount++;
       if(isAscending){
@@ -3125,15 +3098,15 @@ function renderSectionFocus(overrideSpec){
         w.wodPerformance.rounds = state.focusTapCount;
         if(isAscending) w.wodPerformance.extraReps = state.focusAscendingTotal;
       }
-      document.getElementById('gw-focus-roundsbadge').textContent = isAscending ? (state.focusAscendingTotal||0) : state.focusTapCount;
-      document.getElementById('gw-focus-plus').classList.add('gw-tap-flash');
-      setTimeout(()=>document.getElementById('gw-focus-plus').classList.remove('gw-tap-flash'), 120);
+      paintRound();
+      plusEl.classList.add('gw-tap-flash');
+      setTimeout(()=>plusEl.classList.remove('gw-tap-flash'), 120);
       vibrate(15);
       logRoundTap(focusCurrentElapsed());
       if(roundCap && state.focusTapCount >= roundCap){
-        // last prescribed round just got logged — this finishes the WOD, same as swiping to finish
+        // last prescribed round just got logged — that finishes the WOD, no separate finish control needed
         focusManualFinish(key);
-        document.getElementById('gw-focus-plus').disabled = true;
+        plusEl.disabled = true;
       } else {
         if(kind==='FORTIME_REPEATS' && focusTimer) focusTimer.restUntil = focusCurrentElapsed() + spec.restSeconds;
         focusUpdateDisplay();
@@ -3144,49 +3117,6 @@ function renderSectionFocus(overrideSpec){
     document.getElementById('gw-focus-skipnext').onclick = isRepeatCountdown ? ()=>{ focusFinish(); focusUpdateDisplay(); } : focusSkipToNextRound;
     document.getElementById('gw-floatcard-playpause').onclick = focusToggleFromTap;
     document.getElementById('gw-floatcard-close').onclick = requestCloseFloatCard;
-    if(isAmreps){
-      if(!isResume) state.focusAmrepsTotal = 0;
-      const totalEl = document.getElementById('gw-amreps-total');
-      totalEl.value = state.focusAmrepsTotal || 0;
-      const setTotal = (val)=>{
-        state.focusAmrepsTotal = Math.max(0, Math.round(val) || 0);
-        totalEl.value = state.focusAmrepsTotal;
-        if(key==='wod'){ if(!w.wodPerformance) w.wodPerformance = {}; w.wodPerformance.extraReps = state.focusAmrepsTotal; }
-      };
-      const bump = (delta)=>{ setTotal((state.focusAmrepsTotal||0) + delta); vibrate(10); };
-      document.getElementById('gw-amreps-plus').onclick = ()=>bump(1);
-      document.getElementById('gw-amreps-minus').onclick = ()=>bump(-1);
-      // type the exact count straight in — no need to tap once per rep
-      totalEl.onfocus = ()=>totalEl.select();
-      totalEl.onchange = ()=>setTotal(Number(totalEl.value));
-      // one tap adds a chunk: a fixed 5 and 10, plus one full set of the movement's own rep count
-      // (e.g. 15 for "Barbell Floor Press 15 reps") — whichever fit how people actually count
-      const quick = document.getElementById('gw-amreps-quick');
-      quick.style.display = 'flex';
-      const m0 = key==='wod' && w.wodMovements && w.wodMovements[0];
-      const steps = [5, 10];
-      if(m0 && typeof m0.reps==='number' && !steps.includes(m0.reps)) steps.push(m0.reps);
-      steps.sort((a,b)=>a-b).forEach(n=>{
-        const chip = document.createElement('button');
-        chip.type = 'button'; chip.className = 'gw-amreps-chip'; chip.textContent = `+${n}`;
-        chip.onclick = ()=>bump(n);
-        quick.appendChild(chip);
-      });
-    }
-
-    // RFT / LADDER / uncapped FOR TIME / open-ended EMOM end on the athlete's own judgment — swipe locks it in
-    if(((kind==='RFT' || kind==='FORTIME' || kind==='LADDER') && !spec.cap) || (kind==='EMOM' && spec.openEnded)){
-      const swipeZone = document.createElement('div');
-      swipeZone.className = 'gw-focus-swipezone';
-      swipeZone.id = 'gw-focus-swipezone';
-      swipeZone.innerHTML = `<div class="gw-focus-swipe-track">
-          <div class="gw-focus-swipe-fill" id="gw-focus-swipe-fill"></div>
-          <span>Swipe to finish</span>
-          <div class="gw-focus-swipe-thumb" id="gw-focus-swipe-thumb">${ICON_PLAY}</div>
-        </div>`;
-      container.appendChild(swipeZone);
-      wireSwipeToFinish(swipeZone, key);
-    }
 
     if(isResume){
       focusUpdateDisplay();
@@ -3208,44 +3138,23 @@ function vibrate(pattern){
   try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
 }
 
-function wireSwipeToFinish(zone, stepKey){
-  const track = zone.querySelector('.gw-focus-swipe-track');
-  const thumb = zone.querySelector('.gw-focus-swipe-thumb');
-  const fill = document.getElementById('gw-focus-swipe-fill');
-  const THUMB_SIZE = 44, EDGE_GAP = 6;
-  let dragging = false, startX = 0, maxTravel = 1;
-  function onDown(e){
-    dragging = true;
-    startX = (e.touches ? e.touches[0].clientX : e.clientX);
-    maxTravel = Math.max(1, track.getBoundingClientRect().width - THUMB_SIZE - EDGE_GAP*2);
-  }
-  function onMove(e){
-    if(!dragging) return;
-    const x = (e.touches ? e.touches[0].clientX : e.clientX);
-    const delta = Math.max(0, Math.min(maxTravel, x - startX));
-    thumb.style.transform = `translateX(${delta}px)`;
-    fill.style.width = (delta + THUMB_SIZE) + 'px';
-    if(delta / maxTravel > 0.85){ finishSwipe(); }
-  }
-  function onUp(){
-    if(!dragging) return;
-    dragging = false;
-    thumb.style.transform = 'translateX(0)';
-    fill.style.width = '0%';
-  }
-  function finishSwipe(){
-    dragging = false;
-    thumb.style.transform = `translateX(${maxTravel}px)`;
-    fill.style.width = '100%';
-    focusManualFinish(stepKey);
-  }
-  thumb.addEventListener('touchstart', onDown, {passive:true});
-  thumb.addEventListener('touchmove', onMove, {passive:true});
-  thumb.addEventListener('touchend', onUp);
-  thumb.addEventListener('mousedown', onDown);
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onUp);
+// hold the circle until its ring fills — a deliberate press, so a stray tap can't end the workout
+function wireHoldToFinish(btn, stepKey){
+  const HOLD_MS = 900;
+  let t0 = 0, raf = 0, active = false;
+  const reset = ()=>{ active = false; cancelAnimationFrame(raf); btn.style.setProperty('--p', 0); };
+  const tick = ()=>{
+    if(!active) return;
+    const p = Math.min(1, (performance.now() - t0) / HOLD_MS);
+    btn.style.setProperty('--p', p);
+    if(p >= 1){ active = false; focusManualFinish(stepKey); }
+    else raf = requestAnimationFrame(tick);
+  };
+  btn.addEventListener('pointerdown', e=>{ if(btn.disabled) return; e.preventDefault(); active = true; t0 = performance.now(); vibrate(10); raf = requestAnimationFrame(tick); });
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev, reset));
+  btn.addEventListener('contextmenu', e=>e.preventDefault());
 }
+
 
 // a finished timer has nothing left to resume, so it closes itself — deferred a beat so the
 // "Completed" state/toast is visible for a moment first, and deferred (not synchronous) because
@@ -3495,30 +3404,25 @@ function focusUpdateButtonStates(){
   const playPauseBtn = document.getElementById('gw-floatcard-playpause');
   if(!playPauseBtn || focusTimer.leadIn) return;
   playPauseBtn.innerHTML = focusTimer.running ? ICON_PAUSE : ICON_PLAY;
+  playPauseBtn.classList.toggle('is-running', !!focusTimer.running);
   // once the timer is done there's nothing left to play/pause — say so, plainly, wherever the round button is
   playPauseBtn.disabled = focusTimer.doneBeeped;
   const roundBtn = document.getElementById('gw-focus-plus');
-  if(roundBtn && focusTimer.doneBeeped){
-    roundBtn.disabled = true;
-    roundBtn.innerHTML = `${ICON_CHECK}<span>Completed</span>`;
-  }
+  if(roundBtn && focusTimer.doneBeeped) roundBtn.disabled = true;
+  const skipBtn = document.getElementById('gw-focus-skipnext');
+  if(skipBtn && focusTimer.doneBeeped) skipBtn.disabled = true;
+  const holdBtn = document.getElementById('gw-focus-hold');
+  if(holdBtn && focusTimer.doneBeeped) holdBtn.disabled = true;
 }
 function focusUpdateDisplay(){
   if(!focusTimer || focusTimer.leadIn) return;
   const numberEl = document.getElementById('gw-focus-number');
   const subEl = document.getElementById('gw-focus-sub');
   const phaseEl = document.getElementById('gw-focus-phase');
-  const ring = document.getElementById('gw-focus-ring');
-  const stage = document.getElementById('gw-focus-stage');
   const secondaryEl = document.getElementById('gw-focus-secondary');
   if(!numberEl) return;
   const elapsed = focusCurrentElapsed();
-  const CIRC = 2*Math.PI*34;
-  let displaySeconds = 0, warn = false, fraction = 1, isRest = false, phaseWordUsed = false, secondaryUsed = false;
-  // frac = fraction of the current phase REMAINING (1 at phase start, 0 at phase end).
-  // The dial fills as time elapses (matches a class-clock look), so we draw the complement of frac.
-  // frac = fraction of the current phase remaining (1 at phase start, 0 at phase end) — the ring depletes as time passes.
-  function setRing(frac){ if(ring) ring.style.strokeDashoffset = String(CIRC * (1-Math.max(0,Math.min(1,frac)))); }
+  let displaySeconds = 0, warn = false, isRest = false, phaseWordUsed = false, secondaryUsed = false;
 
   if(focusTimer.kind==='AMRAP' && focusTimer.cycles){
     const workSec = focusTimer.minutes*60, restSec = (focusTimer.restMinutes||0)*60, cycleLen = workSec+restSec;
@@ -3530,16 +3434,15 @@ function focusUpdateDisplay(){
     const phaseSecTotal = isRest ? restSec : workSec;
     const phaseElapsed = isRest ? withinCycle-workSec : withinCycle;
     displaySeconds = phaseSecTotal - phaseElapsed;
-    fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0;
     const phaseKey = cycleIdx+'-'+(isRest?'rest':'work');
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
     phaseEl.textContent = isRest ? 'REST' : 'AMRAP';
     phaseWordUsed = true;
-    subEl.textContent = `Interval ${cycleIdx+1} of ${focusTimer.cycles}` + (isRest ? ' — rest, get ready to go again' : '');
-    if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+    phaseEl.classList.toggle('rest', isRest);
+    subEl.textContent = `Interval ${cycleIdx+1} of ${focusTimer.cycles}`;
+    if(elapsed >= totalDuration){ warn=true; focusFinish(); displaySeconds=0; }
     else if(displaySeconds<=3) warn=true;
     focusMaybeTick(displaySeconds);
-    setRing(fraction);
 
   } else if(focusTimer.kind==='AMRAP' || focusTimer.kind==='COUNTDOWN'){
     const total = focusTimer.minutes*60;
@@ -3547,20 +3450,19 @@ function focusUpdateDisplay(){
     if(focusTimer.kind==='AMRAP' && !focusTimer.halfwayBeeped && elapsed >= total/2 && focusTimer.running){
       focusTimer.halfwayBeeped = true; switchBeep(); vibrate(40);
     }
-    if(displaySeconds<=0){ displaySeconds=0; warn=true; fraction=0; focusFinish(); }
-    else { if(displaySeconds<=10) warn=true; focusMaybeTick(displaySeconds); fraction = total>0 ? displaySeconds/total : 0; }
-    setRing(fraction);
+    if(displaySeconds<=0){ displaySeconds=0; warn=true; focusFinish(); }
+    else { if(displaySeconds<=10) warn=true; focusMaybeTick(displaySeconds); }
     if(focusTimer.kind==='AMRAP'){
       subEl.textContent = focusTimer.mode==='ascending'
         ? `Next round: ${focusTimer.startReps + state.focusTapCount*focusTimer.increment} reps`
-        : focusTimer.mode==='reps' ? `${fmtMinutesShort(focusTimer.minutes)} — rack up total reps`
-        : `${fmtMinutesShort(focusTimer.minutes)} AMRAP — counts down`;
+        : '';
     } else if(focusTimer.repeatKey){
       const w = state.currentWorkout;
       const done = (w && w.roundCounts && w.roundCounts[focusTimer.repeatKey]) || 0;
-      subEl.textContent = `Set ${Math.min(done+1, focusTimer.repeatTotal)} of ${focusTimer.repeatTotal} — resting`;
+      phaseEl.textContent = 'REST'; phaseEl.classList.add('rest'); phaseWordUsed = true;
+      subEl.textContent = `Set ${Math.min(done+1, focusTimer.repeatTotal)} of ${focusTimer.repeatTotal}`;
     } else {
-      subEl.textContent = `${fmtMinutesShort(focusTimer.minutes)} countdown`;
+      subEl.textContent = '';
     }
 
   } else if(focusTimer.kind==='EMOM'){
@@ -3569,56 +3471,50 @@ function focusUpdateDisplay(){
     const unit = Math.floor(clamped/60);
     const withinMinute = clamped - unit*60;
     displaySeconds = 60 - withinMinute;
-    fraction = displaySeconds/60;
     if(focusTimer.alternate){
       const which = unit % 2;
-      subEl.textContent = `Minute ${unit+1}${total!=null?` of ${focusTimer.minutes}`:''} — ${which===0?'ODD':'EVEN'}: ${focusTimer.alternate[which]}`;
-      const chipA = document.getElementById('gw-focus-alt-a'), chipB = document.getElementById('gw-focus-alt-b');
-      if(chipA && chipB){ chipA.classList.toggle('gw-alt-active', which===0); chipB.classList.toggle('gw-alt-active', which===1); }
+      subEl.textContent = `Minute ${unit+1}${total!=null?` of ${focusTimer.minutes}`:''}`;
+      paintNowNext(focusTimer.alternate[which], (total!=null && unit+1>=focusTimer.minutes) ? 'Done' : focusTimer.alternate[1-which], false);
+    } else if(!focusTimer.openEnded && state.focusExercises.length){
+      // one exercise (or a short list) every minute — name it, with its reps underneath
+      const exs = state.focusExercises;
+      paintNowNext(exs.map(e=>e.name).join(' + '), '', false, exs.map(e=>e.qty).filter(Boolean).join(' · '));
     } else if(focusTimer.openEnded){
-      subEl.textContent = `Minute ${unit+1} — go until you can't hold the pace`;
+      subEl.textContent = `Minute ${unit+1}` + (state.focusExercises.length ? ` · ${state.focusExercises.map(e=>e.name).join(' + ')}` : '');
     } else {
       subEl.textContent = `Minute ${Math.min(unit+1, focusTimer.minutes)} of ${focusTimer.minutes}`;
     }
-    if(secondaryEl) secondaryEl.textContent = total!=null ? `Workout time left: ${fmtClock(Math.max(0,total-clamped))}` : `Total elapsed: ${fmtClock(elapsed)}`;
-    secondaryUsed = true;
+    if(secondaryEl && total==null){ secondaryEl.textContent = `${fmtClock(elapsed)} total`; secondaryUsed = true; }
     const unitCap = total!=null ? focusTimer.minutes : Infinity;
     if(unit > focusTimer.lastBeepUnit && unit < unitCap && focusTimer.running){ switchBeep(); vibrate([60,40,60]); focusTimer.lastBeepUnit = unit; }
-    if(total!=null && elapsed >= total){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+    if(total!=null && elapsed >= total){ warn=true; focusFinish(); displaySeconds=0; }
     else { if(displaySeconds<=3) warn=true; focusMaybeTick(displaySeconds); }
-    setRing(fraction);
 
   } else if(focusTimer.kind==='INTERVAL'){
     const cycle = focusTimer.minutes*60;
-    const nextPreviewEl = document.getElementById('gw-floatcard-nextpreview');
     if(focusTimer.totalRounds){
       const totalDuration = cycle*focusTimer.totalRounds;
       const clamped = Math.min(elapsed, totalDuration);
       const unit = Math.floor(clamped/cycle);
       const withinUnit = clamped - unit*cycle;
       displaySeconds = cycle - withinUnit;
-      fraction = displaySeconds/cycle;
       // this branch is only ever reached by the continuous "For X Cycles" interval clock — the
       // genuinely rest-based paced sets run through the separate COUNTDOWN/repeatKey engine below
       // — so this is never a rest period, just the current lift's working interval
       subEl.textContent = `Set ${Math.min(unit+1, focusTimer.totalRounds)} of ${focusTimer.totalRounds}`;
-      if(nextPreviewEl) nextPreviewEl.textContent = unit+1 < focusTimer.totalRounds ? `Set ${unit+2}` : 'Finish';
       if(unit > focusTimer.lastBeepUnit && unit < focusTimer.totalRounds && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
-      if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+      if(elapsed >= totalDuration){ warn=true; focusFinish(); displaySeconds=0; }
       else if(displaySeconds<=3) warn=true;
       focusMaybeTick(displaySeconds);
     } else {
       const unit = Math.floor(elapsed/cycle);
       const withinUnit = elapsed - unit*cycle;
       displaySeconds = cycle - withinUnit;
-      fraction = displaySeconds/cycle;
-      subEl.textContent = `Round ${unit+1} — beeps each time it resets`;
-      if(nextPreviewEl) nextPreviewEl.textContent = `Round ${unit+2}`;
+      subEl.textContent = `Round ${unit+1}`;
       if(unit > focusTimer.lastBeepUnit && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
       if(displaySeconds<=3) warn=true;
       focusMaybeTick(displaySeconds);
     }
-    setRing(fraction);
 
   } else if(focusTimer.kind==='TABATA'){
     const cycle = tabataRoundSec(focusTimer);
@@ -3644,81 +3540,73 @@ function focusUpdateDisplay(){
       phaseWord = isRest ? 'REST' : (focusTimer.alternate ? focusTimer.alternate[roundIdx % 2] : 'WORK');
     }
     displaySeconds = phaseSecTotal - phaseElapsed;
-    fraction = phaseSecTotal>0 ? displaySeconds/phaseSecTotal : 0;
     const phaseKey = roundIdx+'-'+phaseId;
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
-    phaseEl.textContent = phaseWord;
-    phaseEl.classList.toggle('rest', isRest);
-    phaseWordUsed = true;
     subEl.textContent = `Round ${roundIdx+1} of ${focusTimer.rounds}`;
-    if(focusTimer.alternate){
-      const altRow = document.getElementById('gw-focus-altrow');
-      if(altRow){
-        const chipA = document.getElementById('gw-focus-alt-a'), chipB = document.getElementById('gw-focus-alt-b');
-        chipA.classList.toggle('gw-alt-active', !isRest && roundIdx%2===0);
-        chipB.classList.toggle('gw-alt-active', !isRest && roundIdx%2===1);
-      }
-    }
-    if(elapsed >= totalDuration){ warn=true; fraction=0; focusFinish(); displaySeconds=0; }
+    // what's being done now and what comes next — on the left, where the round counter would sit
+    const lastRound = roundIdx+1 >= focusTimer.rounds;
+    const plainName = (!focusTimer.phases && !focusTimer.alternate && state.focusExercises.length===1) ? state.focusExercises[0].name : 'Work';
+    const nextWord = focusTimer.phases
+      ? (focusTimer.phases[phaseId+1] ? focusTimer.phases[phaseId+1].label : (lastRound ? 'Done' : focusTimer.phases[0].label))
+      : (isRest ? (lastRound ? 'Done' : (focusTimer.alternate ? focusTimer.alternate[(roundIdx+1)%2] : plainName)) : 'Rest');
+    paintNowNext(focusTimer.phases ? focusTimer.phases[phaseId].label : (isRest ? 'Rest' : (focusTimer.alternate ? focusTimer.alternate[roundIdx%2] : plainName)), nextWord, isRest);
+    if(elapsed >= totalDuration){ warn=true; focusFinish(); displaySeconds=0; }
     else if(displaySeconds<=3) warn=true;
     focusMaybeTick(displaySeconds);
-    setRing(fraction);
 
   } else if(focusTimer.kind==='LADDER'){
     displaySeconds = elapsed;
-    if(focusTimer.cap){
-      const capSec = focusTimer.cap*60;
-      fraction = Math.max(0, 1 - elapsed/capSec);
-      if(elapsed >= capSec){ warn = true; focusFinish(); }
-    } else {
-      fraction = 1;
-    }
-    setRing(fraction);
+    if(focusTimer.cap && elapsed >= focusTimer.cap*60){ warn = true; focusFinish(); }
     const rungs = focusTimer.rungs;
     const roundIdx = Math.min(state.focusTapCount, rungs.length-1);
     subEl.textContent = state.focusTapCount >= rungs.length
-      ? `All ${rungs.length} rounds done`
-      : `Round ${roundIdx+1} of ${rungs.length} — ${rungs[roundIdx]} reps this round`;
+      ? 'All rounds done'
+      : `${rungs[roundIdx]} reps this round`;
   } else { // FORTIME / RFT / FORTIME_REPEATS / stopwatch
     displaySeconds = elapsed;
-    if(focusTimer.cap){
-      const capSec = focusTimer.cap*60;
-      fraction = Math.max(0, 1 - elapsed/capSec);
-      if(elapsed >= capSec){ warn = true; focusFinish(); }
-    } else {
-      fraction = 1;
-    }
-    setRing(fraction);
+    if(focusTimer.cap && elapsed >= focusTimer.cap*60){ warn = true; focusFinish(); }
     if(focusTimer.kind==='FORTIME_REPEATS'){
       const resting = focusTimer.restUntil && elapsed < focusTimer.restUntil;
       phaseEl.textContent = resting ? 'REST' : 'GO';
+      phaseEl.classList.toggle('rest', !!resting);
       phaseWordUsed = true;
       if(resting && secondaryEl){ secondaryEl.textContent = `Next round in ${fmtClock(focusTimer.restUntil-elapsed)}`; secondaryUsed = true; }
       if(resting && focusTimer.running && Math.ceil(focusTimer.restUntil-elapsed)<=3) focusMaybeTick(focusTimer.restUntil-elapsed);
-      subEl.textContent = `Round ${Math.min(state.focusTapCount+1, focusTimer.rounds)} of ${focusTimer.rounds} — for time`;
+      subEl.textContent = `Round ${Math.min(state.focusTapCount+1, focusTimer.rounds)} of ${focusTimer.rounds}`;
     } else {
-      const roundsPart = focusTimer.rounds ? `Complete ${focusTimer.rounds} rounds — you track them. ` : '';
-      subEl.textContent = focusTimer.cap ? `${roundsPart}Time cap ${focusTimer.cap}'` : (roundsPart || 'Counts up — stop when you finish');
+      subEl.textContent = focusTimer.cap ? `Time cap ${focusTimer.cap} min` : '';
     }
   }
 
+  function paintNowNext(now, next, resting, nowSub){
+    const nowEl = document.getElementById('gw-nn-now'), nextEl = document.getElementById('gw-nn-next');
+    if(!nowEl || !nextEl) return;
+    nowEl.textContent = now; nextEl.textContent = next;
+    nowEl.classList.toggle('rest', !!resting);
+    const subEl2 = document.getElementById('gw-nn-nowsub');
+    if(subEl2){ subEl2.textContent = nowSub || ''; subEl2.style.display = nowSub ? '' : 'none'; }
+    const nextBlock = document.getElementById('gw-nn-nextblock');
+    if(nextBlock) nextBlock.style.display = next ? '' : 'none';
+  }
   if(secondaryEl && !secondaryUsed) secondaryEl.textContent = '';
   if(phaseEl && !phaseWordUsed) phaseEl.textContent = '';
   numberEl.textContent = fmtClock(displaySeconds);
   numberEl.classList.toggle('warn', warn);
 
-  // once finished, locking the + / swipe controls prevents mis-taps from changing a score that's
+  // once finished, locking the round / finish controls prevents mis-taps from changing a score that's
   // already locked in. Paced-rest is the one exception that stays tappable throughout — mid-rest
   // the same button doubles as "Skip Rest", so disabling it would take away the skip.
   const plusBtn = document.getElementById('gw-focus-plus');
   if(plusBtn) plusBtn.disabled = focusTimer.doneBeeped;
-  const swipeZone = document.getElementById('gw-focus-swipezone');
-  if(swipeZone) swipeZone.classList.toggle('gw-swipe-locked', focusTimer.doneBeeped);
+  const holdBtn = document.getElementById('gw-focus-hold');
+  if(holdBtn) holdBtn.disabled = focusTimer.doneBeeped;
   updateFocusCloseButton();
 
   // the finish message lives in the drawer itself — it holds here for a beat (see
   // focusAutoCloseAndRate) before the drawer closes on its own to reveal the completed section
   if(focusTimer.doneBeeped){
+    const nn = document.getElementById('gw-nownext');
+    if(nn) nn.style.display = 'none';
     phaseEl.textContent = 'COMPLETED';
     phaseEl.classList.remove('rest');
     subEl.textContent = '';
@@ -3751,7 +3639,7 @@ function parseSectionLine(line){
   let tag = '';
   const oe = s.match(/^(Odd|Even):\s*(.*)$/i);
   if(oe){ tag = oe[1].toLowerCase()==='odd' ? 'odd minutes' : 'even minutes'; s = oe[2]; }
-  s = s.replace(/^(?:Each|Every) minute:\s*/i, '').replace(/^\d+-\s+/, '');
+  s = s.replace(/^(?:Each|Every) minute:\s*/i, '').replace(/^\d+-\s+/, '').replace(/\s+every minute$/i, '');
 
   // "5 x 5", "5 sets x 8-10 (strict or banded)", "5 x 10 lunges each leg"
   let m = s.match(/^(\d+)\s*(?:sets?\s*)?[x×]\s*(\d+(?:-\d+)?)\s*(.*)$/i);
@@ -3813,10 +3701,10 @@ function parseSectionText(body){
   return {headline, items};
 }
 
-// tapping an exercise line opens its how-to; the row's own name wins, the full text of its line is the
-// fallback, and the most specific (longest) known movement is the one shown
 // a numeric slot keeps the number face only while it actually holds a number
 function numCls(v){ return /\d/.test(String(v==null ? '' : v)) ? '' : ' gw-txt'; }
+// tapping an exercise line opens its how-to; the row's own name wins, the full text of its line is the
+// fallback, and the most specific (longest) known movement is the one shown
 function infoKeyFor(name, raw){
   const best = list=>list.sort((a,b)=>b.length-a.length)[0] || null;
   return best(findKnownMovements(name || '')) || best(findKnownMovements(raw || ''));
@@ -3873,9 +3761,8 @@ function appendSectionRefresh(node){
   if(!node.onReroll) return;
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'gw-section-refresh-btn';
-  btn.setAttribute('aria-label', `Refresh ${node.sectionTitle}`);
-  btn.innerHTML = `${ICON_REFRESH}<span>Refresh</span>`;
+  btn.className = 'gw-inline-link gw-section-suggest';
+  btn.textContent = `Suggest new ${node.sectionTitle==='Extra Core' ? 'Core' : node.sectionTitle}`;
   btn.onclick = node.onReroll;
   node.bodyEl.appendChild(btn);
 }
@@ -3933,6 +3820,7 @@ function sectionWithChips(title, body, tag, opts){
   // an interval skill leads with its set count ("5 Sets"); the cadence ("Every 2 minutes:") is the
   // supporting line under it. A group name ("Complex (main bar)", "Snatch", "Superset") that used to be
   // the title becomes the first exercise line instead
+  if(sp && sp.kind==='EMOM' && sp.openEnded) headline = (sp.amrap || /AMRAP/i.test(body)) ? 'EMOM + AMRAP' : 'EMOM';
   const groupRows = [];
   const setsTitle = n=>`${n} ${n===1 ? 'Set' : 'Sets'}`;
   if(sp && sp.kind==='INTERVAL' && sp.totalRounds && !(headline && /^\s*(\d+\s*rounds?|tabata|emom|amrap|for time|countdown)/i.test(headline))){
@@ -3998,6 +3886,15 @@ function sectionWithChips(title, body, tag, opts){
   });
   const loads = opts.loads || [];
   const usedLoads = new Set();
+  // reps are prescribed, not editable — each set's line reads like every other exercise line. A skill with
+  // one exercise repeats that exercise's name on every set row (reps underneath, weight at the right)
+  const repsShown = hasSetRows && opts.setsList.some(r=>r!==null);
+  let setName = null, setRaw = '';
+  if(repsShown && rows.length===1){
+    const r0 = rows[0];
+    const hasLoad = loads.some(l=>{ const def = SKILL_LOAD_DEFS.find(d=>d.key===l.key); return def && def.re.test(r0.raw); });
+    if(!hasLoad){ setName = r0.name; setRaw = r0.raw; rows.length = 0; }
+  }
   if(rows.length || loads.length){
     const listEl = document.createElement('div');
     listEl.className = 'gw-movement-list';
@@ -4012,39 +3909,32 @@ function sectionWithChips(title, body, tag, opts){
 
   if(opts.setsList && opts.setsList.length){
     const listWrap = document.createElement('div');
-    listWrap.className = 'gw-setlist';
+    listWrap.className = 'gw-movement-list gw-setlist';
     const weightInputs = [];
-    // rows exist to edit reps/weight set by set — a block workout (several movements per set, each
-    // with its own rep count in the text) with no tracked lift has neither, so a column of empty
-    // "Set 1 / Set 2 / …" lines would just be noise; only the add/remove-set controls remain
+    // rows exist to show each set's reps / edit its weight — a block workout (several movements per set,
+    // each with its own rep count in the text) with no tracked lift has neither, so a column of empty
+    // "Set 1 / Set 2 / …" lines would just be noise; only the add/remove-set links remain
     const showRows = !(opts.setsList.every(r=>r===null) && !opts.setsWeights);
     // for a paced-rest skill, each set row shows done/not — checked off as its rest completes
     // (see advancePacedRestRound()), not editable at that point since the set's already logged
     (showRows ? opts.setsList : []).forEach((reps, idx)=>{
       const isDone = opts.doneCount && idx < opts.doneCount;
       const row = document.createElement('div');
-      row.className = 'gw-setlist-row' + (isDone ? ' gw-setlist-row-done' : '');
-      const num = document.createElement('span');
-      num.className = 'gw-setlist-num';
-      num.textContent = `Set ${idx+1}`;
-      const repsWrap = document.createElement('span');
-      repsWrap.className = 'gw-setlist-reps';
-      const repsInput = document.createElement('input');
-      if(reps === null) repsInput.style.display = 'none';
-      repsInput.type = 'text'; repsInput.inputMode = 'numeric'; repsInput.value = reps;
-      repsInput.disabled = isDone;
-      // reps can be a range like "8-10" straight from the prescription — editing just narrows/overrides
-      // that one set, it never cascades the way weight does
-      repsInput.onchange = ()=>{
-        const val = repsInput.value.trim() || reps;
-        repsInput.value = val;
-        opts.onRepsChange && opts.onRepsChange(idx, val);
-      };
-      repsWrap.appendChild(repsInput);
-      const repsUnit = document.createElement('span');
-      repsUnit.textContent = reps === null ? '' : 'reps';
-      repsWrap.appendChild(repsUnit);
-      row.appendChild(num); row.appendChild(repsWrap);
+      row.className = 'gw-movement-row' + (isDone ? ' gw-setlist-row-done' : '');
+      const main = document.createElement('div');
+      main.className = 'gw-movement-main';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'gw-movement-name';
+      nameEl.textContent = (setName && reps !== null) ? setName : `Set ${idx+1}`;
+      main.appendChild(nameEl);
+      if(reps !== null){
+        const qtyEl = document.createElement('span');
+        qtyEl.className = 'gw-movement-reps';
+        qtyEl.textContent = `${setName ? `Set ${idx+1} · ` : ''}${qtyWord(reps)}`;
+        main.appendChild(qtyEl);
+      }
+      row.appendChild(main);
+      if(setName && reps !== null) makeRowTappable(row, infoKeyFor(setName, setRaw));
       if(isDone){
         const badge = document.createElement('span');
         badge.className = 'gw-setlist-done-badge';
@@ -4056,6 +3946,7 @@ function sectionWithChips(title, body, tag, opts){
         weightWrap.className = 'gw-setlist-weight';
         const input = document.createElement('input');
         input.type = 'number'; input.step = '5'; input.value = opts.setsWeights[idx] ?? 0;
+        input.setAttribute('aria-label', `Set ${idx+1} weight in pounds`);
         weightInputs.push(input);
         // editing a set's weight fills forward into every later set (not the ones before it) —
         // a natural "ramp to this weight and hold" workflow you can still override set by set
@@ -4074,17 +3965,17 @@ function sectionWithChips(title, body, tag, opts){
     });
     if(showRows) bodyEl.appendChild(listWrap);
     if(opts.onSetsDelta){
-      const ctrlRow = document.createElement('div');
-      ctrlRow.className = 'gw-setlist-controls';
+      const links = document.createElement('div');
+      links.className = 'gw-setlist-links';
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button'; addBtn.className = 'gw-inline-link'; addBtn.textContent = '+ Add set';
+      addBtn.onclick = ()=>opts.onSetsDelta(1);
       const removeBtn = document.createElement('button');
-      removeBtn.type = 'button'; removeBtn.textContent = '− Remove Set';
+      removeBtn.type = 'button'; removeBtn.className = 'gw-inline-link'; removeBtn.textContent = '− Remove set';
       removeBtn.disabled = opts.setsList.length<=1;
       removeBtn.onclick = ()=>opts.onSetsDelta(-1);
-      const addBtn = document.createElement('button');
-      addBtn.type = 'button'; addBtn.textContent = '+ Add Set';
-      addBtn.onclick = ()=>opts.onSetsDelta(1);
-      ctrlRow.appendChild(removeBtn); ctrlRow.appendChild(addBtn);
-      bodyEl.appendChild(ctrlRow);
+      links.appendChild(addBtn); links.appendChild(removeBtn);
+      bodyEl.appendChild(links);
     }
   }
 
@@ -4135,7 +4026,7 @@ function renderWodSection(w){
     nameEl.textContent = wodMovementDisplayName(m.name);
     const repsEl = document.createElement('span');
     repsEl.className = 'gw-movement-reps';
-    repsEl.textContent = `${m.reps} reps${repsSuffixFor(m.name)}${m.tag ? ' · '+m.tag : ''}`;
+    repsEl.textContent = (wodTimerSpec && wodTimerSpec.kind==='AMRAP' && wodTimerSpec.mode==='reps' && !m.tag) ? 'Max reps' : `${m.reps} reps${repsSuffixFor(m.name)}${m.tag ? ' · '+m.tag : ''}`;
     main.appendChild(nameEl); main.appendChild(repsEl);
     row.appendChild(main);
     makeRowTappable(row, infoKeyFor(wodMovementDisplayName(m.name), m.name));
@@ -4173,7 +4064,6 @@ function rerollSection(section){
     } else { w.suggestedLoad = null; w.deload = false; }
     w.skillSetWeights = buildSkillSetWeights(w.skillSetReps.length, w.suggestedLoad);
     w.skillLoads = bw ? [] : buildSkillLoads(w.skillTplText);
-    w.skillRepsCascade = w.skillSetReps.every(r=>r===w.skillSetReps[0]);
     w.rpe = null;
   } else if(section==='wod'){
     let movementPool = MOVEMENT_LIB[w.type];
