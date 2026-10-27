@@ -851,11 +851,12 @@
 <div id="gw-timerstop-backdrop">
   <div id="gw-timerstop">
     <h4>Cancel this timer?</h4>
-    <p>This will reset it back to the start. Any rounds you've logged for this section stay saved.</p>
+    <p id="gw-timerstop-msg">This stops the timer and discards its progress, including any rounds or reps you've logged.</p>
     <div class="gw-stopconfirm-row">
       <button class="gw-btn" id="gw-timerstop-cancel">Continue</button>
       <button class="gw-btn gw-primary" id="gw-timerstop-ok">Cancel Timer</button>
     </div>
+    <button class="gw-btn" id="gw-timerstop-log" style="display:none; width:100%; margin-top:10px;">Stop &amp; log what I did</button>
   </div>
 </div>
 <div id="gw-modal-backdrop">
@@ -2275,6 +2276,10 @@ function renderCoachNotes(notes){
 // has been computed (see logWorkout), that's what leads; rounds+reps still shows as a sub-caption.
 function formatPerformanceShort(perf){
   if(!perf) return '';
+  if(perf.completedAll===false && perf.stoppedAt){
+    if(perf.roundsDone != null) return `${perf.roundsDone}/${perf.roundsTotal} rounds · stopped ${perf.stoppedAt}`;
+    if(perf.totalReps == null && perf.rounds == null && perf.extraReps == null) return `Stopped at ${perf.stoppedAt}`;
+  }
   if(perf.totalReps != null) return `${perf.totalReps} reps`;
   if(perf.rounds != null) return `${perf.rounds} rd${perf.rounds===1?'':'s'}${perf.extraReps ? ' + '+perf.extraReps+' reps' : ''}`;
   if(perf.time) return `${perf.time}${perf.hitCap ? ' (cap)' : ''}`;
@@ -2834,10 +2839,44 @@ function cancelTimerAndClose(){
   cancelPromptAutoPaused = false;
   const key = state.focusSectionKey;
   const w = state.currentWorkout;
+  // rounds / reps tallied on an unfinished WOD timer go with it, so they can't turn up later as a result nobody finished
+  if(key==='wod' && w && w.wodPerformance && !(w.sectionsDone && w.sectionsDone.wod)){
+    delete w.wodPerformance.rounds; delete w.wodPerformance.extraReps;
+  }
   focusStopTicking();
   closeTimerDrawer();
   render();
   maybePromptRating(w, key);
+}
+// stopping the WOD partway and keeping what was done: logged as a modified workout, with where it
+// stopped (time, and rounds when the format has a round count) kept as the result and in the notes
+function stopTimerAndLogPartial(){
+  document.getElementById('gw-timerstop-backdrop').classList.remove('show');
+  cancelPromptAutoPaused = false;
+  const w = state.currentWorkout;
+  if(!w || !focusTimer || focusTimer.sectionKey!=='wod') return;
+  const t = focusTimer;
+  const stoppedAt = fmtClock(Math.floor(focusCurrentElapsed()));
+  const roundCap = t.kind==='RFT' || t.kind==='FORTIME_REPEATS' ? t.rounds : (t.kind==='LADDER' ? t.rungs.length : null);
+  if(!w.wodPerformance) w.wodPerformance = {};
+  const perf = w.wodPerformance;
+  perf.completedAll = false;
+  perf.stoppedAt = stoppedAt;
+  let note = `Stopped at ${stoppedAt}`;
+  if(roundCap){
+    perf.roundsDone = state.focusTapCount; perf.roundsTotal = roundCap;
+    note += ` — ${state.focusTapCount} of ${roundCap} rounds done`;
+  } else if(t.kind==='AMRAP' && !t.cycles && t.mode!=='reps' && state.focusTapCount){
+    note += ` — ${state.focusTapCount} round${state.focusTapCount===1 ? '' : 's'}`;
+  }
+  w.wodNotes = w.wodNotes ? `${note}. ${w.wodNotes}` : note;
+  w.rxStatus = 'scaled';
+  if(w.sectionsDone) w.sectionsDone.wod = true;
+  state.focusStepDone.wod = true;
+  focusStopTicking();
+  closeTimerDrawer();
+  render();
+  maybePromptRating(w, 'wod');
 }
 // tracks whether requestCloseFloatCard() itself paused a running timer to show the confirm
 // dialog — vs. it was already paused (the athlete's own choice) before Cancel was even tapped —
@@ -2853,7 +2892,15 @@ function requestCloseFloatCard(){
       focusPause();
       cancelPromptAutoPaused = true;
     }
-    // real progress is on the line — confirm before resetting it back to 0:00
+    // real progress is on the line — confirm before throwing it away. A rest-between-sets countdown is
+    // the exception: the sets already finished are kept on the workout itself.
+    const canLogPartial = focusTimer.sectionKey==='wod' && !focusTimer.repeatKey;
+    document.getElementById('gw-timerstop-msg').textContent = focusTimer.repeatKey
+      ? "This stops the rest timer. Sets you've already finished stay checked off."
+      : (canLogPartial
+        ? "Cancelling discards its progress, including any rounds or reps you've logged. Or stop here and log what you did as a modified workout."
+        : "This stops the timer and discards its progress, including any rounds or reps you've logged.");
+    document.getElementById('gw-timerstop-log').style.display = canLogPartial ? '' : 'none';
     document.getElementById('gw-timerstop-backdrop').classList.add('show');
   } else {
     // nothing's happened yet, so there's nothing to confirm discarding — this was a silent
@@ -3114,7 +3161,7 @@ function renderSectionFocus(overrideSpec){
     };
     // a repeat-countdown's "Next" slot is repurposed as "Skip" — ending the rest early counts the
     // same as letting it run out, via the exact same focusFinish() path
-    document.getElementById('gw-focus-skipnext').onclick = isRepeatCountdown ? ()=>{ focusFinish(); focusUpdateDisplay(); } : focusSkipToNextRound;
+    document.getElementById('gw-focus-skipnext').onclick = isRepeatCountdown ? ()=>{ focusFinish(); focusUpdateDisplay(); } : (kind==='INTERVAL' ? focusSkipToNextRound : focusSkipRest);
     document.getElementById('gw-floatcard-playpause').onclick = focusToggleFromTap;
     document.getElementById('gw-floatcard-close').onclick = requestCloseFloatCard;
 
@@ -3380,6 +3427,20 @@ function focusSkipToNextRound(){
   focusUpdateDisplay();
   vibrate(20);
 }
+// ends a rest early: multi-interval AMRAP jumps to the start of the next interval, For Time Repeats starts the next round now
+function focusSkipRest(){
+  if(!focusTimer) return;
+  const elapsed = focusCurrentElapsed();
+  if(focusTimer.kind==='AMRAP' && focusTimer.cycles){
+    const cycleLen = focusTimer.minutes*60 + (focusTimer.restMinutes||0)*60;
+    focusTimer.elapsedBefore = (Math.floor(elapsed/cycleLen)+1)*cycleLen;
+    focusTimer.startedAt = focusTimer.running ? performance.now() : null;
+  } else if(focusTimer.kind==='FORTIME_REPEATS'){
+    focusTimer.restUntil = null;
+  } else return;
+  focusUpdateDisplay();
+  vibrate(20);
+}
 function focusStart(){
   if(!focusTimer || focusTimer.running) return;
   focusTimer.running = true;
@@ -3422,7 +3483,7 @@ function focusUpdateDisplay(){
   const secondaryEl = document.getElementById('gw-focus-secondary');
   if(!numberEl) return;
   const elapsed = focusCurrentElapsed();
-  let displaySeconds = 0, warn = false, isRest = false, phaseWordUsed = false, secondaryUsed = false;
+  let displaySeconds = 0, warn = false, isRest = false, phaseWordUsed = false, secondaryUsed = false, restSkippable = false;
 
   if(focusTimer.kind==='AMRAP' && focusTimer.cycles){
     const workSec = focusTimer.minutes*60, restSec = (focusTimer.restMinutes||0)*60, cycleLen = workSec+restSec;
@@ -3438,6 +3499,7 @@ function focusUpdateDisplay(){
     if(phaseKey !== focusTimer.lastPhaseKey && focusTimer.running){ switchBeep(); focusTimer.lastPhaseKey = phaseKey; }
     phaseEl.textContent = isRest ? 'REST' : 'AMRAP';
     phaseWordUsed = true;
+    restSkippable = isRest;
     phaseEl.classList.toggle('rest', isRest);
     subEl.textContent = `Interval ${cycleIdx+1} of ${focusTimer.cycles}`;
     if(elapsed >= totalDuration){ warn=true; focusFinish(); displaySeconds=0; }
@@ -3567,6 +3629,7 @@ function focusUpdateDisplay(){
     if(focusTimer.cap && elapsed >= focusTimer.cap*60){ warn = true; focusFinish(); }
     if(focusTimer.kind==='FORTIME_REPEATS'){
       const resting = focusTimer.restUntil && elapsed < focusTimer.restUntil;
+      restSkippable = !!resting;
       phaseEl.textContent = resting ? 'REST' : 'GO';
       phaseEl.classList.toggle('rest', !!resting);
       phaseWordUsed = true;
@@ -3587,6 +3650,17 @@ function focusUpdateDisplay(){
     if(subEl2){ subEl2.textContent = nowSub || ''; subEl2.style.display = nowSub ? '' : 'none'; }
     const nextBlock = document.getElementById('gw-nn-nextblock');
     if(nextBlock) nextBlock.style.display = next ? '' : 'none';
+  }
+  // during a rest the round circle gives way to a Skip circle (Tabata is a fixed rhythm — no skipping there)
+  if(focusTimer.kind==='FORTIME_REPEATS' || (focusTimer.kind==='AMRAP' && focusTimer.cycles)){
+    const showSkip = restSkippable && !focusTimer.doneBeeped;
+    const roundCircle = document.getElementById('gw-focus-plus'), skipSlot = document.getElementById('gw-floatcard-next');
+    if(roundCircle) roundCircle.style.display = showSkip ? 'none' : '';
+    if(skipSlot){
+      skipSlot.style.display = showSkip ? '' : 'none';
+      const skipBtn = document.getElementById('gw-focus-skipnext');
+      if(skipBtn && !skipBtn.dataset.skipLabel){ skipBtn.innerHTML = `${ICON_SKIP}<span>Skip</span>`; skipBtn.dataset.skipLabel = '1'; }
+    }
   }
   if(secondaryEl && !secondaryUsed) secondaryEl.textContent = '';
   if(phaseEl && !phaseWordUsed) phaseEl.textContent = '';
@@ -4145,7 +4219,7 @@ async function logWorkout(){
       await saveVolume();
     }
     let prMessage = null, isPR = false;
-    if(w.isBenchmark){
+    if(w.isBenchmark && !(w.wodPerformance && w.wodPerformance.stoppedAt)){
       const benchmark = BENCHMARKS.find(b=>b.name===w.benchmarkName);
       const result = await recordBenchmarkResult(benchmark, w.wodPerformance);
       isPR = result.isPR;
@@ -5094,6 +5168,7 @@ function fmtClock(totalSeconds){
 
 document.getElementById('gw-timerstop-cancel').onclick = cancelCloseFloatCard;
 document.getElementById('gw-timerstop-ok').onclick = cancelTimerAndClose;
+document.getElementById('gw-timerstop-log').onclick = stopTimerAndLogPartial;
 updateFocusCloseButton();
 document.getElementById('gw-focus-close').onclick = requestExitFocus;
 document.getElementById('gw-timer-drawer-backdrop').onclick = (e)=>{ if(e.target.id==='gw-timer-drawer-backdrop') requestExitFocus(); };
