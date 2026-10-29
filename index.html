@@ -352,6 +352,8 @@
   .gw-headline-row{display:flex; flex-direction:column; align-items:flex-start; gap:6px;}
   .gw-headline-row .gw-tag{flex-shrink:0;}
   .gw-section-detail{font-family:var(--font-body); font-weight:500; font-size:13.5px; color:var(--text); line-height:1.7; white-space:pre-line;}
+  .gw-movement-group{font-family:var(--font-body); font-weight:700; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:10px 0 2px;}
+  .gw-movement-group:first-child{margin-top:0;}
   .gw-format-explainer{font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--muted); line-height:1.4;}
   .gw-roundlog{display:flex; flex-direction:column; gap:2px; width:100%;}
   .gw-roundlog:empty{display:none;}
@@ -943,11 +945,13 @@ const DAY_TYPES = [
 ];
 
 const DEFAULT_WEIGHTS = {
-  backSquat:95, frontSquat:75, deadlift:135, floorPress:65, powerClean:65, powerSnatch:45
+  backSquat:95, frontSquat:75, deadlift:135, floorPress:65, powerClean:65, powerSnatch:45,
+  hangSnatch:45, snatchBalance:45, hangClean:65, pendlayRow:65
 };
 const LIFT_LABELS = {
   backSquat:'Back Squat', frontSquat:'Front Squat', deadlift:'Deadlift',
-  floorPress:'Barbell Floor Press', powerClean:'Power Clean', powerSnatch:'Power Snatch'
+  floorPress:'Barbell Floor Press', powerClean:'Power Clean', powerSnatch:'Power Snatch',
+  hangSnatch:'Hang Snatch', snatchBalance:'Snatch Balance', hangClean:'Hang Clean', pendlayRow:'Pendlay Row'
 };
 // available plates, one per side (35/25/15 oly + 25/10 iron)
 
@@ -957,7 +961,11 @@ const ADJUST = {
   deadlift:    {easy:15, right:10, hard:0},
   floorPress:  {easy:5,  right:5,  hard:0},
   powerClean:  {easy:5,  right:5,  hard:-5},
-  powerSnatch: {easy:5,  right:5,  hard:-5}
+  powerSnatch: {easy:5,  right:5,  hard:-5},
+  hangSnatch:  {easy:5,  right:5,  hard:-5},
+  snatchBalance: {easy:5, right:5, hard:0},
+  hangClean:   {easy:5,  right:5,  hard:-5},
+  pendlayRow:  {easy:5,  right:5,  hard:0}
 };
 const RPE_LABELS = {easy:'Easy', right:'Right', hard:'Hard'};
 
@@ -1011,7 +1019,7 @@ const SKILLS = {
   strength: [
     {text:"STRENGTH - UPPER BODY PUSH\nBARBELL FLOOR PRESS\n5 x 5\nEvery 2 min", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
     {text:"STRENGTH - UPPER BODY PUSH\nBARBELL FLOOR PRESS\n5-5-3-3-2-2\nEvery 2 min", liftKey:'floorPress', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
-    {text:"STRENGTH - UPPER BODY PULL\nPENDLAY ROW (barbell)\n5 x 6\nEvery 2 min", timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
+    {text:"STRENGTH - UPPER BODY PULL\nPENDLAY ROW (barbell)\n5 x 6\nEvery 2 min", liftKey:'pendlayRow', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
     {text:"STRENGTH - UPPER BODY PULL\nSTRICT PULL-UPS (add weight if you can)\n5 x 3-5\nEvery 2 min", timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
     {text:"STRENGTH\nBACK SQUAT (rack)\n5 x 5\nEvery 2 min", liftKey:'backSquat', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
     {text:"STRENGTH\nFRONT SQUAT (rack)\n5-5-3-3-2-2\nEvery 2 min", liftKey:'frontSquat', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
@@ -1032,9 +1040,9 @@ const SKILLS = {
     {text:"GYMNASTIC\nEMOM 10'\nOdd: 3-5 Handstand Push-Ups (or hold)\nEven: 3 Wall Walks", timer:{kind:'EMOM', minutes:10, alternate:['Handstand Push-Ups','Wall Walks'], label:'Alternate Movements per Interval'}}
   ],
   weightlifting: [
-    {text:"OLYMPIC LIFTING - SNATCH BALANCE\n5 sets x 3\nEvery 2 min, build to a heavy 3", timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
-    {text:"OLYMPIC LIFTING - CLEAN PULL + HANG CLEAN\n5 sets: 2 Clean Pulls + 1 Hang Clean\nEvery 2 min", timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
-    {text:"OLYMPIC LIFTING - HANG SNATCH\n6 sets x 2\nEvery 2 min, progressive load", timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - SNATCH BALANCE\n5 sets x 3\nEvery 2 min, build to a heavy 3", liftKey:'snatchBalance', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - CLEAN PULL + HANG CLEAN\n5 sets: 2 Clean Pulls + 1 Hang Clean\nEvery 2 min", liftKey:'hangClean', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
+    {text:"OLYMPIC LIFTING - HANG SNATCH\n6 sets x 2\nEvery 2 min, progressive load", liftKey:'hangSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
     {text:"OLYMPIC LIFTING - COMPLEX (main bar)\n5 sets, every 2 min:\n1 Power Clean + 1 Front Squat + 1 Push Jerk", liftKey:'powerClean', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
     {text:"OLYMPIC LIFTING - SNATCH\n5 sets: 1 Snatch Deadlift + 1 Hang Power Snatch\nEvery 2 min", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:5, label:'For X Cycles'}},
     {text:"OLYMPIC LIFTING - SNATCH\n6 sets x 3\nEvery 2 min, progressive load", liftKey:'powerSnatch', timer:{kind:'INTERVAL', minutes:2, totalRounds:6, label:'For X Cycles'}},
@@ -1410,7 +1418,7 @@ const MOVEMENT_PATTERNS = {
   'Butterfly Pull-Ups':'pull', 'Clean and Jerks':'hinge', 'Barbell Walking Lunges':'lunge', 'Devil Press':'push'
 };
 // same idea for the barbell lifts used in Skill work
-const LIFT_PATTERNS = {backSquat:'squat', frontSquat:'squat', deadlift:'hinge', floorPress:'push', powerClean:'hinge', powerSnatch:'hinge'};
+const LIFT_PATTERNS = {backSquat:'squat', frontSquat:'squat', deadlift:'hinge', floorPress:'push', powerClean:'hinge', powerSnatch:'hinge', hangSnatch:'hinge', snatchBalance:'squat', hangClean:'hinge', pendlayRow:'pull'};
 // tallies how often each pattern showed up in this focus's last few logged sessions — the basis for
 // steering movement selection away from whatever's already been hammered
 function recentPatternTally(type, sessions){
@@ -1641,7 +1649,7 @@ const EXTRA_MOBILITY = [
 function cooldownAreas(type, liftKey){
   if(type==='weightlifting') return ['lower','upper'];
   if(type==='gymnastics') return ['hang','upper'];
-  if(type==='strength') return (liftKey && LIFT_PATTERNS[liftKey]==='push') ? ['upper'] : ['lower'];
+  if(type==='strength') return (liftKey && ['push','pull'].includes(LIFT_PATTERNS[liftKey])) ? ['upper'] : ['lower'];
   return ['general','lower'];
 }
 function extraPoolFor(kind, type, liftKey){
@@ -1691,7 +1699,7 @@ const MOBILITY_PRIMERS = {
 function mobilityPrimerFor(type, liftKey){
   if(type==='weightlifting') return MOBILITY_PRIMERS.both;
   if(type==='gymnastics') return MOBILITY_PRIMERS.hang;
-  if(type==='strength') return (liftKey && LIFT_PATTERNS[liftKey]==='push') ? MOBILITY_PRIMERS.press : MOBILITY_PRIMERS.lower;
+  if(type==='strength') return (liftKey && ['push','pull'].includes(LIFT_PATTERNS[liftKey])) ? MOBILITY_PRIMERS.press : MOBILITY_PRIMERS.lower;
   return MOBILITY_PRIMERS.general;
 }
 
@@ -1704,7 +1712,7 @@ const PATTERN_PLAIN = {
   'upper-press': 'upper-body pressing', 'upper-pull': 'upper-body pulling', 'lower-press': 'squatting and lunging',
   'lower-pull': 'hinging and pulling from the floor'
 }; // the four strength patterns; cardio is left out because most pools hold few cardio movements, so it would always look light
-const LIFT_TO_SCALING_PATTERN = {squat:'lower-press', hinge:'lower-pull', push:'upper-press'};
+const LIFT_TO_SCALING_PATTERN = {squat:'lower-press', hinge:'lower-pull', push:'upper-press', pull:'upper-pull'};
 function lookBack(){
   const since = Date.now() - LOOKBACK_DAYS*86400000;
   const recent = state.history.filter(h=>h.kind!=='external' && h.date>=since);
@@ -1737,7 +1745,8 @@ const CROSSFIT_REP_SCHEMES = {
   straightSets: [[5,5,5,5,5],[3,3,3,3,3],[10,10,10],[8,8,8,8]]
 };
 const LOAD_PRESETS = { // lb, Rx (male) reference — Scaled/Rx+ are ±20% off Rx, rounded to 5
-  backSquat:95, frontSquat:75, deadlift:135, floorPress:65, powerClean:65, powerSnatch:45
+  backSquat:95, frontSquat:75, deadlift:135, floorPress:65, powerClean:65, powerSnatch:45,
+  hangSnatch:45, snatchBalance:45, hangClean:65, pendlayRow:65
 };
 // standard CrossFit Rx loads (lb) for barbell/KB movements that show up in the WOD — always
 // fixed, not user-adjustable, and shown as "women/men" (e.g. "Thrusters 65/95")
@@ -2336,7 +2345,7 @@ function timerExplainer(spec){
   }
   if(spec.kind==='LADDER'){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
-    return `Finish as fast as you can${capPart}.`;
+    return `Go round by round: finish every movement in a round before the next round. Finish as fast as you can${capPart}.`;
   }
   if(spec.kind==='FORTIME'){
     const capPart = spec.cap ? ` — time cap ${spec.cap} min` : '';
@@ -2677,6 +2686,12 @@ function pickMovementsLRU(pool, type, n){
   });
   scored.sort((a,b)=>b.score-a.score);
   return scored.slice(0, Math.min(n, pool.length)).map(s=>s.m);
+}
+// movements whose reps are a ladder ("15-12-9"): each carries its own rungs, so a round can name every
+// movement with its own count (a multi-ladder pairs "15-12-9" with, say, "10-8-6")
+function ladderMovements(movements){
+  return (movements || []).filter(m=>!m.tag && typeof m.reps==='string' && /^\d+(-\d+)+$/.test(m.reps))
+    .map(m=>({name:m.name, load:m.load, rungs:m.reps.split('-').map(Number)}));
 }
 function buildWodText(format, wodMovements){
   return `${format}\n` + wodMovements.map(m => `- ${m.reps} ${m.name}${repsSuffixFor(m.name)}${m.tag ? ' ('+m.tag+')' : ''}`).join('\n');
@@ -3272,8 +3287,11 @@ function timerSpecShortLabel(spec){
       return `Tabata ${spec.rounds}x`;
     case 'RFT':
       return `${spec.rounds} Rounds`;
-    case 'LADDER':
-      return `For Time ${spec.rungs.join('-')}`;
+    case 'LADDER': {
+      // movements on different ladders (10-8-6 with 5-4-3) have no single rung list to show
+      const lad = ladderMovements(state.currentWorkout && state.currentWorkout.wodMovements);
+      return lad.every(l=>l.rungs.join('-')===spec.rungs.join('-')) ? `For Time ${spec.rungs.join('-')}` : `For Time · ${spec.rungs.length} rounds`;
+    }
     case 'FORTIME':
       return 'For Time';
     case 'FORTIME_REPEATS':
@@ -4515,6 +4533,13 @@ function focusUpdateDisplay(){
       // genuinely rest-based paced sets run through the separate COUNTDOWN/repeatKey engine below
       // — so this is never a rest period, just the current lift's working interval
       subEl.textContent = `Set ${Math.min(unit+1, focusTimer.totalRounds)} of ${focusTimer.totalRounds}`;
+      // on the last set there is no next one — the skip button says Finish (it ends the block the same way)
+      const skipLabel = document.getElementById('gw-focus-skipnext');
+      const wantLabel = unit+1 >= focusTimer.totalRounds ? 'Finish' : 'Next';
+      if(skipLabel && skipLabel.dataset.label !== wantLabel){
+        skipLabel.dataset.label = wantLabel;
+        skipLabel.innerHTML = `${wantLabel==='Finish' ? ICON_CHECK : ICON_SKIP}<span>${wantLabel}</span>`;
+      }
       if(unit > focusTimer.lastBeepUnit && unit < focusTimer.totalRounds && focusTimer.running){ switchBeep(); focusTimer.lastBeepUnit = unit; }
       if(elapsed >= totalDuration){ warn=true; focusFinish(); displaySeconds=0; }
       else if(displaySeconds<=3) warn=true;
@@ -4572,9 +4597,13 @@ function focusUpdateDisplay(){
     if(focusTimer.cap && elapsed >= focusTimer.cap*60){ warn = true; focusFinish(); }
     const rungs = focusTimer.rungs;
     const roundIdx = Math.min(state.focusTapCount, rungs.length-1);
+    const w0 = state.currentWorkout;
+    const lad = ladderMovements(w0 && w0.wodMovements);
     subEl.textContent = state.focusTapCount >= rungs.length
       ? 'All rounds done'
-      : `${rungs[roundIdx]} reps this round`;
+      : (lad.length
+          ? `Round ${roundIdx+1} of ${rungs.length}: ` + lad.map(l=>`${l.rungs[Math.min(roundIdx, l.rungs.length-1)]} ${l.name}`).join(' + ')
+          : `${rungs[roundIdx]} reps this round`);
   } else { // FORTIME / RFT / FORTIME_REPEATS / stopwatch
     displaySeconds = elapsed;
     if(focusTimer.cap && elapsed >= focusTimer.cap*60){ warn = true; focusFinish(); }
@@ -5041,7 +5070,10 @@ function renderWodSection(w){
     headlineRow.appendChild(tagEl);
   }
   bodyEl.appendChild(headlineRow);
-  const wodExplainerText = timerExplainer(wodTimerSpec);
+  const ladder = ladderMovements(w.wodMovements);
+  const isLadderWod = ladder.length > 0 && ladder.length === w.wodMovements.length;
+  // a benchmark ladder (Fran) runs on the plain For Time clock but reads like any other ladder
+  const wodExplainerText = timerExplainer(isLadderWod && wodTimerSpec && wodTimerSpec.kind==='FORTIME' ? {...wodTimerSpec, kind:'LADDER'} : wodTimerSpec);
   if(wodExplainerText){
     const explainEl = document.createElement('div');
     explainEl.className = 'gw-format-explainer';
@@ -5051,7 +5083,7 @@ function renderWodSection(w){
 
   const listEl = document.createElement('div');
   listEl.className = 'gw-movement-list';
-  w.wodMovements.forEach((m)=>{
+  const addMovementRow = (m, repsText)=>{
     const row = document.createElement('div');
     row.className = 'gw-movement-row';
     const main = document.createElement('div');
@@ -5061,12 +5093,50 @@ function renderWodSection(w){
     nameEl.textContent = wodMovementDisplayName(m.name, m.load);
     const repsEl = document.createElement('span');
     repsEl.className = 'gw-movement-reps';
-    repsEl.textContent = (wodTimerSpec && wodTimerSpec.kind==='AMRAP' && wodTimerSpec.mode==='reps' && !m.tag) ? 'Max reps' : `${m.reps} reps${repsSuffixFor(m.name)}${m.tag ? ' · '+m.tag : ''}`;
+    repsEl.textContent = repsText;
     main.appendChild(nameEl); main.appendChild(repsEl);
     row.appendChild(main);
     makeRowTappable(row, infoKeyFor(wodMovementDisplayName(m.name), m.name));
     listEl.appendChild(row);
-  });
+  };
+  if(isLadderWod){
+    // a ladder is done round by round: every movement in round 1, then every movement in round 2, and so on —
+    // listing a round at a time keeps anyone from finishing one movement's whole ladder before starting the next
+    const rounds = Math.max(...ladder.map(l=>l.rungs.length));
+    for(let r=0; r<rounds; r++){
+      const head = document.createElement('div');
+      head.className = 'gw-movement-group';
+      head.textContent = `Round ${r+1}`;
+      listEl.appendChild(head);
+      ladder.forEach(l=>{
+        const reps = l.rungs[Math.min(r, l.rungs.length-1)];
+        addMovementRow(l, `${reps} reps${repsSuffixFor(l.name)}`);
+      });
+    }
+  } else if(w.wodMovements.some(m=>m.tag==='Buy-In' || m.tag==='Buy-Out' || m.tag==='Between Rounds')){
+    // buy-in and buy-out happen once; the rounds in between repeat — titles keep the three apart so the
+    // rounds are not mistaken for one more line of the buy-in or buy-out
+    const addGroup = (title, list)=>{
+      if(!list.length) return;
+      const head = document.createElement('div');
+      head.className = 'gw-movement-group';
+      head.textContent = title;
+      listEl.appendChild(head);
+      list.forEach(m=>addMovementRow(m, `${m.reps} reps${repsSuffixFor(m.name)}`));
+    };
+    const roundsTitle = !wodTimerSpec ? 'Rounds'
+      : wodTimerSpec.kind==='RFT' ? `${wodTimerSpec.rounds} rounds, every round`
+      : wodTimerSpec.kind==='AMRAP' ? `AMRAP ${wodTimerSpec.minutes} min, repeat the round`
+      : 'Rounds';
+    addGroup('Buy-In, once', w.wodMovements.filter(m=>m.tag==='Buy-In'));
+    addGroup(roundsTitle, w.wodMovements.filter(m=>!m.tag));
+    addGroup('Between each round', w.wodMovements.filter(m=>m.tag==='Between Rounds'));
+    addGroup('Buy-Out, once', w.wodMovements.filter(m=>m.tag==='Buy-Out'));
+  } else {
+    w.wodMovements.forEach((m)=>{
+      addMovementRow(m, (wodTimerSpec && wodTimerSpec.kind==='AMRAP' && wodTimerSpec.mode==='reps' && !m.tag) ? 'Max reps' : `${m.reps} reps${repsSuffixFor(m.name)}${m.tag ? ' · '+m.tag : ''}`);
+    });
+  }
   bodyEl.appendChild(listEl);
 
   addStartSectionButton(wrap, 'wod');
@@ -6261,6 +6331,7 @@ document.getElementById('gw-timer-drawer-backdrop').onclick = (e)=>{ if(e.target
 
 // iOS Safari ignores user-scalable=no for pinch gestures — this is the part that actually stops them
 ['gesturestart','gesturechange','gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+
 
 loadState();
 })();
