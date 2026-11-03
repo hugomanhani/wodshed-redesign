@@ -1944,9 +1944,9 @@ const BENCHMARKS = [
   {name:'Grace', format:"FOR TIME", scoreType:'time', equip:'barbell',
    movements:[{name:'Clean and Jerks', reps:30}]},
   {name:'Isabel', format:"FOR TIME", scoreType:'time', equip:'barbell',
-   movements:[{name:'Snatch', reps:30}]},
+   movements:[{name:'Snatch', reps:30, load:'95/135 lb'}]},
   {name:'Elizabeth', format:"FOR TIME", scoreType:'time', equip:'barbell',
-   movements:[{name:'Clean', reps:'21-15-9'},{name:'Ring Dips', reps:'21-15-9'}]},
+   movements:[{name:'Clean', reps:'21-15-9', load:'95/135 lb'},{name:'Ring Dips', reps:'21-15-9'}]},
   {name:'Diane', format:"FOR TIME", scoreType:'time', equip:'barbell',
    movements:[{name:'Deadlift', reps:'21-15-9'},{name:'Handstand Push-Ups', reps:'21-15-9'}]},
   {name:'Helen', format:"3 RFT", scoreType:'time', equip:'kb',
@@ -1968,7 +1968,7 @@ const BENCHMARKS = [
   {name:'Barbara', format:"5 x FOR TIME (rest 180s)", scoreType:'time', equip:'bar',
    movements:[{name:'Pull-Ups', reps:20},{name:'Push-Ups', reps:30},{name:'Sit-Ups', reps:40},{name:'Air Squats', reps:50}]},
   {name:'Randy', format:"FOR TIME", scoreType:'time', equip:'barbell',
-   movements:[{name:'Power Snatch', reps:75}]},
+   movements:[{name:'Power Snatch', reps:75, load:'55/75 lb'}]},
   {name:'JT', format:"FOR TIME", scoreType:'time', equip:'rings',
    movements:[{name:'Handstand Push-Ups', reps:'21-15-9'},{name:'Ring Dips', reps:'21-15-9'},{name:'Push-Ups', reps:'21-15-9'}]},
   {name:'Nate', format:"AMRAP 20'", scoreType:'rounds', equip:'none', repsPerRound:14,
@@ -3038,6 +3038,9 @@ const SKILL_LOAD_DEFS = [
   {re:/KB Romanian deadlift/i, key:'kbRdl', label:'KB Romanian deadlift', def:35},
   {re:/renegade rows/i, key:'kbRenegade', label:'Renegade rows (per KB)', def:25},
   {re:/KB goblet squats/i, key:'kbGoblet', label:'KB goblet squats', def:35},
+  {re:/Pendlay rows/i, key:'pendlayRowLoad', label:'Pendlay rows', def:65},
+  {re:/KB strict press/i, key:'kbStrictPress', label:'KB strict press (per arm)', def:25},
+  {re:/KB cleans/i, key:'kbClean', label:'KB cleans (per arm)', def:35},
 ];
 function buildSkillLoads(text){
   return SKILL_LOAD_DEFS.filter(d=>d.re.test(text||'')).map(d=>({
@@ -3197,7 +3200,7 @@ function generateWorkout(focus){
     skillSetWeights: buildSkillSetWeights(initSkillSetReps.length, suggestedLoad),
     skillLoads: (skillTplText && !bw) ? buildSkillLoads(skillTplText) : [],
     formatId, format, wodMovements, movements: wodMovements.map(m=>m.name), wodTimerSpec,
-    core, coreTimer, extraKind, mobility, mobilityTimer: {kind:'COUNTDOWN', minutes:2}, rpe: null, wodRpe: null, bw,
+    core, coreTimer, extraKind, coreLoads: (core && !bw) ? buildSkillLoads(core) : [], mobility, mobilityTimer: {kind:'COUNTDOWN', minutes:2}, rpe: null, wodRpe: null, bw,
     volumeUsed: effectiveVolume, coachNotes, isBenchmark, benchmarkName,
     rxStatus: 'rx', wodNotes: '',
     sectionsDone: {mobility:false, warmup:false, skill:false, wod:false, core:false}, roundCounts: {}, wodPerformance: {}
@@ -3486,7 +3489,9 @@ function renderSectionNode(key, w, opts){
       onReroll: opts.simple ? null : ()=>rerollSection('core'),
       onDone: opts.simple ? null : ()=>toggleSectionDone(w, 'core'),
       isDone: !!w.sectionsDone.core,
-      timerSpec: w.coreTimer
+      timerSpec: w.coreTimer,
+      loads: w.coreLoads,
+      onLoadChange: opts.simple ? null : (idx, val)=>{ w.coreLoads[idx].load = val; }
     });
     node.finalize();
     addStartSectionButton(node, 'core');
@@ -5200,6 +5205,7 @@ function rerollSection(section){
     if(extraPool.length>1){ do{ choice = extraPool[Math.floor(Math.random()*extraPool.length)]; } while(choice.text===w.core); }
     w.core = choice.text;
     w.coreTimer = choice.timer || null;
+    w.coreLoads = w.bw ? [] : buildSkillLoads(w.core);
   }
   render();
 }
@@ -5244,8 +5250,9 @@ async function logWorkout(){
     if(w.skillLiftKey && w.suggestedLoad){
       state.weights[w.skillLiftKey] = w.suggestedLoad;
     }
-    (w.skillLoads || []).forEach(item=>{ state.weights['load:'+item.key] = item.load; });
-    if((w.skillLiftKey && w.suggestedLoad) || (w.skillLoads && w.skillLoads.length)) await saveWeights();
+    const loggedLoads = (w.skillLoads || []).concat(w.coreLoads || []);
+    loggedLoads.forEach(item=>{ state.weights['load:'+item.key] = item.load; });
+    if((w.skillLiftKey && w.suggestedLoad) || loggedLoads.length) await saveWeights();
     if(w.wodRpe && !w.isBenchmark){
       const adj = VOLUME_ADJUST[w.wodRpe] ?? 0;
       state.volume[w.type] = clamp((state.volume[w.type] || 1.0) + adj, 0.7, 1.4);
