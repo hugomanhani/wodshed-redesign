@@ -673,6 +673,12 @@
   .gw-dial-play.is-running{background:var(--coral-wash); color:var(--coral);}
   .gw-stage-round-badge{font-family:var(--font-mono); font-weight:700; font-size:28px; line-height:1; color:#fff;}
   .gw-stage-round-badge.gw-long{font-size:21px;}
+  /* AMReps tally: the circle is a dial — drag up/down on it to move the number, no taps */
+  .gw-ctl.gw-spin{position:relative; touch-action:none; user-select:none; -webkit-user-select:none; cursor:ns-resize;}
+  .gw-ctl.gw-spin::before, .gw-ctl.gw-spin::after{content:''; position:absolute; left:50%; width:7px; height:7px; border-left:2px solid var(--muted); border-top:2px solid var(--muted); opacity:0.7;}
+  .gw-ctl.gw-spin::before{top:9px; transform:translateX(-50%) rotate(45deg);}
+  .gw-ctl.gw-spin::after{bottom:9px; transform:translateX(-50%) rotate(225deg);}
+  .gw-ctl.gw-spin.gw-spinning{background:var(--coral-wash);}
   .gw-stage-round-label{font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); line-height:1.1; text-align:center;}
   /* what's being done now, and what's next (Tabata / alternating EMOM) */
   .gw-nownext{flex-direction:column; justify-content:center; gap:10px; min-width:0; padding-right:12px;}
@@ -1787,7 +1793,23 @@ const WOD_LOAD_STANDARDS = {
   'Romanian Deadlift': {w:95, m:135},
   'Clean and Jerks': {w:95, m:135},
   'Barbell Walking Lunges': {w:45, m:65},
-  'Devil Press': {w:35, m:53}
+  'Devil Press': {w:35, m:53},
+  'Single-Arm KB Swings': {w:35, m:53},
+  'American KB Swings': {w:35, m:53},
+  'Single-Arm KB Thrusters': {w:35, m:53},
+  'KB Clean and Jerks': {w:35, m:53},
+  'KB Overhead Lunges': {w:35, m:53},
+  'KB Front-Rack Lunges': {w:35, m:53},
+  'Power Clean': {w:95, m:135},
+  'Power Snatch': {w:75, m:115},
+  'Shoulder to Overhead': {w:75, m:115},
+  'Ground to Overhead': {w:75, m:115},
+  'Hang High Pulls': {w:65, m:95},
+  'Front-Rack Lunges': {w:65, m:95},
+  'Back-Rack Lunges': {w:65, m:95},
+  'Zercher Squat': {w:65, m:95},
+  'Stiff-Legged Deadlift': {w:95, m:135},
+  'Bench Press': {w:95, m:135}
 };
 function wodMovementDisplayName(name, load){
   if(load !== undefined && load !== null) return load ? `${name} ${load}` : name; // a benchmark's own written load
@@ -4096,15 +4118,51 @@ function renderSectionFocus(overrideSpec){
     paintRound();
     if(isResume && roundCap && state.focusTapCount >= roundCap) document.getElementById('gw-focus-plus').disabled = true;
 
-    document.getElementById('gw-focus-plus').onclick = ()=>{
+    if(isAmreps){
+      // dial, not a button: drag up to count up, drag down to go back; a quick drag moves 5 at a time
+      const dialEl = document.getElementById('gw-focus-plus');
+      const STEP_PX = 14, FAST_PX_PER_MS = 1.4;
+      dialEl.classList.add('gw-spin');
+      dialEl.setAttribute('role', 'spinbutton');
+      dialEl.setAttribute('aria-label', 'Reps — drag up or down to change');
+      const setReps = n=>{
+        n = Math.max(0, n);
+        if(n === (state.focusAmrepsTotal||0)) return false;
+        state.focusAmrepsTotal = n;
+        if(key==='wod'){ if(!w.wodPerformance) w.wodPerformance = {}; w.wodPerformance.extraReps = n; }
+        dialEl.setAttribute('aria-valuenow', n);
+        paintRound(); vibrate(8);
+        return true;
+      };
+      let dragging = false, lastY = 0, lastT = 0, carry = 0;
+      dialEl.onpointerdown = e=>{
+        dragging = true; lastY = e.clientY; lastT = e.timeStamp; carry = 0;
+        dialEl.setPointerCapture(e.pointerId);
+        dialEl.classList.add('gw-spinning');
+        e.preventDefault();
+      };
+      dialEl.onpointermove = e=>{
+        if(!dragging) return;
+        const dy = lastY - e.clientY, dt = Math.max(1, e.timeStamp - lastT);
+        const fast = Math.abs(dy)/dt > FAST_PX_PER_MS;
+        lastY = e.clientY; lastT = e.timeStamp;
+        carry += dy;
+        const steps = Math.trunc(carry / STEP_PX);
+        if(!steps) return;
+        carry -= steps * STEP_PX;
+        setReps((state.focusAmrepsTotal||0) + steps * (fast ? 5 : 1));
+      };
+      const endDrag = ()=>{ dragging = false; dialEl.classList.remove('gw-spinning'); };
+      dialEl.onpointerup = endDrag; dialEl.onpointercancel = endDrag;
+      dialEl.onkeydown = e=>{
+        if(e.key==='ArrowUp'){ e.preventDefault(); setReps((state.focusAmrepsTotal||0) + 1); }
+        else if(e.key==='ArrowDown'){ e.preventDefault(); setReps((state.focusAmrepsTotal||0) - 1); }
+      };
+      dialEl.setAttribute('aria-valuenow', state.focusAmrepsTotal||0);
+      dialEl.onclick = null;
+    }
+    if(!isAmreps) document.getElementById('gw-focus-plus').onclick = ()=>{
       const plusEl = document.getElementById('gw-focus-plus');
-      if(isAmreps){
-        state.focusAmrepsTotal = (state.focusAmrepsTotal||0) + 1;
-        if(key==='wod'){ if(!w.wodPerformance) w.wodPerformance = {}; w.wodPerformance.extraReps = state.focusAmrepsTotal; }
-        paintRound(); vibrate(10);
-        plusEl.classList.add('gw-tap-flash'); setTimeout(()=>plusEl.classList.remove('gw-tap-flash'), 90);
-        return;
-      }
       if(roundCap && state.focusTapCount >= roundCap) return;
       state.focusTapCount++;
       if(isAscending){
