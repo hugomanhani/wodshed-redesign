@@ -645,16 +645,17 @@
   .gw-dial-clock.warn{color:var(--danger);}
   .gw-dial-secondary{font-family:var(--font-body); font-weight:600; font-size:12px; color:var(--muted); text-align:center; min-height:0;}
   .gw-dial-secondary:empty{display:none;}
-  .gw-stage-weight{display:flex; align-items:center; gap:16px; margin:2px 0;}
+  /* the − and + stay put at the edges whatever the plate note says; the note gets two lines of room so a longer one never moves them */
+  .gw-stage-weight{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:2px 0; width:100%; box-sizing:border-box;}
   .gw-stage-weight button{
     width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--line-strong);
     color:var(--coral); font-size:16px; font-weight:900; cursor:pointer; font-family:var(--font-body);
-    display:flex; align-items:center; justify-content:center; padding:0;
+    display:flex; align-items:center; justify-content:center; padding:0; flex:none;
   }
-  .gw-stage-weight-mid{display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .gw-stage-weight-mid{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; flex:1; min-width:0; height:66px;}
   .gw-stage-weight-val{font-family:var(--font-mono); font-weight:700; font-size:24px; color:#fff; min-width:80px; text-align:center;}
   .gw-stage-weight-val span{font-family:var(--font-body); font-weight:700; font-size:11px; color:var(--muted); margin-left:4px;}
-  .gw-stage-weight-plates{font-family:var(--font-body); font-weight:600; font-size:11px; color:var(--muted);}
+  .gw-stage-weight-plates{font-family:var(--font-body); font-weight:600; font-size:11px; color:var(--muted); text-align:center;}
 
   /* the control row: left = round counter / next, right = play-pause, both the same size */
   .gw-ctl-row{display:flex; justify-content:space-between; align-items:center; width:100%; padding:2px 14px 0;}
@@ -4803,6 +4804,8 @@ function parseSectionText(body){
       const dash = remainder.match(/^-\s*(.+)$/);
       if(dash){
         if(/^complex\b/i.test(dash[1])) headline = niceName(dash[1]);
+        // "CLEAN PULL + HANG CLEAN" only names the pairing; the lines below list each movement with its reps
+        else if(/\s\+\s/.test(dash[1]) && lines.length){}
         else { lines.unshift(dash[1]); dashRow = true; }
       }
       // anything else after the category ("(KB)", "(bodyweight)", "(W-bar + KB)") is equipment the
@@ -5635,6 +5638,7 @@ function countWorkoutsThisWeek(){
   const start = weekStart(Date.now());
   return state.history.filter(h=>h.kind!=='external' && h.date>=start).length;
 }
+function countOutsideActivities(){ return state.history.filter(h=>h.kind==='external').length; }
 function renderProfilePage(){
   const panel = document.getElementById('gw-profile-content');
   panel.innerHTML = '';
@@ -5688,8 +5692,10 @@ function renderProfilePage(){
   [
     {key:'equipment', label:'Equipment'},
     {key:'skills', label:'Skills'},
+    {key:'lifts', label:'Lift Progress'},
     {key:'benchmarks', label:'Benchmarks'},
-    {key:'backup', label:'Backup & Restore'}
+    {key:'backup', label:'Backup & Restore'},
+    {key:'credits', label:'Data Credits'}
   ].forEach(item=>{
     const row = document.createElement('div');
     row.className = 'gw-profile-list-row';
@@ -5699,11 +5705,6 @@ function renderProfilePage(){
   });
   panel.appendChild(list);
 
-  const credits = document.createElement('div');
-  credits.className = 'gw-card';
-  credits.style.cssText = 'margin-top:14px; font-size:12px; color:var(--muted); line-height:1.5; padding:16px;';
-  credits.innerHTML = '<div style="color:#fff; font-weight:700; margin-bottom:4px;">Data credits</div>' + EX_REF_CREDITS.map(t=>'<div style="margin-top:6px;">'+t+'</div>').join('');
-  panel.appendChild(credits);
 }
 function renderEquipmentDrawer(content){
   const grid = document.createElement('div');
@@ -5875,8 +5876,18 @@ function renderSkillsDrawer(content){
   renderList('');
 }
 function renderBenchmarksDrawer(content){
-  BENCHMARKS.forEach(b=>{
-    const hist = (state.benchmarks[b.name] && state.benchmarks[b.name].history) || [];
+  const histOf = b=>(state.benchmarks[b.name] && state.benchmarks[b.name].history) || [];
+  const tested = BENCHMARKS.filter(b=>histOf(b).length)
+    .sort((a,b)=>histOf(b)[histOf(b).length-1].date - histOf(a)[histOf(a).length-1].date);
+  const untested = BENCHMARKS.filter(b=>!histOf(b).length);
+  const heading = text=>{
+    const h = document.createElement('div');
+    h.style.cssText = 'font-size:11px; color:var(--muted); font-weight:900; letter-spacing:0.04em; text-transform:uppercase; margin:6px 0 8px;';
+    h.textContent = text;
+    content.appendChild(h);
+  };
+  const addCard = b=>{
+    const hist = histOf(b);
     const scores = hist.map(h=>h.score);
     const best = scores.length ? (b.scoreType==='rounds' ? Math.max(...scores) : Math.min(...scores)) : null;
 
@@ -5889,23 +5900,68 @@ function renderBenchmarksDrawer(content){
       </div>
       <div class="gw-benchmark-detail">${b.format} · ${b.movements.map(m=>`${m.reps} ${m.name}`).join(', ')}</div>`;
 
+    if(scores.length){
+      const last = hist[hist.length-1];
+      const trail = scores.slice(-5).map(sc=>fmtBenchmarkScore(b, sc));
+      const prog = document.createElement('div');
+      prog.style.cssText = 'font-size:12px; color:var(--muted); padding-top:8px; line-height:1.5;';
+      prog.textContent = `${scores.length} test${scores.length===1 ? '' : 's'} · last ${new Date(last.date).toLocaleDateString(undefined,{month:'short', day:'numeric'})}` + (scores.length>1 ? ` · ${(scores.length>5 ? '… → ' : '') + trail.join(' → ')}` : '');
+      card.appendChild(prog);
+    }
     if(scores.length>=2){
       const chartWrap = document.createElement('div');
       chartWrap.style.cssText = 'width:100%; padding:8px 0 0;';
       chartWrap.innerHTML = buildSparkline(scores);
       card.appendChild(chartWrap);
-    } else if(scores.length===1){
-      const last = document.createElement('div');
-      last.style.cssText = 'font-size:11px; color:var(--muted); padding-top:8px;';
-      last.textContent = `Tested ${new Date(hist[0].date).toLocaleDateString(undefined,{month:'short', day:'numeric'})}`;
-      card.appendChild(last);
+    }
+    content.appendChild(card);
+  };
+  if(tested.length){ heading('Tested'); tested.forEach(addCard); }
+  if(untested.length){ heading(tested.length ? 'Not tested yet' : 'Benchmarks'); untested.forEach(addCard); }
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:12px; color:var(--muted); padding-top:10px;';
+  note.textContent = `Retested automatically about every ${BENCHMARK_RETEST_DAYS} days as part of a Conditioning day.`;
+  content.appendChild(note);
+}
+// every lift that has logged weights: where it started, where it is now, and the climb in between
+function renderLiftsDrawer(content){
+  let shown = 0;
+  Object.keys(LIFT_LABELS).forEach(key=>{
+    const entries = state.history.filter(h=>h.liftKey===key && h.loggedLoad!=null);
+    if(!entries.length) return;
+    shown++;
+    const loads = entries.map(e=>e.loggedLoad);
+    const first = loads[0], latest = loads[loads.length-1], delta = latest - first;
+    const card = document.createElement('div');
+    card.className = 'gw-benchmark-card';
+    card.innerHTML = `
+      <div class="gw-benchmark-headrow">
+        <span class="gw-benchmark-name">${LIFT_LABELS[key]}</span>
+        <span class="gw-benchmark-best">${latest} lb</span>
+      </div>
+      <div class="gw-benchmark-detail">${first} → ${latest} lb (${delta>=0 ? '+' : ''}${delta} lb) over ${entries.length} session${entries.length===1 ? '' : 's'}</div>`;
+    if(loads.length>=2){
+      const chartWrap = document.createElement('div');
+      chartWrap.style.cssText = 'width:100%; padding:8px 0 0;';
+      chartWrap.innerHTML = buildSparkline(loads);
+      card.appendChild(chartWrap);
     }
     content.appendChild(card);
   });
-  const note = document.createElement('div');
-  note.style.cssText = 'font-size:12px; color:var(--muted); padding-top:4px;';
-  note.textContent = `Retested automatically about every ${BENCHMARK_RETEST_DAYS} days as part of a Conditioning day.`;
-  content.appendChild(note);
+  if(!shown){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.6;';
+    empty.textContent = 'Log a Skill session with a lift and its weight will be tracked here.';
+    content.appendChild(empty);
+  }
+}
+function renderCreditsDrawer(content){
+  EX_REF_CREDITS.forEach((t, i)=>{
+    const p = document.createElement('div');
+    p.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.6;' + (i ? ' margin-top:12px;' : '');
+    p.innerHTML = t;
+    content.appendChild(p);
+  });
 }
 // everything this app saves lives on this device only (localStorage, under 'garage-wod-*'). That's
 // what survives app updates, but it does NOT survive deleting the Home Screen app or moving to a
@@ -5964,7 +6020,9 @@ const PROFILE_DRAWERS = {
   equipment: {title:'Equipment', render:renderEquipmentDrawer},
   plates: {title:'Plates', render:renderPlatesDrawer},
   skills: {title:'Skills', render:renderSkillsDrawer},
-  benchmarks: {title:'Benchmarks', render:renderBenchmarksDrawer}
+  benchmarks: {title:'Benchmarks', render:renderBenchmarksDrawer},
+  lifts: {title:'Lift Progress', render:renderLiftsDrawer},
+  credits: {title:'Data Credits', render:renderCreditsDrawer}
 };
 function openProfileDrawer(key){
   const def = PROFILE_DRAWERS[key];
@@ -6211,7 +6269,9 @@ function renderLogPage(){
   statsRow.style.marginTop = '0';
   [
     {num: countWorkoutsTotal(), label:'Total Workouts'},
-    {num: countWorkoutsThisWeek(), label:'This Week'}
+    {num: countWorkoutsThisWeek(), label:'This Week'},
+    // outside activity is a win, not a gap: it only shows up once there's something to celebrate
+    ...(countOutsideActivities() ? [{num: countOutsideActivities(), label: countOutsideActivities()===1 ? 'Outside Activity' : 'Outside Activities'}] : [])
   ].forEach(s=>{
     const tile = document.createElement('div');
     tile.className = 'gw-stat-tile';
@@ -6249,24 +6309,8 @@ function renderLogPage(){
     container.appendChild(clearRow);
   }
 
-  // ---- progress summary (only when not filtered to a single day) ----
+  // ---- last trained (only when not filtered to a single day); lift and benchmark progress live in Profile ----
   if(!state.logFilterDate){
-    let summaryHtml = '';
-    Object.keys(LIFT_LABELS).forEach(key=>{
-      const entries = state.history.filter(h=>h.liftKey===key && h.loggedLoad!=null);
-      if(entries.length===0) return;
-      const first = entries[0].loggedLoad, latest = entries[entries.length-1].loggedLoad;
-      const delta = latest - first;
-      summaryHtml += `${LIFT_LABELS[key]}: ${first} → ${latest} lb (${delta>=0?'+':''}${delta} lb over ${entries.length} session${entries.length===1?'':'s'})<br>`;
-    });
-    if(summaryHtml){
-      const summary = document.createElement('div');
-      summary.className = 'gw-card';
-      summary.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.7; padding:16px;';
-      summary.innerHTML = `<div style="color:#fff; font-weight:700; margin-bottom:4px;">Lift progress</div>${summaryHtml}`;
-      container.appendChild(summary);
-    }
-
     // a chip per focus (big number + label) reads at a glance far better than a wall of muted
     // text — color flags a focus that's gone stale (14+ days, same threshold layoffFactor() uses
     // to ease weight back in) so it stands out instead of blending into the rest of the row
@@ -6290,35 +6334,8 @@ function renderLogPage(){
     FOCUS_CHOICES.forEach(f=>{
       chipGrid.appendChild(buildLastTrainedChip(lastSessionDateForFocus(f.key), f.label));
     });
-    chipGrid.appendChild(buildLastTrainedChip(lastExternalActivityDate(), 'Outside Activity'));
     lastTrained.appendChild(chipGrid);
     container.appendChild(lastTrained);
-
-    // ---- benchmark progress ----
-    const testedBenchmarks = BENCHMARKS.filter(b => state.benchmarks[b.name] && state.benchmarks[b.name].history.length);
-    if(testedBenchmarks.length){
-      const bmBox = document.createElement('div');
-      bmBox.className = 'gw-card';
-      bmBox.style.cssText = 'font-size:12.5px; color:var(--muted); line-height:1.8; padding:16px;';
-      let bmHtml = '<div style="color:#fff; font-weight:700; margin-bottom:4px;">Benchmark progress</div>';
-      testedBenchmarks.forEach(b=>{
-        const hist = state.benchmarks[b.name].history;
-        const scores = hist.map(h => fmtBenchmarkScore(b, h.score));
-        const trend = scores.length > 4 ? ['…', ...scores.slice(-4)] : scores;
-        bmHtml += `${b.name}: ${trend.join(' → ')}<br>`;
-      });
-      const nextDue = eligibleBenchmarks(state.bodyweightOnly).filter(b => !testedBenchmarks.includes(b) || true).map(b=>{
-        const hist = (state.benchmarks[b.name] && state.benchmarks[b.name].history) || [];
-        const last = hist.length ? hist[hist.length-1].date : null;
-        const daysLeft = last===null ? 0 : Math.max(0, BENCHMARK_RETEST_DAYS - Math.round(daysSince(last)));
-        return {name:b.name, daysLeft, tested: hist.length>0};
-      }).sort((a,b)=>a.daysLeft-b.daysLeft)[0];
-      if(nextDue && nextDue.tested && nextDue.daysLeft>0){
-        bmHtml += `<span style="font-size:11px;">Next retest (${nextDue.name}) due in ${nextDue.daysLeft} day${nextDue.daysLeft===1?'':'s'}</span>`;
-      }
-      bmBox.innerHTML = bmHtml;
-      container.appendChild(bmBox);
-    }
   }
 
   // ---- timeline (filtered by selected day, if any) ----
