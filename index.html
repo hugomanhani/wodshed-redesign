@@ -263,7 +263,7 @@
   /* --muted-2 only measures ~3:1 against this dark card background, below the 4.5:1 small-text
      floor — --muted (~5.3:1) reads the same "quiet" but stays legible */
   .gw-timeline-caveat{color:var(--muted); font-size:11px; margin-top:6px; font-style:italic;}
-  .gw-timeline-notes{color:var(--text); opacity:0.82; font-size:12.5px; margin-top:10px; line-height:1.5; font-style:italic; padding-left:10px; border-left:2px solid var(--line-strong);}
+  .gw-timeline-notes{color:var(--text); opacity:0.82; font-size:12.5px; margin-top:10px; line-height:1.5; font-style:italic; padding-left:10px; border-left:2px solid var(--line-strong); white-space:pre-wrap; overflow-wrap:anywhere;}
 
   #gw-focusline{display:none;}
   .gw-daytabs-sheet-item{
@@ -379,6 +379,7 @@
   .gw-movement-row:last-child{border-bottom:none;}
   .gw-movement-main{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;}
   .gw-movement-name{overflow-wrap:anywhere;}
+  .gw-movement-note .gw-movement-name{font-size:13.5px; font-weight:500; color:var(--muted);}
   .gw-movement-tappable{cursor:pointer; -webkit-tap-highlight-color:transparent;}
   .gw-movement-tappable .gw-movement-name::after{
     content:'i'; display:inline-block; box-sizing:border-box; width:12px; height:12px; margin-left:6px; vertical-align:1px;
@@ -1233,7 +1234,7 @@ const MOVEMENT_LIB = {
     {name:'Mountain Climbers', range:[20,30], step:5, equip:'none'},
     {name:'KB Snatch', range:[8,12], step:1, equip:'kb'},
     {name:'KB Clean & Press', range:[6,10], step:1, equip:'kb'},
-    {name:'Sumo Deadlift High Pulls', range:[10,15], step:5, equip:'kb'},
+    {name:'KB Sumo Deadlift High Pulls', range:[10,15], step:5, equip:'kb'},
     {name:'Push Press', range:[6,12], step:1, equip:'barbell'},
     {name:'Push Jerk', range:[5,10], step:1, equip:'barbell'},
     {name:'Hang Power Clean', range:[5,10], step:1, equip:'barbell'},
@@ -1410,7 +1411,7 @@ const MOVEMENT_PATTERNS = {
   'Hollow Rocks':'core', 'V-ups':'core', 'Russian Twists':'core',
   'Ring Dips':'push', 'KB Snatch':'hinge', 'KB Clean & Press':'push',
   'Wall Walks':'push', 'Reverse Lunges':'lunge', 'KB Farmer Carry':'carry',
-  'Handstand Push-Ups':'push', 'Sumo Deadlift High Pulls':'hinge', 'Renegade Rows':'pull',
+  'Handstand Push-Ups':'push', 'Sumo Deadlift High Pulls':'hinge', 'KB Sumo Deadlift High Pulls':'hinge', 'Renegade Rows':'pull',
   'Bear Crawl':'monostructural', 'Overhead Squat':'squat', 'Pistol Squats':'squat',
   'Good Mornings':'hinge', 'Bent-Over Rows':'pull', 'Knees to Elbows':'core',
   'Chest-to-Bar Pull-Ups':'pull', 'Push Press':'push', 'Push Jerk':'push',
@@ -1769,6 +1770,7 @@ const WOD_LOAD_STANDARDS = {
   'KB Snatch': {w:35, m:53},
   'KB Clean & Press': {w:35, m:53},
   'Sumo Deadlift High Pulls': {w:35, m:53},
+  'KB Sumo Deadlift High Pulls': {w:35, m:53},
   'Renegade Rows': {w:35, m:53},
   'KB Farmer Carry': {w:35, m:53},
   'Overhead Squat': {w:65, m:95},
@@ -1830,6 +1832,11 @@ function pickOne(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 // on purpose — that phrasing already tells you the count is a total split across the switch.
 const UNILATERAL_LEG_MOVEMENTS = new Set(['Front-Rack Lunges', 'Back-Rack Lunges', 'Dumbbell Overhead Lunges', 'Dumbbell Walking Lunges', 'Dumbbell Front-Rack Lunges', 'Bulgarian Split Squats', 'Shrimp Squats', 'Barbell Step-Ups', 'Dumbbell Box Step-Ups', 'KB Overhead Lunges', 'KB Front-Rack Lunges', 'Pistol Squats', 'Reverse Lunges', 'Walking Lunges', 'Barbell Walking Lunges']);
 const UNILATERAL_ARM_MOVEMENTS = new Set(['Dumbbell Rows', 'Single-Arm Dumbbell Thrusters', 'Single-Arm KB Thrusters', 'Single-Arm KB Swings', 'KB Clean and Jerks', 'Dumbbell Cleans', 'Dumbbell Power Cleans', 'Dumbbell Squat Cleans', 'Dumbbell Hang Squat Cleans', 'Turkish Get-Ups', 'Single-Arm KB Push Press', 'KB Cleans', 'Dumbbell Snatches', 'Dumbbell Hang Power Cleans']);
+// a distance ("400m", "1 mile", "5K") is its own unit — only a plain count is "reps"
+function repsText(reps){
+  const r = String(reps).trim();
+  return /^\d+(?:\.\d+)?\s*(?:m|km|k|mi|miles?|meters?|metres?|yd|yards?)$/i.test(r) ? r : `${r} reps`;
+}
 function repsSuffixFor(name){
   if(UNILATERAL_LEG_MOVEMENTS.has(name)) return ' each leg';
   if(UNILATERAL_ARM_MOVEMENTS.has(name)) return ' each arm';
@@ -2634,6 +2641,7 @@ const EXERCISE_INFO = {
   "Reverse Lunges": {desc: "Step backward into a lunge, back knee grazing the floor, then drive through your front heel back to standing. Easier on the knees than a walking lunge."},
   "KB Farmer Carry": {desc: "Hold the kettlebell at your side (or one in each hand if you have two) and walk tall with a braced core, steady steps — count each step as a rep."},
   "Handstand Push-Ups": {desc: "Kick up into a handstand against a wall, lower your head toward the floor under control, then press back up to full lockout. Scale with a pike push-up or partial range of motion.", url: "https://www.crossfit.com/essentials/the-handstand-push-up"},
+  "KB Sumo Deadlift High Pulls": {desc: "Wide stance, hike the kettlebell between your legs like a swing, then pull it up close to your body to chin height, elbows high and out.", url: "https://www.crossfit.com/essentials/the-sumo-deadlift-high-pull"},
   "Sumo Deadlift High Pulls": {desc: "Wide stance, hike the kettlebell between your legs like a swing, then pull it up close to your body to chin height, elbows high and out.", url: "https://www.crossfit.com/essentials/the-sumo-deadlift-high-pull"},
   "Renegade Rows": {desc: "In a plank with one hand on the kettlebell, row the bell to your ribs while bracing hard to keep your hips square, then lower and switch sides."},
   "Bear Crawl": {desc: "Hands and feet on the floor, knees hovering just off the ground, crawl forward moving opposite hand and foot together — count each step as a rep."},
@@ -3341,7 +3349,25 @@ function sectionStartLabel(key, w){
 }
 // the checkmark is a real toggle — marking a section undone also resets its inline round counter
 // (if it has one) so the round button becomes tappable again instead of staying stuck on "Completed"
+// marking a section done while its own timer is still live (running, paused or minimized) finishes that
+// timer the way the athlete would: the elapsed time becomes a For Time result, and the timer lets go so
+// the next section's start button isn't stuck on "Finish the WOD timer first"
+function finishLiveTimerFor(w, key){
+  const t = focusTimer;
+  if(!t || t.doneBeeped || t.sectionKey!==key) return;
+  if(key==='wod'){
+    const elapsed = Math.floor(focusCurrentElapsed());
+    const forTime = t.kind==='FORTIME' || t.kind==='RFT' || t.kind==='LADDER' || t.kind==='FORTIME_REPEATS';
+    if(forTime && elapsed > 0){
+      if(!w.wodPerformance) w.wodPerformance = {};
+      w.wodPerformance.time = fmtClock(elapsed);
+    }
+  }
+  state.focusStepDone[key] = true;
+  closeTimerDrawer();
+}
 function toggleSectionDone(w, key){
+  if(!w.sectionsDone[key]) finishLiveTimerFor(w, key);
   w.sectionsDone[key] = !w.sectionsDone[key];
   if(!w.sectionsDone[key] && w.roundCounts && w.roundCounts[key] != null){
     w.roundCounts[key] = 0;
@@ -4776,6 +4802,7 @@ function parseSectionLine(line){
   m = s.match(/^\d+\s*sets?\b([^:]*)(?::\s*(.*))?$/i);
   if(m){ if(!m[2]) return []; s = m[2]; }
   if(/^every\s+\d/i.test(s)) return [{kind:'every', raw:s, name:s, qty:''}];
+  if(/^not there yet\?/i.test(s)) return [{kind:'note', raw:s, name:s, qty:''}];
   m = s.match(/^rest\s+(\d+)(["'])?\s*(.*)$/i);
   if(m) return [{kind:'rest', raw:s, name:'Rest', qty:`${qtyWord(m[1], m[2]||'"').replace(' reps',' sec')}${m[3] ? ' '+m[3] : ''}`}];
 
@@ -4822,6 +4849,7 @@ function parseSectionText(body){
 }
 
 // a numeric slot keeps the number face only while it actually holds a number
+function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function numCls(v){ return /\d/.test(String(v==null ? '' : v)) ? '' : ' gw-txt'; }
 // tapping an exercise line opens its how-to; the row's own name wins, the full text of its line is the
 // fallback, and the most specific (longest) known movement is the one shown
@@ -4899,13 +4927,14 @@ function appendSectionRefresh(node){
 // one exercise: name on top, quantity underneath; a loaded movement's weight sits at the right edge
 function exerciseRow(item, loadItem, onLoadChange, loadIdx){
   const row = document.createElement('div');
-  row.className = 'gw-movement-row';
+  row.className = 'gw-movement-row' + (item.note ? ' gw-movement-note' : '');
   const main = document.createElement('div');
   main.className = 'gw-movement-main';
   const nameEl = document.createElement('span');
   nameEl.className = 'gw-movement-name';
   nameEl.textContent = item.name;
   main.appendChild(nameEl);
+  if(item.note) { row.appendChild(main); return row; }
   if(item.qty){
     const qtyEl = document.createElement('span');
     qtyEl.className = 'gw-movement-reps';
@@ -5004,6 +5033,7 @@ function sectionWithChips(title, body, tag, opts){
   items.forEach(it=>{
     if(it.kind==='every'){ if(!/every/i.test((explainerText || '') + ' ' + headline) && it !== everyItem) rows.push({name:it.name, qty:'', raw:it.raw}); return; }
     if(it.kind==='rest'){ if(!timerSpecForExplainer) rows.push({name:it.name, qty:it.qty, raw:it.raw}); return; }
+    if(it.kind==='note'){ rows.push({name:it.name, qty:'', raw:it.raw, note:true}); return; }
     if(it.kind==='scheme'){
       const prev = rows[rows.length-1];
       if(prev){
@@ -5013,6 +5043,11 @@ function sectionWithChips(title, body, tag, opts){
       return;
     }
     rows.push({name:it.name, qty:it.qty, raw:it.raw});
+  });
+  // a group title ("Pull-Up Progression") that opens the same how-to as a movement listed under it adds nothing
+  groupRows.forEach(g=>{
+    const gk = infoKeyFor(g.name, g.raw);
+    if(gk && rows.some(r=>r!==g && !r.note && infoKeyFor(r.name, r.raw)===gk)) rows.splice(rows.indexOf(g), 1);
   });
   const loads = opts.loads || [];
   const usedLoads = new Set();
@@ -5176,7 +5211,7 @@ function renderWodSection(w){
       listEl.appendChild(head);
       ladder.forEach(l=>{
         const reps = l.rungs[Math.min(r, l.rungs.length-1)];
-        addMovementRow(l, `${reps} reps${repsSuffixFor(l.name)}`);
+        addMovementRow(l, `${repsText(reps)}${repsSuffixFor(l.name)}`);
       });
     }
   } else if(w.wodMovements.some(m=>m.tag==='Buy-In' || m.tag==='Buy-Out' || m.tag==='Between Rounds')){
@@ -5188,7 +5223,7 @@ function renderWodSection(w){
       head.className = 'gw-movement-group';
       head.textContent = title;
       listEl.appendChild(head);
-      list.forEach(m=>addMovementRow(m, `${m.reps} reps${repsSuffixFor(m.name)}`));
+      list.forEach(m=>addMovementRow(m, `${repsText(m.reps)}${repsSuffixFor(m.name)}`));
     };
     const roundsTitle = !wodTimerSpec ? 'Rounds'
       : wodTimerSpec.kind==='RFT' ? `${wodTimerSpec.rounds} rounds, every round`
@@ -5200,7 +5235,7 @@ function renderWodSection(w){
     addGroup('Buy-Out, once', w.wodMovements.filter(m=>m.tag==='Buy-Out'));
   } else {
     w.wodMovements.forEach((m)=>{
-      addMovementRow(m, (wodTimerSpec && wodTimerSpec.kind==='AMRAP' && wodTimerSpec.mode==='reps' && !m.tag) ? 'Max reps' : `${m.reps} reps${repsSuffixFor(m.name)}${m.tag ? ' · '+m.tag : ''}`);
+      addMovementRow(m, (wodTimerSpec && wodTimerSpec.kind==='AMRAP' && wodTimerSpec.mode==='reps' && !m.tag) ? 'Max reps' : `${repsText(m.reps)}${repsSuffixFor(m.name)}${m.tag ? ' · '+m.tag : ''}`);
     });
   }
   bodyEl.appendChild(listEl);
@@ -5304,6 +5339,23 @@ function mkBtn(label, cls, onclick, iconSvg){
   return b;
 }
 
+// rounds ticked off on a section that never got marked done ("2 of 4 rounds"), so the Log can say what
+// was done rather than call the whole section skipped
+function unfinishedSectionProgress(w){
+  const out = {};
+  ['mobility','warmup','skill','core'].forEach(key=>{
+    if(w.sectionsDone && w.sectionsDone[key]) return;
+    const done = (w.roundCounts && w.roundCounts[key]) || 0;
+    if(!done) return;
+    const data = getSectionFocusData(w, key);
+    if(!data) return;
+    const spec = data.timerSpec;
+    const total = isPacedRestSpec(spec) ? spec.totalRounds : (!spec ? parseRoundTarget(data.text) : null);
+    if(total && done < total) out[key] = {done, total, unit: /\bsets?\b/i.test(data.text || '') ? 'sets' : 'rounds'};
+  });
+  return out;
+}
+
 async function logWorkout(){
   const w = state.currentWorkout;
   if(!w) return;
@@ -5335,7 +5387,7 @@ async function logWorkout(){
       liftKey: w.skillLiftKey, loggedLoad: w.suggestedLoad || null, rpe: w.rpe || null,
       wodRpe: w.wodRpe || null, volumeUsed: w.volumeUsed || 1.0,
       format: w.format, movements: w.movements, movementNames: w.movements, core: w.core, extraKind: w.extraKind, bw: w.bw,
-      sectionsDone: w.sectionsDone || null, wodPerformance: w.wodPerformance || null,
+      sectionsDone: w.sectionsDone || null, sectionProgress: unfinishedSectionProgress(w), wodPerformance: w.wodPerformance || null,
       isBenchmark: w.isBenchmark || false, benchmarkName: w.benchmarkName || null, isPR,
       rxStatus: w.rxStatus || null, notes: (w.wodNotes || '').trim()
     });
@@ -6178,7 +6230,7 @@ function buildTimelineCard(h){
         <div class="gw-timeline-stat"><div class="gw-timeline-stat-num gw-txt">${RPE_LABELS[h.intensity]||'—'}</div><div class="gw-timeline-stat-label">Felt</div></div>
         <div class="gw-timeline-stat"><div class="gw-timeline-stat-num gw-txt">${mappedLabel||'—'}</div><div class="gw-timeline-stat-label">Counted As</div></div>
       </div>
-      ${h.notes ? `<div class="gw-timeline-notes">${h.notes}</div>` : ''}`;
+      ${h.notes ? `<div class="gw-timeline-notes">${escapeHtml(h.notes)}</div>` : ''}`;
     return card;
   }
 
@@ -6187,13 +6239,16 @@ function buildTimelineCard(h){
   // when the hero number is a computed total-reps score, the rounds+reps it came from is still
   // worth showing — just as a smaller caption underneath, not competing with the headline number
   const roundsBreakdown = (h.wodPerformance && h.wodPerformance.totalReps != null) ? formatRoundsBreakdown(h.wodPerformance) : '';
-  const skipped = [];
+  const skipped = [], partial = [];
   if(h.sectionsDone){
-    if(h.sectionsDone.mobility===false) skipped.push('mobility');
-    if(h.sectionsDone.warmup===false) skipped.push('warm-up');
-    if(h.sectionsDone.skill===false) skipped.push('skill');
-    if(h.sectionsDone.core===false) skipped.push('core');
+    [['mobility','Mobility'], ['warmup','Warm-up'], ['skill','Skill'], ['core','Extra']].forEach(([key, label])=>{
+      if(h.sectionsDone[key]!==false) return;
+      const p = h.sectionProgress && h.sectionProgress[key];
+      if(p) partial.push(`${label}: ${p.done} of ${p.total} ${p.unit} done, ${p.total - p.done} skipped`);
+      else skipped.push(label.toLowerCase());
+    });
   }
+  const caveats = (skipped.length ? [`Skipped ${skipped.join(', ')}`] : []).concat(partial);
   // PR first — it's the most exciting thing on the card — then what kind of session this was,
   // then how it was done; {text, cls} lets each carry its own color instead of the default coral
   const badges = [];
@@ -6225,8 +6280,8 @@ function buildTimelineCard(h){
       <div class="gw-timeline-stat"><div class="gw-timeline-stat-num${numCls(feel)}">${feel}</div><div class="gw-timeline-stat-label">Felt</div></div>
     </div>
     <div class="gw-timeline-meta">${meta}</div>
-    ${skipped.length ? `<div class="gw-timeline-caveat">Skipped ${skipped.join(', ')}</div>` : ''}
-    ${h.notes ? `<div class="gw-timeline-notes">${h.notes}</div>` : ''}`;
+    ${caveats.length ? `<div class="gw-timeline-caveat">${caveats.join('<br>')}</div>` : ''}
+    ${h.notes ? `<div class="gw-timeline-notes">${escapeHtml(h.notes)}</div>` : ''}`;
   return card;
 }
 // one timeline node per day (dot + date header), holding a card for every session logged that day
@@ -6303,7 +6358,7 @@ function renderLogPage(){
 
   if(state.logFilterDate){
     const clearRow = document.createElement('div');
-    clearRow.style.cssText = 'font-size:12px; color:var(--coral); cursor:pointer; margin-bottom:12px; text-decoration:underline;';
+    clearRow.style.cssText = 'display:flex; align-items:center; min-height:44px; margin:10px 0 6px; font-size:13px; color:var(--coral); cursor:pointer; text-decoration:underline;';
     clearRow.textContent = `Showing ${new Date(state.logFilterDate).toLocaleDateString(undefined,{month:'short', day:'numeric'})} only — clear filter`;
     clearRow.onclick = ()=>{ state.logFilterDate = null; renderLogPage(); };
     container.appendChild(clearRow);
